@@ -1,0 +1,40 @@
+C:\xampp\php\php.exe -S localhost:8000 index.php
+// RUN BACKEND
+npm run dev
+//run frontend
+
+To Do List
+- Membuat User Bisa Akses Tambah Menu
+- Grafik Dashboard Di ambil secara real time dan sesuai dengan yang di add user 
+- Mempercantik UI Dari Website
+- Mmempermudah Alur dari Website
+- Membuat Website Lebih Atractive Dan Parents Friendly
+- Membuat DarkMode
+- Croscheck Bug Dari Setiap Fitur
+- Bisa Share Vidio Untuk Tutorial
+- Membuat Minigame Dari Java Untuk Menghafal Resep Makanan
+- Ada Tata Cara Platting Ala Cheff
+- Bisa Sharing Hasil Masakan ( seperti Platform Tiktok )
+- Menjelaskan Ilmu Gizi Dan Pengetahuan Tentang bahan Pangan, Tentang Baik Dan Buruk Nya Bahan Makanan
+- Menambahkan Dashboard Bagi Role Admin Yang Menggunakan selain desktop
+- Buat Website Ini bisa menjadi Inspiransi dan jadi sarana edukasi
+- Ada Fitur Premium, Dan Juga Ada Ai Asisten Untuk Bertanya tentang Memasak
+- Eror Handling Lebih Bagus
+- Berikan Page 404 Jika Terjadi Eror
+- Membuat 100 Resep Dari Setiap Kategori Yang Ada ( Add )
+- UI/UX Yang Lebih Rapih, Database Yang lebi Rapih
+- Tanda Lonceng Di page Dashboard Masih Belum Berungsi
+- Adakan Profile User Yang Di Dalam ny Bisa Upload Photo Profile, Isi Bio Data, Bisa Melihat Subscriber Dari User Lain ( Ambil data ini secara real time dan mulai dari 0 )
+- Buat Website ini muda di fahami tanpa harus membaca 1 per 1
+- Buat aplikasi ini bisa di manfaatkan oleh beberap perusahaan, seperti jika akun nya di daftar kan bukan untuk personal, maka website ini bisa di gunakan untuk kasir dan showcase menu untuk di lihat para konsumen untuk memesan, dan juga bisa custom nama website ( fitur ini harus menggunakan premium dengan perbulan 1.000.000 rupiah ) jadi berubah menjadi aplikasi kasir dan juga bisa menghitung income, laba, dll
+- Buat Banyak Promosi di web ini agar semua fitur nya bisa tergunakan dengan baik oleh user terutama fitur premium
+- Buat Aplikasi Ini Bisa Berbahasa Selain Indonesia, Tapi inggris juga bisa
+- Dan Juga Setelah masak bagaimana cara mengelola sampah nya, serta cara menjaga  ke higienisan nya
+- Ambil Vidio Tutorial dari url Youtube
+- Dan juga fungsi piring kecil untuk apa, sendok, pisau, garpu, table manner, semua nya buatkan kategori nya masing masing agar aplikasi ini terlihat sangat profesional dan detail
+- Gunakan React ROUTER Dom
+- Ingin Reales Aplikasi ini ke web resmi dan akan build apk nya di android studio jadi database nya harus ter intregasi. Gunakan Storage Lokal Sperti WhatsApp Saya ingin Mneggunakan Vercel Yang Gratis
+- Ketika Mencoba Untuk Logout, Ada alert dan Langsung membalikan user ke halama utama atau home
+- membuat fitur MULAI MASAK dan ada timer serta checklist yang menentukan si timer untuk pengingat orang lupa
+- adakan achievment bagi user loyal di aplikasi
+- 

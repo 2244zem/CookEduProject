@@ -1,0 +1,12 @@
+# Arahkan semua request ke index.php
+# Kecuali file/folder yang memang ada secara fisik
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Cegah akses langsung ke file config
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
