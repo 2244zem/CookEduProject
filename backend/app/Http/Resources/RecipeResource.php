@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class RecipeResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'slug' => $this->slug,
+            'description' => $this->description,
+            'ingredients' => $this->ingredients,
+            'steps' => $this->steps,
+            'image_url' => $this->image_url ? (str_starts_with($this->image_url, 'http') ? $this->image_url : asset('storage/' . $this->image_url)) : null,
+            'difficulty' => $this->difficulty,
+            'cooking_time' => $this->cooking_time,
+            'nutritional_info' => $this->nutritional_info,
+            'is_premium' => (bool) $this->is_premium,
+            'category' => new CategoryResource($this->whenLoaded('category')),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
+        ];
+    }
+}
