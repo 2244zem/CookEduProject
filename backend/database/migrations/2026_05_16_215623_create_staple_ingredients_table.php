@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('staple_ingredients');
         Schema::create('staple_ingredients', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
