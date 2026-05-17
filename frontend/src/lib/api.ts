@@ -84,9 +84,18 @@ export const recipeApi = {
   // Admin
   adminList: (params?: any) => api.get('/admin/recipes', { params }),
   create: (data: any) => api.post('/admin/recipes', data),
-  update: (id: number, data: any) => api.put(`/admin/recipes/${id}`, data),
+  update: (id: number, data: any) => {
+    if (data instanceof FormData) {
+      data.append('_method', 'PUT');
+      return api.post(`/admin/recipes/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/admin/recipes/${id}`, data);
+  },
   delete: (id: number) => api.delete(`/admin/recipes/${id}`),
   restore: (id: number) => api.post(`/admin/recipes/${id}/restore`),
+  moderate: (id: number, status: string) => api.patch(`/admin/recipes/${id}/moderate`, { status }),
 };
 
 // ===== Lesson API =====
@@ -97,7 +106,15 @@ export const lessonApi = {
   progress: () => api.get('/learning/progress'),
   // Admin
   create: (data: any) => api.post('/admin/lessons', data),
-  update: (id: number, data: any) => api.put(`/admin/lessons/${id}`, data),
+  update: (id: number, data: any) => {
+    if (data instanceof FormData) {
+      data.append('_method', 'PUT');
+      return api.post(`/admin/lessons/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/admin/lessons/${id}`, data);
+  },
   delete: (id: number) => api.delete(`/admin/lessons/${id}`),
 };
 
@@ -105,7 +122,15 @@ export const lessonApi = {
 export const categoryApi = {
   list: () => api.get('/categories'),
   create: (data: any) => api.post('/admin/categories', data),
-  update: (id: number, data: any) => api.put(`/admin/categories/${id}`, data),
+  update: (id: number, data: any) => {
+    if (data instanceof FormData) {
+      data.append('_method', 'PUT');
+      return api.post(`/admin/categories/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/admin/categories/${id}`, data);
+  },
   delete: (id: number) => api.delete(`/admin/categories/${id}`),
 };
 

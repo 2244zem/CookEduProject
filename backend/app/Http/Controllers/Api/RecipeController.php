@@ -18,7 +18,7 @@ class RecipeController extends Controller
     public function index(Request $request)
     {
         $query = Recipe::with(['category', 'creator'])
-            ->where('is_published', true);
+            ->where('moderation_status', 'approved');
 
         // Search by title or description
         if ($search = $request->query('search')) {
@@ -126,6 +126,7 @@ class RecipeController extends Controller
     public function update(UpdateRecipeRequest $request, Recipe $recipe)
     {
         $data = $request->validated();
+        $oldValues = $recipe->getRawOriginal();
 
         // Handle image upload
         if ($request->hasFile('image')) {
@@ -134,9 +135,25 @@ class RecipeController extends Controller
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($recipe->image_url);
             }
             $data['image_url'] = $request->file('image')->store('recipes', 'public');
+        } else {
+            // If image is present in request but not a file, it's likely the existing URL
+            unset($data['image']);
         }
 
         $recipe->update($data);
+        
+        // Audit Log
+        \App\Models\AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'updated_recipe',
+            'model_type' => Recipe::class,
+            'model_id' => $recipe->id,
+            'old_values' => $oldValues,
+            'new_values' => $recipe->getChanges(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         $recipe->load(['category', 'creator']);
 
         return response()->json([
@@ -150,7 +167,19 @@ class RecipeController extends Controller
      */
     public function destroy(Recipe $recipe)
     {
+        $oldValues = $recipe->toArray();
         $recipe->delete();
+
+        // Audit Log
+        \App\Models\AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'deleted_recipe',
+            'model_type' => Recipe::class,
+            'model_id' => $recipe->id,
+            'old_values' => $oldValues,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
 
         return response()->json([
             'message' => 'Resep berhasil dihapus (soft delete).',
@@ -164,6 +193,16 @@ class RecipeController extends Controller
     {
         $recipe = Recipe::withTrashed()->findOrFail($id);
         $recipe->restore();
+
+        // Audit Log
+        \App\Models\AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'restored_recipe',
+            'model_type' => Recipe::class,
+            'model_id' => $recipe->id,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
 
         return response()->json([
             'message' => 'Resep berhasil dipulihkan!',
@@ -182,9 +221,46 @@ class RecipeController extends Controller
             $query->where('title', 'ILIKE', "%{$search}%");
         }
 
+        if ($status = $request->query('moderation_status')) {
+            $query->where('moderation_status', $status);
+        }
+
         $recipes = $query->orderBy('created_at', 'desc')
             ->paginate($request->query('per_page', 15));
 
         return RecipeResource::collection($recipes);
+    }
+
+    /**
+     * Admin: Update moderation status.
+     */
+    public function moderate(Request $request, Recipe $recipe)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,approved,rejected',
+        ]);
+
+        $oldStatus = $recipe->moderation_status;
+        $recipe->update([
+            'moderation_status' => $request->status,
+            'is_published' => $request->status === 'approved',
+        ]);
+
+        // Audit Log
+        \App\Models\AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'moderated_recipe',
+            'model_type' => Recipe::class,
+            'model_id' => $recipe->id,
+            'old_values' => ['status' => $oldStatus],
+            'new_values' => ['status' => $request->status],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return response()->json([
+            'message' => 'Status moderasi diperbarui menjadi ' . $request->status,
+            'data' => new RecipeResource($recipe),
+        ]);
     }
 }

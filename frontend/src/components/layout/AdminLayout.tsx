@@ -37,50 +37,57 @@ export default function AdminLayout() {
       <DebugOverlay />
       
       {/* Sidebar (Desktop Only) */}
-      <aside className="hidden lg:flex w-80 bg-white dark:bg-surface-card border-r border-gray-100 dark:border-white/5 flex-col sticky top-0 h-screen overflow-hidden">
-        <div className="p-10 border-b border-gray-50 dark:border-white/5 flex items-center gap-4">
-           <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-glow">
-              <ChefHat className="w-6 h-6 text-white" />
+      <aside className="hidden lg:flex w-80 bg-white border-r border-slate-100 flex-col sticky top-0 h-screen overflow-hidden z-50">
+        <div className="p-10 flex items-center gap-4">
+           <div className="w-12 h-12 bg-slate-900 rounded-[20px] flex items-center justify-center shadow-2xl shadow-slate-900/20">
+              <ChefHat className="w-6 h-6 text-cyan-400" />
            </div>
            <div>
-              <h1 className="text-2xl font-black tracking-tighter">Cook<span className="text-primary">Edu</span></h1>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Admin Control</p>
+              <h1 className="text-2xl font-black tracking-tighter text-slate-900">Cook<span className="text-cyan-600">Edu</span></h1>
+              <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-0.5">Control Tower</p>
            </div>
         </div>
 
-        <nav className="flex-1 p-8 space-y-3">
+        <nav className="flex-1 px-8 py-4 space-y-2 overflow-y-auto custom-scrollbar">
+          <div className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] px-6 mb-4 mt-6">Main Command</div>
           {navItems.map(({ to, icon: Icon, label, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex items-center gap-4 px-6 py-4 rounded-[22px] transition-all duration-300 group ${
+                `flex items-center gap-4 px-6 py-4 rounded-[22px] transition-all duration-500 group relative ${
                   isActive
-                    ? 'bg-primary text-white shadow-glow scale-[1.02]'
-                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-primary'
+                    ? 'bg-slate-900 text-white shadow-2xl shadow-slate-900/30'
+                    : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'
                 }`
               }
             >
-              <Icon className="w-5 h-5" />
+              <Icon className={`w-5 h-5 transition-colors ${location.pathname === to ? 'text-cyan-400' : 'group-hover:text-cyan-600'}`} />
               <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
-              <ChevronRight className="ml-auto w-4 h-4 opacity-0 group-hover:opacity-100 transition-all" />
+              {location.pathname === to && (
+                <motion.div layoutId="sidebar-dot" className="ml-auto w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-glow-sm" />
+              )}
             </NavLink>
           ))}
         </nav>
 
-        <div className="p-8 border-t border-gray-50 dark:border-white/5">
-           <div className="bg-gray-50 dark:bg-white/5 rounded-[30px] p-6 mb-6">
-              <div className="flex items-center gap-4 mb-4">
-                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-black">
+        <div className="p-8">
+           <div className="bg-slate-50 rounded-[35px] p-6 border border-slate-100 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500 opacity-[0.03] -mr-12 -mt-12 rounded-full" />
+              <div className="flex items-center gap-4 mb-6">
+                 <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-900 font-black shadow-sm group-hover:rotate-12 transition-transform">
                     {user?.name?.charAt(0)}
                  </div>
                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black truncate">{user?.name}</p>
-                    <p className="text-[8px] text-gray-400 uppercase font-bold truncate">Ultimate Admin</p>
+                    <p className="text-[13px] font-black text-slate-900 truncate leading-tight">{user?.name}</p>
+                    <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-0.5">Superuser</p>
                  </div>
               </div>
-              <button onClick={handleLogout} className="w-full py-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">Logout</button>
+              <button onClick={handleLogout} className="w-full py-4 bg-white border border-slate-200 hover:bg-rose-500 hover:text-white hover:border-rose-500 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2 group/btn">
+                 <LogOut className="w-4 h-4 group-hover/btn:-translate-x-1 transition-transform" /> 
+                 Logout Session
+              </button>
            </div>
         </div>
       </aside>

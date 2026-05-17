@@ -26,6 +26,7 @@ class Recipe extends Model
         'category_id',
         'created_by',
         'is_published',
+        'moderation_status',
     ];
 
     /**

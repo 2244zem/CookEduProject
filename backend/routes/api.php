@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/recipes', [RecipeController::class, 'adminIndex']);
         Route::post('/recipes', [RecipeController::class, 'store']);
         Route::put('/recipes/{recipe}', [RecipeController::class, 'update']);
+        Route::patch('/recipes/{recipe}/moderate', [RecipeController::class, 'moderate']);
         Route::delete('/recipes/{recipe}', [RecipeController::class, 'destroy']);
         Route::post('/recipes/{id}/restore', [RecipeController::class, 'restore']);
 

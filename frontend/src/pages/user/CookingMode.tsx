@@ -4,12 +4,13 @@ import { useQuery } from '@tanstack/react-query'
 import { recipeApi, authApi } from '../../lib/api'
 import { 
   ArrowLeft, ArrowRight, X, Play, Pause, RotateCcw, 
-  Loader2, Award, ChefHat, AlertTriangle, Home, User,
-  Volume2, Timer as TimerIcon, Check
+  Loader2, Award, Home, User, Volume2, Timer as TimerIcon, Check
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import telorImg from '../../assets/telor.png'
+
+// Asset Imports
+import bgPattern from '../../assets/food_drawing.jpg'
 
 export default function CookingMode() {
   const { id } = useParams()
@@ -48,7 +49,6 @@ export default function CookingMode() {
     window.speechSynthesis.speak(utterance)
   }
 
-  // Auto TTS on step change
   useEffect(() => {
     if (step) {
       speakInstruction()
@@ -106,7 +106,7 @@ export default function CookingMode() {
   const handleFinish = async () => {
     setLoadingXp(true)
     try {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0077B6', '#00B4D8', '#CAF0F8'] })
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0891B2', '#22D3EE', '#CFFAFE'] })
       await authApi.addXp(100)
       setShowSuccess(true)
     } catch (err) {
@@ -122,202 +122,132 @@ export default function CookingMode() {
     else setCurrentStep(index + 1)
   }
 
-  if (!recipe) return <div className="min-h-screen bg-[#F4F9F8] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>
+  if (!recipe) return <div className="min-h-screen bg-[#F0F9FF] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-cyan-600" /></div>
 
   const progressPercentage = ((currentStep + 1) / steps.length) * 100;
 
-  // Format instruction to embed interactive timer capsule
-  const formatInstruction = (text: string) => {
-    // Simple regex to find "X menit"
-    const regex = /(\d+)\s*(menit|detik)/gi;
-    const parts = text.split(regex);
-    
-    if (parts.length === 1) return <>{text}</>;
-    
-    const elements = [];
-    let i = 0;
-    while (i < parts.length) {
-      elements.push(<span key={`text-${i}`}>{parts[i]}</span>);
-      if (i + 1 < parts.length && i + 2 < parts.length) {
-        const val = parts[i + 1];
-        const unit = parts[i + 2];
-        elements.push(
-          <button 
-            key={`timer-${i}`}
-            onClick={() => {
-              setTimerSeconds(parseInt(val) * (unit.toLowerCase() === 'menit' ? 60 : 1));
-              setTimerRunning(true);
-            }}
-            className="mx-1 px-3 py-1 bg-[#caf0f8] text-primary font-bold rounded-full text-sm border border-[#90e0ef] hover:scale-105 transition-transform inline-flex items-center gap-1 shadow-sm align-middle"
-          >
-            {timerRunning && timerSeconds > 0 ? (
-              <span className="tabular-nums font-mono">{formatTime(timerSeconds)}</span>
-            ) : (
-              `${val} ${unit}`
-            )}
-          </button>
-        );
-        i += 3;
-      } else {
-        i++;
-      }
-    }
-    return <>{elements}</>;
-  }
-
   return (
-    <div className="min-h-screen bg-[#F4F9F8] dark:bg-[#0A0A0A] p-4 md:p-8 flex flex-col justify-between font-sans overflow-hidden">
-      
+    <div className="min-h-screen relative font-sans overflow-x-hidden bg-[#F0F9FF] text-slate-900 pb-20">
+      {/* GLOBAL BACKGROUND AMBIENCE */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
+        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
+      </div>
+
       <AnimatePresence>
         {showSuccess && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-6">
-            <motion.div initial={{ scale: 0.8, y: 30 }} animate={{ scale: 1, y: 0 }} className="bg-white dark:bg-surface-card rounded-[40px] p-10 md:p-12 max-w-sm w-full text-center shadow-2xl relative overflow-hidden border border-slate-100">
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-secondary" />
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} className="w-24 h-24 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center mx-auto mb-6 shadow-glow">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xl flex items-center justify-center p-6">
+            <motion.div initial={{ scale: 0.8, y: 30 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[50px] p-12 max-w-sm w-full text-center shadow-2xl relative overflow-hidden border border-white">
+              <div className="w-24 h-24 bg-cyan-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
                  <Award className="w-12 h-12 text-white" />
-              </motion.div>
-              <h2 className="text-3xl font-black mb-2 text-slate-800 dark:text-white">Level Up!</h2>
-              <div className="inline-flex items-center justify-center gap-2 mb-6 bg-[#caf0f8] dark:bg-primary/20 py-1.5 px-4 rounded-full">
-                 <span className="text-primary font-bold text-sm">+100 XP</span>
               </div>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 leading-relaxed">Selamat! Resep <span className="font-bold text-slate-800 dark:text-white">"{recipe.title}"</span> berhasil diselesaikan.</p>
-              <button onClick={() => navigate(`/recipes/${id}`)} className="w-full py-4 bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-primary-dark text-white font-bold rounded-2xl transition-all shadow-md">Kembali ke Resep</button>
+              <h2 className="text-3xl font-black mb-2 text-slate-900">Level Up!</h2>
+              <div className="inline-flex items-center justify-center gap-2 mb-6 bg-cyan-100 py-1.5 px-4 rounded-full">
+                 <span className="text-cyan-600 font-black text-[10px] uppercase tracking-widest">+100 XP</span>
+              </div>
+              <p className="text-slate-500 text-sm mb-8 leading-relaxed font-medium">Selamat! Resep <span className="font-bold text-slate-900">"{recipe.title}"</span> berhasil diselesaikan.</p>
+              <button onClick={() => navigate(`/recipes/${id}`)} className="w-full py-5 bg-cyan-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-[24px] shadow-xl hover:bg-cyan-700 transition-all">Kembali ke Resep</button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 1. HEADER PROGRESS */}
-      <div className="w-full flex items-center justify-between gap-4 max-w-4xl mx-auto mb-6">
-        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors shrink-0">
-           <X className="w-5 h-5" />
-        </button>
-        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden flex-1">
-          <div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: `${progressPercentage}%` }}></div>
-        </div>
-        <span className="text-xs font-bold text-primary whitespace-nowrap bg-[#caf0f8] dark:bg-primary/20 px-3 py-1 rounded-full">Langkah {currentStep + 1} dari {steps.length}</span>
-      </div>
-
-      {/* 2. MAIN CARD (COOKING MODE INTERACTIVE) */}
-      <div className="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto">
-         <AnimatePresence mode="wait">
-            <motion.div 
-               key={currentStep}
-               initial={{ scale: 0.95, y: 20, opacity: 0 }}
-               animate={{ scale: 1, y: 0, opacity: 1 }}
-               exit={{ scale: 0.95, y: -20, opacity: 0 }}
-               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-               className="w-full bg-white dark:bg-surface-card rounded-[40px] shadow-xl p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-10 border border-slate-100 dark:border-white/5 relative items-center"
-            >
-               {/* Left/Top: HD Photo */}
-               <div className="w-full md:w-1/2 h-64 md:h-[400px] bg-slate-100 dark:bg-black rounded-[35px] overflow-hidden relative shrink-0">
-                  <img 
-                     src={recipe.image_url} 
-                     alt={recipe.title} 
-                     className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105"
-                  />
-                  {/* Floating AI Status in Image */}
-                  <div className="absolute bottom-4 right-4">
-                     <motion.div 
-                        animate={{ 
-                           scale: isSpeaking ? [1, 1.2, 1] : 1,
-                           opacity: isSpeaking ? [0.8, 1, 0.8] : 0.5
-                        }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
-                        className="w-10 h-10 bg-primary rounded-full blur-md absolute inset-0"
-                     />
-                     <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full border border-white/50 flex items-center justify-center relative z-10">
-                        <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-white' : 'text-white/50'}`} />
-                     </div>
-                  </div>
-               </div>
-               
-               {/* Right/Bottom: Text Instruction */}
-               <div className="w-full md:w-1/2 space-y-6 flex flex-col justify-center py-4">
-                  <div className="inline-flex items-center gap-2">
-                     <span className="w-8 h-8 rounded-full bg-[#caf0f8] dark:bg-primary/20 flex items-center justify-center text-primary font-black text-sm">
-                        {currentStep + 1}
-                     </span>
-                     <h2 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight leading-tight">
-                        {step?.title || "Instruksi Memasak"}
-                     </h2>
-                  </div>
-                  
-                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-lg md:text-xl font-medium">
-                     {formatInstruction(step?.instruction || "")}
-                  </p>
-
-                  {/* Built-in fallback timer UI if no text timer found but duration exists */}
-                  {timerSeconds > 0 && timerRunning && (
-                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-[#caf0f8] dark:bg-primary/20 rounded-2xl flex items-center justify-between border border-[#90e0ef] dark:border-primary/50">
-                        <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-full bg-white dark:bg-black/20 flex items-center justify-center">
-                              <TimerIcon className="w-5 h-5 text-primary" />
-                           </div>
-                           <div>
-                              <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Sisa Waktu</p>
-                              <p className="text-2xl font-mono font-black text-slate-800 dark:text-white leading-none">{formatTime(timerSeconds)}</p>
-                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                           <button onClick={() => setTimerRunning(!timerRunning)} className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md">
-                              {timerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                           </button>
-                           <button onClick={() => { setTimerRunning(false); setTimerSeconds(step?.duration ? step.duration * 60 : 0) }} className="w-10 h-10 rounded-xl bg-white dark:bg-white/5 text-slate-400 flex items-center justify-center border border-slate-200 dark:border-white/10">
-                              <RotateCcw className="w-4 h-4" />
-                           </button>
-                        </div>
-                     </motion.div>
-                  )}
-               </div>
-               
-               {/* Desktop Side Navigation Arrows overlay */}
-               <button onClick={() => setCurrentStep(Math.max(0, currentStep - 1))} disabled={currentStep === 0} className="hidden md:flex absolute -left-6 w-12 h-12 bg-white dark:bg-surface-card rounded-full shadow-lg border border-slate-100 dark:border-white/10 items-center justify-center text-slate-400 hover:text-primary disabled:opacity-0 transition-all z-20">
-                  <ArrowLeft className="w-5 h-5" />
-               </button>
-               <button onClick={() => markStepComplete(currentStep)} className="hidden md:flex absolute -right-6 w-12 h-12 bg-primary rounded-full shadow-lg items-center justify-center text-white hover:scale-110 transition-transform z-20">
-                  {currentStep === steps.length - 1 ? <Check className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
-               </button>
-            </motion.div>
-         </AnimatePresence>
-      </div>
-
-      {/* 3. PREMIUM FLOATING BOTTOM NAVIGATION & AI BUTTON */}
-      <div className="w-full max-w-md mx-auto relative bg-white/90 dark:bg-surface-card/90 backdrop-blur-lg shadow-2xl rounded-full p-3 flex items-center justify-between border border-slate-100 dark:border-white/10 z-50 mt-6">
-        <button onClick={() => navigate('/')} className="flex flex-col items-center justify-center w-12 h-12 text-slate-400 hover:text-[#03045E] dark:hover:text-white transition-colors">
-          <Home className="w-5 h-5 mb-0.5" />
-          <span className="text-[8px] font-bold uppercase tracking-wider">Beranda</span>
-        </button>
-        
-        {/* INTERACTIVE AI BUTTON (FAB) */}
-        <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-          <button 
-             onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))}
-             className="w-16 h-16 bg-gradient-to-tr from-[#0077B6] to-[#03045E] rounded-full flex items-center justify-center text-white shadow-[0_10px_20px_rgba(3,4,94,0.4)] hover:scale-110 active:scale-95 transition-all ring-4 ring-white dark:ring-surface-card overflow-hidden group"
-          >
-             <motion.img 
-               src={telorImg} 
-               alt="Egg AI" 
-               animate={{ rotate: [-10, 10, -10], y: [0, -3, 0] }}
-               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-               className="w-10 h-10 drop-shadow-xl filter contrast-125"
-             />
+      <div className="relative z-10 max-w-lg mx-auto p-6 flex flex-col min-h-screen">
+        {/* HEADER PROGRESS */}
+        <div className="w-full flex items-center justify-between gap-4 mb-10 pt-6">
+          <button onClick={() => navigate(-1)} className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-xl flex items-center justify-center shadow-premium text-slate-400 hover:text-cyan-600 transition-colors shrink-0 border border-white">
+             <X className="w-5 h-5" />
           </button>
+          <div className="h-2 w-full bg-white/60 backdrop-blur-xl rounded-full overflow-hidden flex-1 border border-white">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercentage}%` }}
+              className="h-full bg-cyan-500" 
+            />
+          </div>
+          <span className="text-[9px] font-black text-cyan-600 bg-cyan-50 px-3 py-1.5 rounded-full border border-cyan-100 uppercase tracking-widest">Langkah {currentStep + 1} / {steps.length}</span>
         </div>
 
-        <button onClick={() => navigate('/profile')} className="flex flex-col items-center justify-center w-12 h-12 text-slate-400 hover:text-[#03045E] dark:hover:text-white transition-colors">
-          <User className="w-5 h-5 mb-0.5" />
-          <span className="text-[8px] font-bold uppercase tracking-wider">Profil</span>
-        </button>
-      </div>
+        {/* INSTRUCTION CARD */}
+        <div className="flex-1 flex flex-col justify-center gap-8">
+           <AnimatePresence mode="wait">
+              <motion.div 
+                 key={currentStep}
+                 initial={{ scale: 0.95, opacity: 0 }}
+                 animate={{ scale: 1, opacity: 1 }}
+                 exit={{ scale: 0.95, opacity: 0 }}
+                 className="bg-white/70 backdrop-blur-2xl rounded-[45px] shadow-premium p-8 border border-white relative flex flex-col items-center"
+              >
+                 <div className="w-full h-64 bg-slate-100 rounded-[35px] overflow-hidden mb-8 relative">
+                    <img src={recipe.image_url} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                    <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-full px-4 py-2 border border-white/40">
+                      <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-white' : 'text-white/40'}`} />
+                      <span className="text-[8px] font-black text-white uppercase tracking-widest">Audio ON</span>
+                    </div>
+                 </div>
+                 
+                 <div className="text-center space-y-4">
+                    <div className="inline-flex items-center gap-2 mb-2">
+                       <span className="w-8 h-8 rounded-full bg-cyan-600 text-white flex items-center justify-center font-black text-xs">
+                          {currentStep + 1}
+                       </span>
+                       <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                          {step?.title || "Instruksi"}
+                       </h2>
+                    </div>
+                    
+                    <p className="text-slate-600 leading-relaxed text-lg font-medium italic">
+                       "{step?.instruction || ""}"
+                    </p>
+                 </div>
 
-      {/* Mobile Sticky Next Button */}
-      <div className="md:hidden fixed bottom-28 right-4 z-40">
-         <button onClick={() => markStepComplete(currentStep)} className="w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-transform">
-            {currentStep === steps.length - 1 ? <Check className="w-6 h-6" /> : <ArrowRight className="w-6 h-6" />}
-         </button>
-      </div>
+                 {timerSeconds > 0 && timerRunning && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full mt-8 p-6 bg-cyan-50 rounded-[32px] flex items-center justify-between border border-cyan-100">
+                       <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+                             <TimerIcon className="w-6 h-6 text-cyan-600" />
+                          </div>
+                          <div className="text-left">
+                             <p className="text-[9px] font-black text-cyan-600 uppercase tracking-widest leading-none mb-1">Timer</p>
+                             <p className="text-2xl font-black text-slate-900 leading-none">{formatTime(timerSeconds)}</p>
+                          </div>
+                       </div>
+                       <div className="flex gap-2">
+                          <button onClick={() => setTimerRunning(!timerRunning)} className="w-12 h-12 rounded-2xl bg-cyan-600 text-white flex items-center justify-center shadow-lg">
+                             {timerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                          </button>
+                          <button onClick={() => { setTimerRunning(false); setTimerSeconds(step?.duration ? step.duration * 60 : 0) }} className="w-12 h-12 rounded-2xl bg-white text-slate-400 flex items-center justify-center border border-slate-100 shadow-sm">
+                             <RotateCcw className="w-5 h-5" />
+                          </button>
+                       </div>
+                    </motion.div>
+                 )}
+              </motion.div>
+           </AnimatePresence>
+        </div>
 
+        {/* BOTTOM CONTROLS */}
+        <div className="flex items-center gap-4 py-8">
+           <button 
+             onClick={() => setCurrentStep(Math.max(0, currentStep - 1))} 
+             disabled={currentStep === 0}
+             className="w-16 h-16 rounded-[24px] bg-white/60 backdrop-blur-xl border border-white shadow-premium flex items-center justify-center text-slate-400 disabled:opacity-30"
+           >
+              <ArrowLeft className="w-6 h-6" />
+           </button>
+           <button 
+             onClick={() => markStepComplete(currentStep)}
+             className="flex-1 h-16 bg-cyan-600 text-white rounded-[24px] shadow-xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest hover:bg-cyan-700 transition-all"
+           >
+              {currentStep === steps.length - 1 ? (
+                <><Check className="w-6 h-6" /> Selesai</>
+              ) : (
+                <><ArrowRight className="w-6 h-6" /> Berikutnya</>
+              )}
+           </button>
+        </div>
+      </div>
     </div>
   )
 }

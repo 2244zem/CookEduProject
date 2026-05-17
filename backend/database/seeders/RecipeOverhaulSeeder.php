@@ -106,6 +106,64 @@ class RecipeOverhaulSeeder extends Seeder
                 ]
             ],
             [
+                'title' => 'Ayam Goreng Lengkuas Gurih',
+                'description' => 'Ayam goreng dengan bumbu lengkuas parut yang melimpah, memberikan tekstur renyah dan aroma harum yang menggugah selera.',
+                'image_url' => 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&w=600&q=80',
+                'difficulty' => 'intermediate',
+                'cooking_time' => 45,
+                'servings' => 4,
+                'category_id' => $indoCategory->id,
+                'ingredients' => [
+                    ['item' => 'Daging Ayam', 'amount' => 1000, 'unit' => 'gram'],
+                    ['item' => 'Lengkuas Parut', 'amount' => 200, 'unit' => 'gram'],
+                    ['item' => 'Bawang Putih', 'amount' => 5, 'unit' => 'siung'],
+                    ['item' => 'Sereh', 'amount' => 2, 'unit' => 'batang'],
+                    ['item' => 'Kunyit', 'amount' => 2, 'unit' => 'cm'],
+                    ['item' => 'Garam Dapur', 'amount' => 1.5, 'unit' => 'sdt'],
+                ],
+                'steps' => [
+                    ['instruction' => 'Haluskan bawang putih, kunyit, dan garam dapur, lalu lumuri ke daging ayam.', 'duration' => 5],
+                    ['instruction' => 'Campurkan parutan lengkuas dan sereh memar ke dalam ayam yang dimarinasi.', 'duration' => 5],
+                    ['instruction' => 'Ungkep ayam bersama bumbu di atas api kecil hingga air menyusut dan bumbu meresap.', 'duration' => 25],
+                    ['instruction' => 'Panaskan minyak goreng, lalu goreng ayam dan remahan lengkuas secara terpisah hingga kuning keemasan.', 'duration' => 10],
+                ],
+                'nutritional_info' => [
+                    'calories' => 420,
+                    'protein' => 35,
+                    'carbs' => 12,
+                    'fat' => 28
+                ]
+            ],
+            [
+                'title' => 'Soto Ayam Kuah Bening',
+                'description' => 'Soto ayam khas Indonesia dengan kuah bening yang segar dan kaya rempah. Cocok dinikmati selagi hangat.',
+                'image_url' => 'https://images.unsplash.com/photo-1604152135912-04a022e23696?auto=format&fit=crop&w=600&q=80',
+                'difficulty' => 'intermediate',
+                'cooking_time' => 40,
+                'servings' => 4,
+                'category_id' => $indoCategory->id,
+                'ingredients' => [
+                    ['item' => 'Daging Ayam', 'amount' => 500, 'unit' => 'gram'],
+                    ['item' => 'Bawang Putih', 'amount' => 4, 'unit' => 'siung'],
+                    ['item' => 'Sereh', 'amount' => 1, 'unit' => 'batang'],
+                    ['item' => 'Daun Salam', 'amount' => 2, 'unit' => 'lembar'],
+                    ['item' => 'Tauge', 'amount' => 100, 'unit' => 'gram'],
+                    ['item' => 'Soun (rendam air)', 'amount' => 50, 'unit' => 'gram'],
+                ],
+                'steps' => [
+                    ['instruction' => 'Rebus ayam hingga empuk, lalu suwir-suwir dagingnya. Sisihkan kaldunya.', 'duration' => 20],
+                    ['instruction' => 'Tumis bumbu halus (bawang putih, kemiri, kunyit) lalu masukkan ke dalam air kaldu.', 'duration' => 5],
+                    ['instruction' => 'Masukkan sereh dan daun salam, masak hingga harum.', 'duration' => 10],
+                    ['instruction' => 'Sajikan suwiran ayam, tauge, dan soun di mangkuk, lalu siram dengan kuah panas.', 'duration' => 5],
+                ],
+                'nutritional_info' => [
+                    'calories' => 280,
+                    'protein' => 22,
+                    'carbs' => 30,
+                    'fat' => 10
+                ]
+            ],
+            [
                 'title' => 'Rahasia Kaldu Ayam Jernih (Consommé)',
                 'description' => 'Belajar membuat stok dasar yang jernih tanpa lemak berlebih. Dasar dari semua sup lezat.',
                 'image_url' => 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&q=80&w=1000',

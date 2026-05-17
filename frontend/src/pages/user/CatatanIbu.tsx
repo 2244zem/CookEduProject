@@ -1,179 +1,208 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Clock, Heart, Search, ChevronRight, ArrowLeft, Bookmark } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
-import { recipeData } from '../../data/catatanIbuRecipes';
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  BookOpen, Clock, Heart, Search, 
+  ChevronRight, ArrowLeft, Bookmark, 
+  ShoppingCart, Snowflake, Globe, 
+  User, Moon 
+} from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuthStore } from '../../store/authStore'
+import { recipeData } from '../../data/catatanIbuRecipes'
+
+// Asset Imports
+import bgPattern from '../../assets/food_drawing.jpg'
+import imgDefault from '../../assets/download (1).jpg'
 
 export default function CatatanIbu() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [username, setUsername] = useState('Chef');
-  const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const [searchTerm, setSearchTerm] = useState('')
+  const [username, setUsername] = useState('User')
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { user } = useAuthStore()
+
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
   useEffect(() => {
     if (user?.name) {
-      setUsername(user.name);
+      setUsername(user.name)
     }
-  }, [user]);
+  }, [user])
 
   const filteredRecipes = recipeData.filter(recipe => 
     recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     recipe.ingredients.some(ing => ing.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  )
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] text-[#03045E] font-sans pb-32">
-      
-      {/* 1. HEADER SECTION (FROSTED GLASS EFFECT) */}
-      <div className="bg-gradient-to-b from-[#0077B6]/10 to-transparent p-6 pt-12 max-w-2xl mx-auto w-full relative">
-        <motion.button 
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={() => navigate(-1)}
-          className="absolute top-4 left-6 p-2 bg-white/50 backdrop-blur-md rounded-full text-[#0077B6] hover:bg-white transition-all shadow-sm"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </motion.button>
-
-        <div className="flex flex-col items-center text-center mt-4">
-          <motion.span 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-[11px] font-bold uppercase tracking-widest text-[#0077B6] bg-[#0077B6]/10 px-4 py-1.5 rounded-full border border-[#0077B6]/20"
-          >
-            📂 Buku Resep Keluarga
-          </motion.span>
-          <motion.h1 
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl font-black tracking-tight mt-4 text-[#03045E]"
-          >
-            Catatan Ibu
-          </motion.h1>
-          <motion.p 
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-sm text-slate-500 mt-2 max-w-sm"
-          >
-            Takaran bumbu tulus, tips rahasia, dan memori rasa untuk {username}.
-          </motion.p>
-        </div>
-
-        {/* SEARCH BAR BLUE STYLED */}
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mt-8 relative w-full bg-white/90 backdrop-blur-md rounded-3xl border border-blue-100 p-1.5 flex items-center shadow-premium group focus-within:ring-4 ring-primary/5 transition-all"
-        >
-          <div className="pl-4 text-[#0077B6]">
-            <Search className="w-5 h-5" />
-          </div>
-          <input 
-            type="text" 
-            placeholder="Cari bawang merah, putih, atau tips..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-transparent pl-3 pr-4 py-3 text-sm focus:outline-none text-[#03045E] placeholder-slate-400 font-medium"
-          />
-        </motion.div>
+    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden ${
+      isDarkMode ? 'bg-slate-950 text-white' : 'bg-[#F0F9FF] text-slate-900'
+    } pb-40`}>
+      {/* GLOBAL BACKGROUND AMBIENCE */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
+        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      {/* 2. RECIPE LIST AREA */}
-      <div className="p-6 max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-8">
-        <AnimatePresence mode="popLayout">
-          {filteredRecipes.map((item, index) => (
+      <div className="relative z-10 max-w-lg mx-auto">
+        {/* HEADER SECTION */}
+        <header className="px-6 pt-12 pb-8">
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => navigate(-1)}
+            className="w-12 h-12 bg-white/60 backdrop-blur-xl border border-white/40 rounded-2xl flex items-center justify-center text-cyan-600 shadow-premium mb-8"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </motion.button>
+
+          <div className="text-center">
             <motion.div 
-              key={item.id}
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ delay: index % 10 * 0.05 }}
-              className="bg-white/80 backdrop-blur-md rounded-[40px] border border-white/60 shadow-xl shadow-blue-900/5 overflow-hidden flex flex-col group hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="inline-flex items-center gap-2 bg-cyan-500/10 px-4 py-1.5 rounded-full border border-cyan-500/20 text-cyan-600 text-[10px] font-black uppercase tracking-widest mb-4"
             >
-              {/* IMAGE HEADER WITH GRADIENT OVERLAY */}
-              <div className="relative h-56 w-full bg-slate-100 overflow-hidden">
-                <img 
-                  src={`https://images.unsplash.com/featured/800x600?food,${item.title.split(' ').join(',')}`} 
-                  alt={item.title} 
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-                <span className="absolute top-6 left-6 bg-[#03045E] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full backdrop-blur-md bg-opacity-80 border border-white/20">
-                  {item.category}
-                </span>
-                <button className="absolute top-6 right-6 p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-slate-400 hover:text-red-500 shadow-lg transition-all active:scale-90">
-                  <Heart className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* CARD CONTENT */}
-              <div className="p-8 flex-1 flex flex-col gap-6">
-                {/* DETAILS METRIC */}
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-wider text-[#0077B6]">
-                  <span className="flex items-center gap-2 bg-blue-50/80 px-4 py-2 rounded-full border border-blue-100/50">
-                    <Clock className="w-4 h-4" /> {item.duration}
-                  </span>
-                  <span className="flex items-center gap-2 bg-blue-50/80 px-4 py-2 rounded-full border border-blue-100/50">
-                    <BookOpen className="w-4 h-4" /> {item.ingredients.length} Bumbu
-                  </span>
-                </div>
-
-                <h2 className="text-2xl font-black tracking-tight text-[#03045E] leading-tight">{item.title}</h2>
-
-                {/* INGREDIENTS PILL TAGS */}
-                <div className="flex flex-wrap gap-2">
-                  {item.ingredients.slice(0, 4).map((ing, i) => (
-                    <span 
-                      key={i} 
-                      className="text-[11px] bg-[#0077B6]/5 text-[#0077B6] font-bold px-4 py-1.5 rounded-2xl border border-blue-100/50 shadow-sm"
-                    >
-                      {ing}
-                    </span>
-                  ))}
-                  {item.ingredients.length > 4 && (
-                    <span className="text-[11px] text-slate-400 font-bold px-2 py-1.5">+{item.ingredients.length - 4} lainnya</span>
-                  )}
-                </div>
-
-                {/* MOTHER'S SECRET NOTE (COZY DIARY DESIGN) */}
-                <div className="bg-[#0077B6]/5 border border-[#0077B6]/10 rounded-3xl p-6 relative overflow-hidden mt-2 group-hover:bg-[#0077B6]/10 transition-colors">
-                  <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                    <Bookmark className="w-12 h-12 text-[#0077B6]" />
-                  </div>
-                  <p className="text-[10px] font-black text-[#0077B6] uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                    <span className="text-lg">✍️</span> Pesan Rahasia Ibu
-                  </p>
-                  <p className="text-sm text-slate-600 leading-relaxed italic font-medium">
-                    "{item.motherNote.replace('{username}', username)}"
-                  </p>
-                </div>
-                
-                <button 
-                  onClick={() => navigate(`/recipes/${item.id}`)}
-                  className="mt-4 flex items-center justify-center gap-2 w-full py-4 bg-[#03045E] text-white rounded-[24px] font-bold text-xs uppercase tracking-widest hover:bg-[#0077B6] transition-all shadow-lg active:scale-95"
-                >
-                  Lihat Detail <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              <BookOpen className="w-3 h-3" /> Buku Resep Keluarga
             </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {filteredRecipes.length === 0 && (
-          <div className="col-span-full py-20 text-center">
-            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-blue-200" />
-            </div>
-            <h3 className="text-lg font-bold text-[#03045E]">Tidak ada catatan untuk "{searchTerm}"</h3>
-            <p className="text-sm text-slate-400">Coba cari bahan lain atau bumbu spesifik.</p>
+            <motion.h1 
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="text-4xl font-black tracking-tight text-slate-900"
+            >
+              Catatan Ibu
+            </motion.h1>
+            <p className="text-sm text-slate-500 mt-2 font-medium">
+              Takaran bumbu tulus dan memori rasa untuk {username}.
+            </p>
           </div>
-        )}
+
+          {/* SEARCH BAR */}
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="mt-10 relative"
+          >
+            <div className="absolute inset-0 bg-cyan-400/20 rounded-[28px] blur-2xl -z-10" />
+            <div className="relative flex items-center">
+              <Search className="absolute left-5 w-6 h-6 text-cyan-500" />
+              <input 
+                type="text" 
+                placeholder="Cari bumbu atau tips rahasia..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white/90 backdrop-blur-2xl border-2 border-white p-5 pl-14 rounded-[28px] text-base focus:outline-none focus:ring-4 focus:ring-cyan-400/20 transition-all text-slate-800 placeholder-slate-400 font-bold shadow-2xl"
+              />
+            </div>
+          </motion.div>
+        </header>
+
+        {/* RECIPE LIST */}
+        <main className="px-6 space-y-8">
+          <AnimatePresence mode="popLayout">
+            {filteredRecipes.map((item, index) => (
+              <motion.div 
+                key={item.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-white/70 backdrop-blur-2xl rounded-[40px] border border-white/80 shadow-premium overflow-hidden group hover:shadow-glow transition-all duration-500"
+              >
+                {/* IMAGE */}
+                <div className="relative h-52 w-full bg-slate-100 overflow-hidden">
+                  <img 
+                    src={imgDefault} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  <div className="absolute top-6 left-6 bg-cyan-600/80 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-white/20">
+                    {item.category}
+                  </div>
+                </div>
+
+                {/* CONTENT */}
+                <div className="p-8">
+                  <div className="flex items-center gap-4 mb-4">
+                    <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-cyan-600 bg-cyan-50 px-3 py-1.5 rounded-full border border-cyan-100">
+                      <Clock className="w-3.5 h-3.5" /> {item.duration}
+                    </span>
+                    <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <Bookmark className="w-3.5 h-3.5" /> {item.ingredients.length} Bahan
+                    </span>
+                  </div>
+
+                  <h2 className="text-2xl font-black tracking-tight text-slate-900 mb-6 group-hover:text-cyan-700 transition-colors">
+                    {item.title}
+                  </h2>
+
+                  {/* MOTHER'S NOTE */}
+                  <div className="bg-cyan-50/50 border border-cyan-100/50 rounded-3xl p-5 relative overflow-hidden mb-8">
+                    <p className="text-[9px] font-black text-cyan-600 uppercase tracking-widest mb-2">Pesan Rahasia Ibu</p>
+                    <p className="text-sm text-slate-600 leading-relaxed italic font-medium">
+                      "{item.motherNote.replace('{username}', username)}"
+                    </p>
+                  </div>
+                  
+                  <button 
+                    onClick={() => navigate(`/recipes/${item.id}`)}
+                    className="w-full py-4 bg-slate-900 text-white rounded-[24px] font-black text-[10px] uppercase tracking-widest hover:bg-cyan-600 transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    Buka Catatan <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {filteredRecipes.length === 0 && (
+            <div className="py-20 text-center">
+              <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+              <h3 className="text-lg font-black text-slate-900">Tidak ada catatan ditemukan</h3>
+              <p className="text-sm text-slate-400">Coba cari bahan lain atau bumbu spesifik.</p>
+            </div>
+          )}
+        </main>
       </div>
+
+      {/* SHARED NAVIGATION */}
+      <nav className="fixed bottom-8 inset-x-0 z-50 flex justify-center px-6">
+        <motion.div 
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          className="bg-white/80 backdrop-blur-3xl border border-white/80 rounded-[40px] py-4 px-8 shadow-2xl flex items-center justify-between w-full max-w-sm ring-1 ring-black/5"
+        >
+          {[
+            { id: "home", path: "/", icon: Bookmark },
+            { id: "notes", path: "/catatan-ibu", icon: BookOpen },
+            { id: "fridge", path: "/fridge", icon: Snowflake },
+            { id: "shopping", path: "/daftar-belanja", icon: Globe },
+            { id: "profile", path: "/profile", icon: User },
+            { id: "theme", path: "#", icon: Moon }
+          ].map((item) => {
+            const isActive = location.pathname === item.path
+            return (
+              <button 
+                key={item.id}
+                onClick={() => {
+                  if (item.id === "theme") setIsDarkMode(!isDarkMode)
+                  else navigate(item.path)
+                }} 
+                className={`relative p-3 transition-all ${isActive ? "text-cyan-500" : "text-slate-400 hover:text-slate-600"}`}
+              >
+                <item.icon className={`w-6 h-6 transition-all ${isActive ? "scale-110 shadow-glow-sm" : ""}`} />
+                {isActive && (
+                  <motion.div 
+                    layoutId="active-tab-nav"
+                    className="absolute inset-0 bg-cyan-50 rounded-2xl -z-10"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+              </button>
+            )
+          })}
+        </motion.div>
+      </nav>
     </div>
-  );
+  )
 }

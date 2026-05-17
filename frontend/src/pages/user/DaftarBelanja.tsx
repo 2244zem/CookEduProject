@@ -1,313 +1,344 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Plus, CheckCircle2, Circle, ArrowLeft, Grid, LayoutList, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  Search, Clock, Flame, ShoppingCart, 
+  BookOpen, Bookmark, 
+  User, Globe, CheckCircle2,
+  ChefHat, Grid, Star,
+  Snowflake, Moon, Trash2, Sparkles
+} from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useShoppingStore } from '../../store/shoppingStore'
+import { useAuthStore } from '../../store/authStore'
 
-import { stapleIngredientsData } from '../../data/stapleIngredients';
-import foodDrawing from '../../assets/food_drawing.jpg';
-import bgDrop from '../../assets/backgrounddrop.jpg';
-import download1 from '../../assets/download (1).jpg';
-import download2 from '../../assets/download (2).jpg';
-import download3 from '../../assets/download (3).jpg';
-
-interface ShoppingItem {
-  id: string;
-  name: string;
-  checked: boolean;
-}
-
-interface ShoppingGroup {
-  id: string;
-  title: string;
-  items: ShoppingItem[];
-  bgImage?: string;
-}
+// Asset Imports
+import bgPattern from '../../assets/food_drawing.jpg'
 
 export default function DaftarBelanja() {
-  const navigate = useNavigate();
-  const [cartBadge, setCartBadge] = useState(0);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  
-  // Tab Filter untuk Bahan Pokok
-  const categories = ["Semua", "Rempah & Bumbu", "Sumber Protein", "Karbohidrat", "Sayur-Sayuran", "Susu & Olahan", "Saus & Penyedap"];
-  const [activeTab, setActiveTab] = useState("Semua");
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { user } = useAuthStore()
+  const { groups, toggleItem, removeGroup, clearChecked, getMergedItems, togglePantry } = useShoppingStore()
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [activeTab, setActiveTab] = useState('all') // all, merged, inventory
 
-  const cardBackgrounds = [download1, download2, download3, bgDrop, foodDrawing];
-
-  const [shoppingGroups, setShoppingGroups] = useState<ShoppingGroup[]>([
-    { id: "g1", title: "Belanja Ayam Goreng Krispi", bgImage: download1, items: [{ id: "i1", name: "Ayam Utuh", checked: false }, { id: "i2", name: "Tepung Bumbu", checked: true }, { id: "i3", name: "Minyak Goreng 1L", checked: false }] },
-    { id: "g2", title: "Pasta Carbonara Creamy", bgImage: download2, items: [{ id: "i4", name: "Spaghetti 500g", checked: false }, { id: "i5", name: "Whipping Cream", checked: false }, { id: "i6", name: "Keju Parmesan", checked: true }] },
-    { id: "g3", title: "Soto Ayam Lamongan", bgImage: download3, items: [{ id: "i7", name: "Ayam Kampung", checked: false }, { id: "i8", name: "Soun", checked: false }, { id: "i9", name: "Keluak", checked: false }] },
-    { id: "g4", title: "Nasi Goreng Spesial", bgImage: bgDrop, items: [{ id: "i10", name: "Nasi Dingin", checked: true }, { id: "i11", name: "Telur Ayam", checked: false }, { id: "i12", name: "Kecap Manis", checked: true }] },
-  ]);
-
-  const systemRecommendations = [
-    { title: "Soto Ayam Kuah Bening", count: 5, items: ["Daging Ayam 500g", "8 siung Bawang Putih", "12 siung Bawang Merah", "Daun Jeruk & Sereh"] },
-    { title: "Ayam Betutu Bali", count: 8, items: ["Ayam Utuh", "Base Genep", "Daun Pisang", "Minyak Kelapa"] },
-    { title: "French Onion Soup", count: 4, items: ["Bawang Bombay", "Beef Stock", "Baguette", "Keju Gruyere"] },
-  ];
-
-  const filteredStaples = activeTab === "Semua" 
-    ? stapleIngredientsData 
-    : stapleIngredientsData.filter(item => item.category === activeTab);
-
-  const toggleCheck = (groupId: string, itemId: string) => {
-    setShoppingGroups(prev => prev.map(group => {
-      if (group.id === groupId) {
-        return { ...group, items: group.items.map(item => item.id === itemId ? { ...item, checked: !item.checked } : item) };
-      }
-      return group;
-    }));
-  };
-
-  const handleAddRecommendation = (rec: any) => {
-    const randomBg = cardBackgrounds[Math.floor(Math.random() * cardBackgrounds.length)];
-    const newGroup: ShoppingGroup = {
-      id: `group-${Date.now()}`,
-      title: `Belanja ${rec.title}`,
-      bgImage: randomBg,
-      items: rec.items.map((item: string, index: number) => ({ id: `rec-${index}-${Date.now()}`, name: item, checked: false }))
-    };
-    setShoppingGroups([newGroup, ...shoppingGroups]);
-    setCartBadge(prev => prev + 1);
-  };
-
-  const addStapleItem = (item: any) => {
-    const randomBg = cardBackgrounds[Math.floor(Math.random() * cardBackgrounds.length)];
-    const newGroup: ShoppingGroup = { 
-        id: `staple-${Date.now()}`, 
-        title: `Belanja ${item.name}`, 
-        bgImage: randomBg,
-        items: [{ id: `item-${Date.now()}`, name: item.name, checked: false }] 
-    };
-    setShoppingGroups([newGroup, ...shoppingGroups]);
-    setCartBadge(prev => prev + 1);
-  }
-
-  const totalItems = shoppingGroups.reduce((acc, g) => acc + g.items.length, 0);
-  const checkedItemsCount = shoppingGroups.reduce((acc, g) => acc + g.items.filter(i => i.checked).length, 0);
-
-  const handleFinishShopping = () => {
-    if (checkedItemsCount === 0) {
-       alert("Pilih minimal satu bahan yang sudah dibeli!");
-       return;
-    }
-    setShoppingGroups(prev => prev.map(group => ({
-       ...group,
-       items: group.items.filter(item => !item.checked)
-    })).filter(group => group.items.length > 0));
-    setCartBadge(0);
-    alert("🎉 Selamat! Belanjaan Anda telah selesai dicatat. Stok dapur Anda kini bertambah!");
-  };
+  const mergedItems = getMergedItems()
+  const totalPrice = mergedItems
+    .filter(i => !i.isPantry && !i.checked) // Only items we still need to buy
+    .reduce((acc, curr) => acc + curr.price, 0)
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] text-[#03045E] font-sans pb-44 custom-scrollbar">
-      
-      {/* HEADER */}
-      <div className="bg-gradient-to-b from-[#0077B6]/10 to-transparent p-6 pt-12 max-w-2xl mx-auto w-full flex justify-between items-center relative z-20">
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)} className="p-2 bg-white/50 backdrop-blur-md rounded-full text-[#0077B6] hover:bg-white transition-all shadow-sm">
-          <ArrowLeft className="w-5 h-5" />
-        </motion.button>
-
-        <div className="text-center">
-          <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#0077B6] block">CookEdu Smart Kit</span>
-          <h1 className="text-3xl font-black tracking-tight text-[#03045E]">Daftar Belanja</h1>
-        </div>
-        
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setIsCartOpen(true)}
-          className="relative p-3 bg-white rounded-2xl shadow-sm border border-blue-50 group transition-all hover:border-primary/30"
-        >
-          <ShoppingBag className="w-6 h-6 text-[#0077B6]" />
-          <AnimatePresence>
-            {cartBadge > 0 && (
-              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
-                {cartBadge}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
+    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden ${
+      isDarkMode ? 'bg-slate-950 text-white' : 'bg-[#E0F2FE] text-slate-900'
+    } pb-44`}>
+      {/* GLOBAL BACKGROUND AMBIENCE */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
+        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      <div className="p-6 max-w-2xl mx-auto w-full space-y-8 relative z-10">
-        
-        {/* REKOMENDASI SISTEM (CAROUSEL-LIKE) */}
-        <div className="overflow-x-auto pb-4 -mx-6 px-6 no-scrollbar">
-          <div className="flex gap-4 min-w-max">
-            {systemRecommendations.map((rec, idx) => (
-              <motion.div 
-                key={idx}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="w-72 bg-gradient-to-br from-[#0077B6] to-[#03045E] text-white rounded-[40px] p-8 shadow-xl relative overflow-hidden shrink-0 group"
-              >
-                <div className="absolute right-[-10px] top-[-10px] w-24 h-24 bg-white/5 rounded-full pointer-events-none group-hover:scale-110 transition-transform duration-700" />
-                <span className="text-[8px] bg-white/20 text-cyan-200 px-3 py-1.5 rounded-full font-black uppercase tracking-widest">💡 Rekomendasi</span>
-                <h2 className="text-lg font-black mt-3 leading-tight line-clamp-1">{rec.title}</h2>
-                <p className="text-[10px] text-blue-100/70 mt-1 font-bold">{rec.count} bahan siap beli</p>
-                <button onClick={() => handleAddRecommendation(rec)} className="mt-5 w-full bg-white text-[#03045E] text-[10px] font-black uppercase py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 transition-all shadow-lg active:scale-95">
-                  <Plus className="w-4 h-4" /> Masukkan Daftar
-                </button>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+      <div className="relative z-10 max-w-lg mx-auto">
+        {/* SERENE HEADER */}
+        <header className="px-6 pt-10 flex items-center justify-between">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-3"
+          >
+            <div className="w-12 h-12 rounded-2xl border-2 border-white shadow-xl overflow-hidden bg-white/80 backdrop-blur-md p-0.5">
+              <img src={user?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || 'Zem'}&backgroundColor=b6e3f4`} alt="User" className="w-full h-full rounded-xl object-cover" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black text-cyan-600 uppercase tracking-widest block opacity-70">Halo,</span>
+              <h2 className="text-xl font-black tracking-tight leading-none text-slate-800">{user?.name?.toLowerCase() || 'zem'}</h2>
+            </div>
+          </motion.div>
 
-        {/* QUICK CUSTOM ADD WITH TABS */}
-        <div className="space-y-4">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 flex items-center gap-2 px-2"><Grid className="w-4 h-4" /> Bahan Pokok Cepat</h3>
-          
-          {/* CATEGORY TABS */}
-          <div className="flex gap-2 overflow-x-auto pb-4 -mx-6 px-6 no-scrollbar">
-            {categories.map((cat, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveTab(cat)}
-                className={`whitespace-nowrap px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  activeTab === cat 
-                    ? 'bg-[#0077B6] text-white shadow-lg shadow-blue-500/30 border border-[#0077B6]' 
-                    : 'bg-white text-[#03045E] border border-blue-100/60 hover:bg-blue-50'
+          <div className="flex gap-2">
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate('/')}
+              className="w-12 h-12 rounded-2xl bg-cyan-100 border-2 border-white shadow-lg flex items-center justify-center text-cyan-600 relative"
+            >
+              <div className="bg-cyan-600 p-1.5 rounded-xl text-white">
+                <ChefHat className="w-6 h-6" />
+              </div>
+            </motion.button>
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-xl border-2 border-white shadow-lg flex items-center justify-center text-slate-400"
+            >
+              <Search className="w-5 h-5" />
+            </motion.button>
+          </div>
+        </header>
+
+        {/* SEARCH BOX */}
+        <section className="px-6 mt-8">
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="relative bg-white/80 backdrop-blur-3xl border-2 border-white p-2.5 rounded-[32px] shadow-2xl flex items-center gap-3 ring-1 ring-black/5"
+          >
+            <Search className="w-5 h-5 text-slate-300 ml-4" />
+            <input 
+              type="text"
+              placeholder="Cari item belanja..."
+              className="flex-1 bg-transparent py-2 text-sm font-bold text-slate-600 placeholder:text-slate-300 focus:outline-none"
+            />
+          </motion.div>
+        </section>
+
+        {/* SHOPPING TABS */}
+        <section className="px-6 mt-8">
+          <h3 className="text-sm font-black text-slate-800 mb-4 ml-1">Grup Belanja & Inventaris</h3>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'all', label: "Per Resep", icon: BookOpen },
+              { id: 'merged', label: "Auto-Merge", icon: Sparkles },
+              { id: 'inventory', label: "Inventaris", icon: Grid }
+            ].map((item) => (
+              <motion.button
+                key={item.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveTab(item.id)}
+                className={`px-5 py-2.5 rounded-full text-[10px] font-black flex items-center gap-2 border-2 border-white shadow-sm transition-all ${
+                  activeTab === item.id ? 'bg-cyan-500 text-white shadow-glow-sm' : 'bg-white text-slate-500'
                 }`}
               >
-                {cat}
-              </button>
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </motion.button>
             ))}
           </div>
+        </section>
 
-          {/* INGREDIENTS GRID */}
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-            <AnimatePresence mode="popLayout">
-              {filteredStaples.map((item) => (
-                <motion.button 
-                  key={item.id} 
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  whileHover={{ y: -5 }} 
-                  whileTap={{ scale: 0.9 }} 
-                  onClick={() => addStapleItem(item)} 
-                  className="bg-white border border-blue-100/60 p-5 rounded-[30px] flex flex-col items-center justify-center gap-2 shadow-sm group hover:shadow-md transition-all h-32"
-                >
-                  <span className="text-3xl group-hover:scale-110 transition-transform duration-500">{item.icon}</span>
-                  <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight text-center leading-tight">{item.name}</span>
-                </motion.button>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* SHOPPING LIST GROUPS */}
-        <div className="space-y-6 pt-4">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 flex items-center gap-2 px-2"><LayoutList className="w-4 h-4" /> Catatan Grup Belanja</h3>
-
-          <AnimatePresence mode="popLayout">
-            {shoppingGroups.map((group) => (
-              <motion.div 
-                key={group.id} layout initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white/90 backdrop-blur-md border border-white/60 shadow-xl rounded-[40px] overflow-hidden flex flex-col gap-0 group hover:shadow-2xl transition-all duration-500 relative"
-              >
-                {/* Background Decoration */}
-                <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03]">
-                   <img src={group.bgImage || foodDrawing} alt="" className="w-full h-full object-cover grayscale" />
-                </div>
-
-                <div className="p-7 relative z-10">
-                  <div className="flex justify-between items-center border-b border-slate-100/50 pb-5 mb-5">
-                    <h4 className="font-black text-[12px] text-[#03045E] bg-blue-50/80 px-4 py-2 rounded-xl uppercase tracking-widest border border-blue-100/50">📂 {group.title}</h4>
-                    <span className="text-[9px] text-slate-500 font-black uppercase bg-slate-50 px-3 py-1.5 rounded-full">{group.items.filter(i => i.checked).length}/{group.items.length} Selesai</span>
-                  </div>
-                  <div className="space-y-2">
-                    {group.items.map((item) => (
-                      <motion.div key={item.id} onClick={() => toggleCheck(group.id, item.id)} whileTap={{ scale: 0.98 }} className="flex items-center justify-between p-3.5 rounded-[22px] hover:bg-blue-50/50 cursor-pointer transition-all group/item border border-transparent hover:border-blue-100/50">
-                        <div className="flex items-center gap-4">
-                          {item.checked ? <CheckCircle2 className="w-6 h-6 text-[#0077B6]" /> : <Circle className="w-6 h-6 text-slate-200 group-hover/item:text-[#0077B6] transition-colors" />}
-                          <span className={`text-[14px] font-bold tracking-tight ${item.checked ? 'line-through text-slate-400' : 'text-slate-700'}`}>{item.name}</span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* SHOPPE/TOKPED STYLE BOTTOM STICKY BAR */}
-      <div className="fixed bottom-28 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-xl z-40">
-        <motion.div 
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="bg-white/95 backdrop-blur-xl border-2 border-white rounded-[35px] p-4 flex items-center justify-between shadow-2xl shadow-blue-900/10"
-        >
-          <div className="flex items-center gap-4 pl-4">
-             <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Selesai</span>
-                <span className="text-xl font-black text-[#03045E]">{checkedItemsCount} <span className="text-sm text-slate-400 font-bold">/ {totalItems}</span></span>
-             </div>
-          </div>
-          
-          <button 
-            onClick={handleFinishShopping}
-            className="bg-gradient-to-r from-[#0077B6] to-[#03045E] text-white px-8 py-5 rounded-[24px] font-black text-[11px] uppercase tracking-widest shadow-lg shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all"
+        {/* PRICE ESTIMATION SUMMARY */}
+        {activeTab !== 'all' && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-6 mt-8"
           >
-            Selesaikan Belanja
-          </button>
-        </motion.div>
-      </div>
-
-      {/* CART DRAWER / MODAL */}
-      <AnimatePresence>
-        {isCartOpen && (
-          <div className="fixed inset-0 z-[100] flex items-end justify-center px-4 pb-4">
-             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCartOpen(false)} className="absolute inset-0 bg-[#03045E]/40 backdrop-blur-sm" />
-             <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="relative bg-white w-full max-w-xl rounded-[60px] p-10 shadow-2xl">
-                <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8" />
-                <div className="flex justify-between items-center mb-8">
-                   <h3 className="text-3xl font-black text-[#03045E]">Keranjang Belanja</h3>
-                   <button onClick={() => setIsCartOpen(false)} className="p-3 bg-slate-50 rounded-full text-slate-400 hover:text-primary transition-colors">
-                      <ShoppingBag className="w-6 h-6" />
-                   </button>
+            <div className="bg-cyan-600 text-white p-6 rounded-[32px] shadow-xl flex items-center justify-between overflow-hidden relative">
+              <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-white/10 blur-[40px] rounded-full" />
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+                  <Flame className="w-6 h-6" />
                 </div>
-                <div className="space-y-5 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                   {shoppingGroups.map(g => (
-                      <div key={g.id} className="p-6 bg-blue-50/50 rounded-[40px] border border-blue-100/50 relative overflow-hidden">
-                         <div className="absolute inset-0 z-0 opacity-[0.05]">
-                            <img src={g.bgImage || foodDrawing} alt="" className="w-full h-full object-cover" />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Estimasi Belanja</p>
+                  <p className="text-2xl font-black">Rp {totalPrice.toLocaleString('id-ID')}</p>
+                </div>
+              </div>
+              <Sparkles className="w-8 h-8 text-white/20 relative z-10" />
+            </div>
+          </motion.div>
+        )}
+
+        <main className="px-6 mt-8 space-y-6">
+          <AnimatePresence mode="popLayout">
+            {activeTab === 'merged' || activeTab === 'inventory' ? (
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="bg-white/80 backdrop-blur-2xl border-2 border-white rounded-[40px] p-6 shadow-xl"
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${activeTab === 'merged' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                    {activeTab === 'merged' ? <Sparkles className="w-6 h-6" /> : <Grid className="w-6 h-6" />}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-800 leading-tight">
+                      {activeTab === 'merged' ? 'Daftar Terkonsolidasi' : 'Pantry & Inventaris'}
+                    </h3>
+                    <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                      {activeTab === 'merged' ? 'Bahan-bahan digabung otomatis' : 'Centang bahan yang sudah ada di kulkas'}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                   {mergedItems
+                    .filter(item => activeTab === 'inventory' || !item.isPantry)
+                    .map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`flex items-center justify-between p-4 bg-white border-2 rounded-2xl shadow-sm transition-all ${
+                          item.isPantry ? 'border-amber-100 bg-amber-50/20' : 'border-slate-50'
+                        }`}
+                      >
+                         <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => togglePantry(item.name)}
+                              className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center ${item.isPantry ? 'bg-amber-500 border-amber-500' : 'border-slate-200'}`}
+                            >
+                               {item.isPantry && <CheckCircle2 className="w-3 h-3 text-white" />}
+                            </button>
+                            <span className={`text-sm font-bold text-slate-600 capitalize ${item.isPantry ? 'text-slate-400 line-through' : ''}`}>
+                              {item.name}
+                            </span>
                          </div>
-                         <div className="relative z-10">
-                            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
-                               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" /> Grup: {g.title}
-                            </p>
-                            <div className="space-y-3">
-                               {g.items.map(i => (
-                                  <div key={i.id} className="flex justify-between items-center text-[13px] font-bold text-[#03045E]">
-                                     <span className={i.checked ? 'text-slate-400 line-through' : ''}>{i.name}</span>
-                                     <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${i.checked ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
-                                        {i.checked ? 'Selesai' : 'Belum'}
-                                     </span>
-                                   </div>
-                               ))}
+                         <div className="flex flex-col items-end">
+                            <div className="px-3 py-1 bg-cyan-50 text-cyan-600 rounded-lg text-[10px] font-black">
+                               {item.amount} {item.unit}
                             </div>
+                            {item.price > 0 && !item.isPantry && (
+                              <span className="text-[9px] font-bold text-slate-400 mt-1">~Rp {item.price.toLocaleString('id-ID')}</span>
+                            )}
                          </div>
                       </div>
                    ))}
                 </div>
-                <button 
-                  onClick={handleFinishShopping}
-                  className="w-full mt-10 py-6 bg-[#03045E] text-white rounded-[30px] font-black text-sm uppercase tracking-widest shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                   Konfirmasi Belanja
-                </button>
-             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            ) : groups.length === 0 ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white/70 backdrop-blur-2xl p-12 rounded-[40px] text-center border border-white shadow-premium"
+              >
+                <ShoppingCart className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                <p className="text-sm text-slate-400 font-bold">Belum ada daftar belanja.</p>
+                <div className="flex gap-2 mt-6">
+                  <button 
+                    onClick={() => setActiveTab('merged')}
+                    className={`flex-1 py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'merged' ? 'bg-white text-cyan-600 shadow-lg scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    Auto-Merge
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('inventory')}
+                    className={`flex-1 py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'inventory' ? 'bg-white text-cyan-600 shadow-lg scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    Stok Dapur
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              groups.map((group) => {
+                const total = group.items.length
+                const checkedCount = group.items.filter(i => i.checked).length
+                const progress = total > 0 ? (checkedCount / total) * 100 : 0
 
+                return (
+                  <motion.div 
+                    key={group.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="bg-white/80 backdrop-blur-2xl border-2 border-white rounded-[40px] p-6 shadow-xl group transition-all duration-500 overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-cyan-50 flex items-center justify-center text-cyan-600 shadow-inner">
+                          <Bookmark className="w-7 h-7" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black text-slate-800 leading-tight">
+                            {group.title}
+                          </h3>
+                          <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                            {checkedCount}/{total} Item Terbeli
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => removeGroup(group.id)}
+                        className="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+                      >
+                         <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
+                       <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        className="h-full bg-cyan-500 shadow-glow-sm" 
+                       />
+                    </div>
+
+                    <div className="space-y-3">
+                      {group.items.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => toggleItem(group.id, item.id)}
+                          className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border-2 ${
+                            item.checked 
+                              ? 'bg-slate-50 border-transparent opacity-60' 
+                              : 'bg-white border-slate-50 shadow-sm'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                              item.checked ? 'bg-cyan-500 border-cyan-500' : 'border-slate-200'
+                            }`}>
+                              {item.checked && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                            </div>
+                            <span className={`text-sm font-bold ${item.checked ? 'text-slate-400 line-through' : 'text-slate-600'}`}>
+                              {item.name}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-black text-slate-400">{item.amount} {item.unit}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {checkedCount > 0 && (
+                      <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        onClick={() => clearChecked(group.id)}
+                        className="mt-6 w-full py-3 bg-cyan-50 text-cyan-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-cyan-100"
+                      >
+                        Bersihkan Item Selesai
+                      </motion.button>
+                    )}
+                  </motion.div>
+                )
+              })
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+
+      {/* SHARED NAVIGATION */}
+      <nav className="fixed bottom-8 inset-x-0 z-50 flex justify-center px-6">
+        <motion.div 
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          className="bg-white/80 backdrop-blur-3xl border border-white/80 rounded-[40px] py-4 px-8 shadow-2xl flex items-center justify-between w-full max-w-sm ring-1 ring-black/5"
+        >
+          {[
+            { id: "home", path: "/", icon: Bookmark },
+            { id: "notes", path: "/catatan-ibu", icon: BookOpen },
+            { id: "fridge", path: "/fridge", icon: Snowflake },
+            { id: "shopping", path: "/daftar-belanja", icon: Globe },
+            { id: "profile", path: "/profile", icon: User },
+            { id: "theme", path: "#", icon: Moon }
+          ].map((item) => {
+            const isActive = location.pathname === item.path
+            return (
+              <button 
+                key={item.id}
+                onClick={() => {
+                  if (item.id === "theme") setIsDarkMode(!isDarkMode)
+                  else navigate(item.path)
+                }} 
+                className={`relative p-3 transition-all ${isActive ? "text-cyan-500" : "text-slate-400 hover:text-slate-600"}`}
+              >
+                <item.icon className={`w-6 h-6 transition-all ${isActive ? "scale-110 shadow-glow-sm" : ""}`} />
+                {isActive && (
+                  <motion.div 
+                    layoutId="active-tab-nav"
+                    className="absolute inset-0 bg-cyan-50 rounded-2xl -z-10"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+              </button>
+            )
+          })}
+        </motion.div>
+      </nav>
     </div>
-  );
+  )
 }
