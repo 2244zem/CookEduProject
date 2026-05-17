@@ -7,6 +7,14 @@ import WeatherCard from '../components/WeatherCard';
 import RecipeCard from '../components/RecipeCard';
 import ShoppingList from '../components/ShoppingList';
 
+// Premium background & photographic assets
+import bgImage from '../assets/background.png';
+import bgDrop from '../assets/backgrounddrop.jpg';
+import foodPattern from '../assets/food_drawing.jpg';
+import inspiration1 from '../assets/download (1).jpg';
+import inspiration2 from '../assets/download (2).jpg';
+import inspiration3 from '../assets/download (3).jpg';
+
 const CURRENT_USER = { id: "user_zem123", username: "zem" };
 
 interface UserDashboardProps {
@@ -156,8 +164,31 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F9FF] text-slate-700 p-4 md:p-8 font-sans transition-colors duration-300">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen text-slate-700 p-4 md:p-8 font-sans relative overflow-hidden transition-colors duration-300">
+      
+      {/* GLOBAL LUXURIOUS PARALLAX BACKGROUND SYSTEM */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* 1. Ambient fluid gradient wallpaper */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-85"
+          style={{ backgroundImage: `url(${bgImage})` }}
+        />
+        {/* 2. Ethereal atmospheric drop overlay */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-25 animate-pulse"
+          style={{ backgroundImage: `url(${bgDrop})`, animationDuration: '12s' }}
+        />
+        {/* 3. Culinary line-art grid texture */}
+        <div 
+          className="absolute inset-0 bg-repeat opacity-[0.02]"
+          style={{ backgroundImage: `url(${foodPattern})`, backgroundSize: '360px' }}
+        />
+        {/* 4. Soft premium colored overlay orbs */}
+        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-sky-200/40 blur-[135px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-teal-200/30 blur-[125px] rounded-full" />
+      </div>
+
+      <div className="max-w-7xl mx-auto space-y-6 relative z-10">
         
         {/* ================= HEADER & NAVIGATION (Android accessibility optimized) ================= */}
         <header className="bg-white/80 backdrop-blur-md border border-sky-100/70 p-4 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -253,6 +284,86 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps) {
           {/* CATALOG AND WEATHER (Left/Center Column) */}
           <div className="lg:col-span-2 space-y-6">
             
+            {/* ================= INSPIRASI RASA HARI INI (Premium Culinary Gallery) ================= */}
+            <div className="bg-white/70 backdrop-blur-md border border-sky-100/60 p-5 rounded-[32px] shadow-sm space-y-4 text-left relative overflow-hidden">
+              <div className="flex items-center justify-between border-b border-sky-50 pb-2.5">
+                <div className="space-y-0.5">
+                  <h2 className="text-sm font-black text-slate-800 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+                    <span>Inspirasi Rasa Hari Ini</span>
+                  </h2>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                    Ketuk galeri untuk memfilter masakan terbaik
+                  </p>
+                </div>
+                <span className="text-[8px] font-black uppercase text-slate-450 bg-slate-100 border border-slate-200/50 px-2 py-0.5 rounded">
+                  Premium Gallery
+                </span>
+              </div>
+
+              {/* Horizontal Scroll / Adaptive flex gallery */}
+              <div className="grid grid-cols-3 gap-3">
+                
+                {/* Inspiration Card 1 (Dessert Artistry) */}
+                <div 
+                  onClick={() => setSearchQuery(searchQuery === "Dessert" ? "" : "Dessert")}
+                  className={`group relative h-24 sm:h-28 rounded-2xl overflow-hidden border shadow-sm cursor-pointer transition-all duration-500 hover:shadow-md hover:border-sky-400 active:scale-98 ${
+                    searchQuery === "Dessert" ? "ring-2 ring-sky-550 border-sky-450" : "border-sky-100/45"
+                  }`}
+                >
+                  <img 
+                    src={inspiration1} 
+                    alt="Dessert Artistry" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent" />
+                  <div className="absolute bottom-2.5 inset-x-2.5 text-left text-white space-y-0.5 pointer-events-none">
+                    <span className="text-[7px] font-black bg-rose-500/90 px-1.5 py-0.5 rounded tracking-widest uppercase">Sweet</span>
+                    <h4 className="text-[10px] font-black tracking-tight leading-tight line-clamp-1">Seni Dessert Klasik</h4>
+                  </div>
+                </div>
+
+                {/* Inspiration Card 2 (Archipelago Heritage) */}
+                <div 
+                  onClick={() => setSearchQuery(searchQuery === "Soup" ? "" : "Soup")}
+                  className={`group relative h-24 sm:h-28 rounded-2xl overflow-hidden border shadow-sm cursor-pointer transition-all duration-500 hover:shadow-md hover:border-sky-400 active:scale-98 ${
+                    searchQuery === "Soup" ? "ring-2 ring-sky-550 border-sky-450" : "border-sky-100/45"
+                  }`}
+                >
+                  <img 
+                    src={inspiration2} 
+                    alt="Archipelago Heritage" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent" />
+                  <div className="absolute bottom-2.5 inset-x-2.5 text-left text-white space-y-0.5 pointer-events-none">
+                    <span className="text-[7px] font-black bg-amber-500/90 px-1.5 py-0.5 rounded tracking-widest uppercase">Spice</span>
+                    <h4 className="text-[10px] font-black tracking-tight leading-tight line-clamp-1">Rempah Nusantara</h4>
+                  </div>
+                </div>
+
+                {/* Inspiration Card 3 (Western Symphony) */}
+                <div 
+                  onClick={() => setSearchQuery(searchQuery === "Main Course" ? "" : "Main Course")}
+                  className={`group relative h-24 sm:h-28 rounded-2xl overflow-hidden border shadow-sm cursor-pointer transition-all duration-500 hover:shadow-md hover:border-sky-400 active:scale-98 ${
+                    searchQuery === "Main Course" ? "ring-2 ring-sky-550 border-sky-450" : "border-sky-100/45"
+                  }`}
+                >
+                  <img 
+                    src={inspiration3} 
+                    alt="Gourmet Dining Symphony" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent" />
+                  <div className="absolute bottom-2.5 inset-x-2.5 text-left text-white space-y-0.5 pointer-events-none">
+                    <span className="text-[7px] font-black bg-sky-500/90 px-1.5 py-0.5 rounded tracking-widest uppercase">Gourmet</span>
+                    <h4 className="text-[10px] font-black tracking-tight leading-tight line-clamp-1">Simfoni Gastronomi</h4>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
             {/* Live Weather Widget directly on user's home screen */}
             <WeatherCard
               temperature={temperature}
