@@ -108,18 +108,29 @@ export default function WeatherCard({
     }
   };
 
+  // Appetite gradient based on Fahrenheit temperature
+  const getAppetiteGradient = (temp: number) => {
+    if (temp <= 65) {
+      return "from-slate-800 via-indigo-900 to-teal-800";
+    }
+    if (temp >= 85) {
+      return "from-sky-500 via-teal-400 to-emerald-600";
+    }
+    return "from-sky-600 via-sky-700 to-teal-650";
+  };
+
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500/90 to-teal-600/90 text-white rounded-3xl p-6 shadow-xl border border-white/20 backdrop-blur-md">
+    <div className={`relative overflow-hidden bg-gradient-to-br ${getAppetiteGradient(temperature)} text-white rounded-3xl p-6 shadow-xl border border-white/20 backdrop-blur-md transition-all duration-700`}>
       {/* Background ambient bubble */}
       <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-      <div className="absolute bottom-[-30px] left-[-30px] w-36 h-36 bg-emerald-300/20 rounded-full blur-xl pointer-events-none" />
+      <div className="absolute bottom-[-30px] left-[-30px] w-36 h-36 bg-white/10 rounded-full blur-xl pointer-events-none" />
 
       <div className="relative z-10 space-y-6">
         {/* API Key configuration drawer/bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
           <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-emerald-200 shrink-0" />
-            <span className="text-[11px] font-semibold text-emerald-100">Live Forecast Engine</span>
+            <Compass className="w-4 h-4 text-white/70 shrink-0" />
+            <span className="text-[11px] font-semibold text-white/80">Live Forecast Engine</span>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -127,7 +138,7 @@ export default function WeatherCard({
               value={apiKey}
               onChange={(e) => handleSaveKey(e.target.value)}
               placeholder="Masukkan API Key OpenWeather..."
-              className="bg-black/20 border-none rounded-lg px-2.5 py-1 text-[10px] text-white placeholder-emerald-100/50 focus:outline-none focus:ring-1 focus:ring-white/40 w-44"
+              className="bg-black/20 border-none rounded-lg px-2.5 py-1 text-[10px] text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/40 w-44"
               title="API Key disimpan secara lokal di browser Anda."
             />
           </div>
@@ -142,7 +153,7 @@ export default function WeatherCard({
                 value={addressInput}
                 onChange={(e) => setAddressInput(e.target.value)}
                 onBlur={() => addressInput.trim() && fetchWeather(addressInput)}
-                className="bg-transparent border-none text-xs font-bold text-white placeholder-emerald-100/60 focus:outline-none w-36"
+                className="bg-transparent border-none text-xs font-bold text-white placeholder-white/50 focus:outline-none w-36"
                 placeholder="Ubah lokasi..."
               />
               <button type="submit" disabled={loading}>
@@ -159,12 +170,12 @@ export default function WeatherCard({
               <span className="text-xs font-black bg-white/20 px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
                 Feels like {weatherCondition}
               </span>
-              {loading && <span className="text-[10px] text-emerald-200 animate-pulse">Memperbarui...</span>}
+              {loading && <span className="text-[10px] text-white/80 animate-pulse">Memperbarui...</span>}
             </div>
 
             {errorMsg && (
-              <div className="flex items-center gap-1 text-[10px] text-emerald-200">
-                <AlertCircle className="w-3 h-3 text-emerald-300" />
+              <div className="flex items-center gap-1 text-[10px] text-white/85">
+                <AlertCircle className="w-3 h-3 text-white/90" />
                 <span>{errorMsg}</span>
               </div>
             )}
@@ -180,7 +191,7 @@ export default function WeatherCard({
               <p className="text-xs font-bold text-white leading-tight max-w-[200px]">
                 Suhu ideal untuk hidangan dengan kecocokan Fahrenheit!
               </p>
-              <div className="flex gap-3 text-[10px] text-emerald-100 font-medium">
+              <div className="flex gap-3 text-[10px] text-white/80 font-medium">
                 <span className="flex items-center gap-1"><Wind className="w-3 h-3" /> Live Sync</span>
                 <span className="flex items-center gap-1"><Droplets className="w-3 h-3" /> Fahrenheit</span>
               </div>

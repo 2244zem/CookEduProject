@@ -175,31 +175,27 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps) {
               </div>
             </div>
             
-            {/* Header controls on mobile viewport */}
-            <div className="flex items-center gap-2 md:hidden">
-              {/* Shopping cart button */}
-              <button
-                onClick={() => setIsCartOpen(true)}
-                className="w-12 h-12 flex items-center justify-center bg-sky-50/70 border border-sky-100 text-sky-600 rounded-xl relative active:scale-95 transition-transform animate-fade-in"
-                title="Buka Keranjang Belanja"
+            {/* TWIN BUTTONS COMPONENT (Minimum 48x48px Android Tap Targets in glassmorphic Action Pill) */}
+            <div className="flex items-center bg-sky-50/85 border border-sky-100/70 rounded-full p-1 shadow-sm shrink-0">
+              <button 
+                onClick={() => setIsCartOpen(!isCartOpen)}
+                className="w-11 h-11 flex items-center justify-center bg-white text-sky-600 rounded-full shadow-sm hover:text-sky-700 active:scale-95 transition-all relative"
                 aria-label="Keranjang Belanja"
               >
-                <ShoppingCart className="w-5 h-5" />
+                <ShoppingCart className="w-4.5 h-4.5" />
                 {shoppingCart.length > 0 && (
-                  <span className="absolute top-2 right-2 w-4 h-4 bg-teal-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-teal-500 text-white text-[8px] font-black rounded-full flex items-center justify-center">
                     {shoppingCart.length}
                   </span>
                 )}
               </button>
               
-              {/* Symmetrical Back to Home Page button for mobile */}
-              <button
+              <button 
                 onClick={() => navigate('/')}
-                className="w-12 h-12 flex items-center justify-center bg-sky-50/70 border border-sky-100 text-slate-500 rounded-xl active:scale-95 transition-transform"
-                title="Kembali ke Beranda Utama"
-                aria-label="Kembali"
+                className="w-11 h-11 flex items-center justify-center text-slate-500 hover:text-sky-600 active:scale-95 transition-all ml-1.5"
+                aria-label="Kembali ke Beranda"
               >
-                <ArrowLeft className="w-5 h-5 text-sky-600" />
+                <ArrowLeft className="w-4.5 h-4.5 text-sky-650" />
               </button>
             </div>
             </div>
@@ -225,29 +221,27 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps) {
               <span>Resep Baru</span>
             </button>
 
-            {/* Desktop Utility button panel */}
-            <div className="hidden md:flex items-center gap-2 pl-2 border-l border-slate-100">
-              {/* Shopping cart button */}
-              <button
-                onClick={() => setIsCartOpen(true)}
-                className="w-12 h-12 flex items-center justify-center bg-sky-50 hover:bg-sky-100/80 border border-sky-100/60 text-sky-600 rounded-xl relative active:scale-95 transition-transform"
-                title="Daftar Belanja Anda"
+            {/* Desktop Twin Buttons Action Pill Panel */}
+            <div className="hidden md:flex items-center bg-sky-50/85 border border-sky-100/70 rounded-full p-1 shadow-sm shrink-0 ml-2">
+              <button 
+                onClick={() => setIsCartOpen(!isCartOpen)}
+                className="w-11 h-11 flex items-center justify-center bg-white text-sky-600 rounded-full shadow-sm hover:text-sky-700 active:scale-95 transition-all relative"
+                aria-label="Keranjang Belanja"
               >
-                <ShoppingCart className="w-5 h-5" />
+                <ShoppingCart className="w-4.5 h-4.5" />
                 {shoppingCart.length > 0 && (
-                  <span className="absolute top-2 right-2 w-4 h-4 bg-teal-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-teal-500 text-white text-[8px] font-black rounded-full flex items-center justify-center">
                     {shoppingCart.length}
                   </span>
                 )}
               </button>
-
-              {/* Symmetrical Back to Home Page button for desktop */}
-              <button
+              
+              <button 
                 onClick={() => navigate('/')}
-                className="w-12 h-12 flex items-center justify-center bg-sky-50 hover:bg-sky-100/80 border border-sky-100/60 text-slate-500 rounded-xl active:scale-95 transition-transform"
-                title="Kembali ke Beranda Utama"
+                className="w-11 h-11 flex items-center justify-center text-slate-500 hover:text-sky-600 active:scale-95 transition-all ml-1.5"
+                aria-label="Kembali ke Beranda"
               >
-                <ArrowLeft className="w-5 h-5 text-sky-600" />
+                <ArrowLeft className="w-4.5 h-4.5 text-sky-650" />
               </button>
             </div>
           </div>
@@ -321,26 +315,35 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps) {
             />
           </div>
 
-          {/* Mobile slide-over drawer (specifically for Android/mobile screen sizes) */}
-          <div className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${isCartOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+          {/* 🧺 ANDROID THUMB-ZONE EXPANDABLE BOTTOM SHEET DRAWER */}
+          <div className={`fixed inset-0 z-[100] lg:hidden flex flex-col justify-end transition-opacity duration-300 ${isCartOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
             {/* Backdrop overlay */}
             <div 
               onClick={() => setIsCartOpen(false)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
               aria-hidden="true"
             />
-            {/* Drawer Container */}
-            <div className={`absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl flex flex-col justify-between transform transition-transform duration-300 ease-out ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-              <div className="p-4 bg-sky-50 border-b border-sky-100 flex items-center justify-between shrink-0">
+            {/* Bottom Sheet Container */}
+            <div className={`relative w-full bg-white rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[80vh] overflow-hidden transform transition-transform duration-300 ease-out z-10 ${isCartOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+              
+              {/* Drag/Indicator Handle bar */}
+              <div 
+                className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto my-3 shrink-0 cursor-pointer"
+                onClick={() => setIsCartOpen(false)}
+                title="Tarik ke bawah untuk menutup"
+              />
+
+              <div className="p-4 border-b border-sky-100/60 flex items-center justify-between shrink-0 bg-sky-50/50">
                 <span className="font-extrabold text-sm text-slate-800">Keranjang Belanja</span>
                 <button 
                   onClick={() => setIsCartOpen(false)} 
-                  className="w-12 h-12 flex items-center justify-center bg-white border border-sky-100 rounded-xl text-slate-500 active:scale-95 shrink-0"
+                  className="w-10 h-10 flex items-center justify-center bg-white border border-sky-100 rounded-xl text-slate-500 active:scale-95 shrink-0"
                   aria-label="Tutup Keranjang"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 text-sky-600" />
                 </button>
               </div>
+              
               <div className="flex-1 overflow-y-auto p-4 bg-white">
                 <ShoppingList
                   cartItems={shoppingCart}
