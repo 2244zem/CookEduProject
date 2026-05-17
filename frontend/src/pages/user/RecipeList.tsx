@@ -502,18 +502,32 @@ export default function RecipeList() {
             >
               {recTag.label}
             </motion.div>
-            {["SEMUA", ...categories.map((c: any) => c.name.toUpperCase())].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-5 py-2 rounded-full text-[10px] font-black transition-all whitespace-nowrap border-2 ${activeCategory === cat
-                    ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg'
-                    : 'bg-white/70 text-slate-500 border-white backdrop-blur-md'
-                  }`}
-              >
-                {cat}
-              </button>
-            ))}
+            {["SEMUA", ...categories.map((c: any) => c.name.toUpperCase())].map((cat) => {
+              const isActive = activeCategory === cat
+              return (
+                <motion.button
+                  key={cat}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setActiveCategory(cat)}
+                  className="px-5 py-2.5 rounded-full text-[10px] font-black tracking-wider uppercase whitespace-nowrap relative transition-all"
+                >
+                  <span className={`relative z-10 transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-500'}`}>
+                    {cat}
+                  </span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeCategoryPill"
+                      className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full shadow-lg shadow-cyan-500/20 border border-cyan-400"
+                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    />
+                  )}
+                  {!isActive && (
+                    <div className="absolute inset-0 bg-white/70 border border-white backdrop-blur-md rounded-full -z-10" />
+                  )}
+                </motion.button>
+              )
+            })}
           </div>
         </section>
 
@@ -535,18 +549,20 @@ export default function RecipeList() {
                 <motion.div
                   key={`${uniqueKey}-${idx}`}
                   layout
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="group relative"
+                  whileHover={{ y: -6, scale: 1.025 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 18 }}
+                  className="group relative cursor-pointer"
                 >
                   <Link
                     to={`/recipes/${recipeId}`}
                     className="bg-white/90 backdrop-blur-3xl border border-white rounded-[40px] p-5 flex gap-6 shadow-premium transition-all duration-500 relative overflow-hidden group/card"
                   >
-                    {/* Background Shine Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/0 via-cyan-400/0 to-cyan-400/5 opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                    {/* Background Shine & Glow Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/0 via-cyan-400/5 to-teal-400/5 opacity-0 group-hover/card:opacity-100 transition-opacity -z-10" />
 
                     <div className="w-32 h-32 rounded-[30px] overflow-hidden shrink-0 bg-slate-100 shadow-xl border-4 border-white">
                       <img
