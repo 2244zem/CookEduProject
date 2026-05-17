@@ -388,18 +388,19 @@ export default function RecipeList() {
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="relative"
+            whileHover={{ scale: 1.015 }}
+            className="relative group"
           >
-             <div className="absolute inset-0 bg-cyan-400/10 rounded-[32px] blur-2xl -z-10" />
-             <div className="bg-white/80 backdrop-blur-3xl border-2 border-white p-2.5 rounded-[32px] shadow-xl flex items-center gap-3 ring-1 ring-black/5">
+             <div className="absolute inset-0 bg-cyan-400/20 rounded-[32px] blur-2xl -z-10 opacity-70 group-hover:opacity-100 transition-opacity" />
+             <div className="bg-[#0b172a]/75 backdrop-blur-3xl border-2 border-sky-400/20 p-2.5 rounded-[32px] shadow-2xl flex items-center gap-3 ring-1 ring-sky-300/10">
                 <input 
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cari keajaiban rasa hari ini..."
-                  className="flex-1 bg-transparent px-4 py-2 text-sm font-bold text-slate-600 placeholder:text-slate-300 focus:outline-none"
+                  className="flex-1 bg-transparent px-4 py-2 text-sm font-bold text-white placeholder:text-sky-200/40 focus:outline-none"
                 />
-                <button className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider shadow-lg active:scale-95 transition-all">
+                <button className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider shadow-lg active:scale-95 transition-all border border-sky-400/30">
                   Cari Resep
                 </button>
              </div>
@@ -559,12 +560,12 @@ export default function RecipeList() {
                 >
                   <Link
                     to={`/recipes/${recipeId}`}
-                    className="bg-white/90 backdrop-blur-3xl border border-white rounded-[40px] p-5 flex gap-6 shadow-premium transition-all duration-500 relative overflow-hidden group/card"
+                    className="bg-[#0b172a]/75 backdrop-blur-3xl border border-sky-500/20 rounded-[40px] p-5 flex gap-6 shadow-2xl transition-all duration-500 relative overflow-hidden group/card text-left"
                   >
                     {/* Background Shine & Glow Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/0 via-cyan-400/5 to-teal-400/5 opacity-0 group-hover/card:opacity-100 transition-opacity -z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-cyan-400/5 to-teal-400/5 opacity-0 group-hover/card:opacity-100 transition-opacity -z-10" />
 
-                    <div className="w-32 h-32 rounded-[30px] overflow-hidden shrink-0 bg-slate-100 shadow-xl border-4 border-white">
+                    <div className="w-32 h-32 rounded-[30px] overflow-hidden shrink-0 bg-slate-900 shadow-xl border-4 border-sky-400/20">
                       <img
                         src={img || `https://api.dicebear.com/7.x/shapes/svg?seed=${recipe.title || idx}`}
                         alt={recipe.title}
@@ -575,21 +576,21 @@ export default function RecipeList() {
                     <div className="flex flex-col justify-between flex-1 py-2">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                           <span className="text-[8px] font-black text-cyan-600 tracking-widest uppercase">{(recipe.category?.name || recipe.category || 'RESEP').toUpperCase()}</span>
-                           <div className="h-px w-8 bg-cyan-100" />
+                           <span className="text-[8px] font-black text-cyan-400 tracking-widest uppercase">{(recipe.category?.name || recipe.category || 'RESEP').toUpperCase()}</span>
+                           <div className="h-px w-8 bg-sky-500/25" />
                         </div>
-                        <h3 className="text-lg font-black text-slate-800 leading-tight group-hover:text-cyan-600 transition-colors">
+                        <h3 className="text-lg font-black text-white leading-tight group-hover:text-cyan-300 transition-colors">
                           {recipe.title}
                         </h3>
                       </div>
 
                       <div className="flex items-center justify-between mt-4">
                         <div className="flex gap-4">
-                           <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                           <div className="flex items-center gap-1.5 text-[10px] font-bold text-sky-200/60">
                               <Clock className="w-3.5 h-3.5 text-cyan-400" />
                               {recipe.cooking_time || recipe.prepTime || 20}m
                            </div>
-                           <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                           <div className="flex items-center gap-1.5 text-[10px] font-bold text-sky-200/60">
                               <Flame className="w-3.5 h-3.5 text-rose-400" />
                               {recipe.difficulty || 'Easy'}
                            </div>
@@ -602,7 +603,7 @@ export default function RecipeList() {
                               e.stopPropagation();
                               handleAddRecipeToShopping(recipe);
                             }}
-                            className="p-2 rounded-xl bg-cyan-50 text-cyan-600 hover:bg-cyan-600 hover:text-white transition-colors border border-cyan-100"
+                            className="p-2 rounded-xl bg-cyan-950/80 text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all border border-cyan-500/30"
                             title="Tambah ke Daftar Belanja"
                           >
                             <ShoppingCart className="w-4 h-4" />
@@ -615,12 +616,12 @@ export default function RecipeList() {
                                 e.stopPropagation();
                                 if (window.confirm('Hapus resep ini secara permanen?')) deleteMutation.mutate(recipe.id);
                               }}
-                              className="p-2 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors"
+                              className="p-2 rounded-xl bg-rose-950/80 text-rose-400 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/30"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )}
-                          <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center group-hover/card:bg-cyan-600 group-hover/card:text-white transition-all shadow-glow-sm border border-cyan-100">
+                          <div className="w-10 h-10 rounded-xl bg-cyan-950/80 text-cyan-400 flex items-center justify-center group-hover/card:bg-cyan-600 group-hover/card:text-white transition-all shadow-glow-sm border border-cyan-500/30">
                              <ChevronRight className="w-5 h-5" />
                           </div>
                         </div>
@@ -797,14 +798,14 @@ export default function RecipeList() {
         )}
       </AnimatePresence>
 
-      {/* FLOATING AI ASSISTANT (Image 3 Left style) */}
+      {/* FLOATING AI ASSISTANT (Deep-sea glowing bubble) */}
       <motion.button
-        whileHover={{ scale: 1.1 }}
+        whileHover={{ scale: 1.1, y: -4 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => navigate('/ai-assistant')}
-        className="fixed bottom-32 right-6 w-16 h-16 bg-cyan-500 text-white rounded-[24px] shadow-2xl shadow-cyan-500/40 flex items-center justify-center z-50 border-4 border-white group overflow-hidden"
+        className="fixed bottom-32 right-6 w-16 h-16 bg-gradient-to-tr from-cyan-600 to-teal-500 text-white rounded-[24px] shadow-2xl shadow-cyan-500/30 flex items-center justify-center z-50 border-4 border-sky-300/30 group overflow-hidden"
       >
-        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
         <ChefHat className="w-8 h-8 drop-shadow-lg" />
       </motion.button>
 
@@ -813,7 +814,7 @@ export default function RecipeList() {
         <motion.div 
           initial={{ y: 100 }}
           animate={{ y: 0 }}
-          className="bg-white/80 backdrop-blur-3xl border border-white/80 rounded-[40px] py-4 px-8 shadow-2xl flex items-center justify-between w-full max-w-sm ring-1 ring-black/5"
+          className="bg-[#0b172a]/75 backdrop-blur-3xl border border-sky-500/25 rounded-[40px] py-4 px-8 shadow-2xl flex items-center justify-between w-full max-w-sm ring-1 ring-sky-300/10"
         >
           {[
             { id: "home", path: "/", icon: Bookmark },
@@ -831,13 +832,13 @@ export default function RecipeList() {
                   if (item.id === "theme") setIsDarkMode(!isDarkMode)
                   else if (item.path !== "#") navigate(item.path)
                 }} 
-                className={`relative p-3 transition-all ${isActive ? "text-cyan-500" : "text-slate-400 hover:text-slate-600"}`}
+                className={`relative p-3 transition-all ${isActive ? "text-cyan-400" : "text-sky-200/50 hover:text-white"}`}
               >
                 <item.icon className={`w-6 h-6 transition-all ${isActive ? "scale-110 shadow-glow-sm" : ""}`} />
                 {isActive && (
                   <motion.div 
                     layoutId="active-tab-nav"
-                    className="absolute inset-0 bg-cyan-50 rounded-2xl -z-10"
+                    className="absolute inset-0 bg-gradient-to-tr from-cyan-950/80 to-teal-950/80 border border-sky-500/20 rounded-2xl -z-10"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
