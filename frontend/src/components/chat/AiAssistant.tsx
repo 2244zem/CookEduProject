@@ -27,7 +27,21 @@ export default function AiAssistant() {
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem('chefAiHistory')
     if (saved) return JSON.parse(saved)
-    return [{ id: '1', role: 'model', content: `Halo${user?.name ? ' ' + user.name : ' Zem'}, ini progress belajar Kamu. Aku sudah perbarui modul dari palet biru! Kot rank Kot#1 dan Leaderboard sekarang sudah AKTIF dan BERFUNGSI SEMPURNA! 🍳` }]
+
+    let storedWeatherText = "74°F (Partly Cloudy) di Bandung";
+    try {
+      const stored = localStorage.getItem('cookedu_last_weather');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        storedWeatherText = `${Math.round(parsed.temp)}°F (${parsed.condition || 'Sunny'}) di ${parsed.city || 'Bandung'}`;
+      }
+    } catch (e) {}
+
+    return [{ 
+      id: '1', 
+      role: 'model', 
+      content: `Halo ${user?.name || 'Zem'}! 👨‍🍳 Cuaca saat ini terpantau ${storedWeatherText}. CookEdu siap merekomendasikan resep masakan yang paling cocok untuk cuaca hari ini! Ada yang bisa Chef bantu? 🍲` 
+    }]
   })
   
   const [input, setInput] = useState('')

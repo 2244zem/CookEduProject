@@ -60,6 +60,11 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps) {
     setTemperature(temp);
     setWeatherCondition(condition);
     setUserAddress(resolvedAddress);
+    
+    // Sync with global AI Assistant chatbot
+    const parts = resolvedAddress.split(',');
+    const city = parts[0] ? parts[0].trim() : resolvedAddress;
+    localStorage.setItem('cookedu_last_weather', JSON.stringify({ temp, condition, city }));
   };
 
   // Dynamic Fahrenheit Filter: matches current temperature with suitableTemp.min and max
