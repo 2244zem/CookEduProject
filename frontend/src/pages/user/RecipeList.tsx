@@ -6,7 +6,7 @@ import {
   BookOpen, Snowflake, 
   User, Moon, Bookmark, Thermometer,
   CloudSun, Edit3, Trash2, X, PlusCircle,
-  ChefHat, Globe, Heart, ChevronRight
+  ChefHat, Globe, Heart, ChevronRight, Compass
 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { recipeApi, categoryApi } from '../../lib/api'
@@ -303,6 +303,17 @@ export default function RecipeList() {
               title="Beralih ke Smart Weather Dashboard"
             >
               <CloudSun className="w-5 h-5" />
+            </motion.button>
+
+            {/* CookShare Social Feed Access Button */}
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate('/cookshare')}
+              className="w-11 h-11 rounded-2xl bg-cyan-600 border-2 border-white shadow-lg flex items-center justify-center text-white relative active:scale-95 transition-all"
+              title="Buka CookShare Social Feed"
+            >
+              <Compass className="w-5 h-5 text-white animate-spin-slow" />
+              <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-sky-400 rounded-full animate-ping" />
             </motion.button>
 
             <motion.button 

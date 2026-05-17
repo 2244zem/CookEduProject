@@ -206,24 +206,34 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps) {
               </div>
             </div>
             
-            {/* TWIN BUTTONS COMPONENT (Minimum 48x48px Android Tap Targets in glassmorphic Action Pill) */}
+            {/* TRIPLE BUTTONS COMPONENT (Minimum 48x48px Android Tap Targets in glassmorphic Action Pill) */}
             <div className="flex items-center bg-sky-50/85 border border-sky-100/70 rounded-full p-1 shadow-sm shrink-0">
               <button 
                 onClick={() => setIsCartOpen(!isCartOpen)}
-                className="w-11 h-11 flex items-center justify-center bg-white text-sky-600 rounded-full shadow-sm hover:text-sky-700 active:scale-95 transition-all relative"
+                className="w-10 h-10 flex items-center justify-center bg-white text-sky-600 rounded-full shadow-sm hover:text-sky-700 active:scale-95 transition-all relative"
                 aria-label="Keranjang Belanja"
               >
-                <ShoppingCart className="w-4.5 h-4.5" />
+                <ShoppingCart className="w-4.5 h-4.5 text-sky-600" />
                 {shoppingCart.length > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-teal-500 text-white text-[8px] font-black rounded-full flex items-center justify-center">
                     {shoppingCart.length}
                   </span>
                 )}
               </button>
+
+              <button 
+                onClick={() => navigate('/cookshare')}
+                className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-sky-600 active:scale-95 transition-all ml-1 bg-sky-100/40 rounded-full relative"
+                title="Buka CookShare Social Feed"
+                aria-label="Social Feed"
+              >
+                <Compass className="w-4.5 h-4.5 text-teal-655 animate-spin-slow" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-sky-400 rounded-full animate-ping" />
+              </button>
               
               <button 
                 onClick={() => navigate('/')}
-                className="w-11 h-11 flex items-center justify-center text-slate-500 hover:text-sky-600 active:scale-95 transition-all ml-1.5"
+                className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-sky-600 active:scale-95 transition-all ml-1"
                 aria-label="Kembali ke Beranda"
               >
                 <ArrowLeft className="w-4.5 h-4.5 text-sky-650" />

@@ -23,6 +23,7 @@ import CatatanIbu from './pages/user/CatatanIbu'
 import DaftarBelanja from './pages/user/DaftarBelanja'
 import AiAssistant from './pages/user/AiAssistant'
 import SmartWeatherDashboard from './pages/SmartWeatherDashboard'
+import CookShare from './pages/user/CookShare'
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { isAuthenticated, isAdmin } = useAuthStore()
@@ -110,6 +111,7 @@ export default function App() {
             <Route path="catatan-ibu" element={<CatatanIbu />} />
             <Route path="daftar-belanja" element={<DaftarBelanja />} />
             <Route path="ai-assistant" element={<AiAssistant />} />
+            <Route path="cookshare" element={<CookShare />} />
           </Route>
 
           {/* Smart Weather Recipe App Dual-View Dashboard */}

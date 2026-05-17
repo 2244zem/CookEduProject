@@ -1,16 +1,16 @@
 import { motion } from 'framer-motion'
 import { ChefHat } from 'lucide-react'
-import bgSplash from '../../assets/background.png'
-import bgPattern from '../../assets/food_drawing.jpg'
+import bgSplash from '../../assets/background/#MyStyle25.jpg'
+import bgBatik from '../../assets/background/Bold Batik Patterns to Transform Your Home Decor Today!.jpg'
 
 export default function SplashScreen() {
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-primary overflow-hidden">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#030B17] overflow-hidden">
       {/* Background with images */}
       <div className="absolute inset-0 z-0">
-         <img src={bgSplash} alt="" className="w-full h-full object-cover opacity-40 scale-110 animate-pulse-slow" />
-         <img src={bgPattern} alt="" className="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay" />
-         <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent" />
+         <img src={bgSplash} alt="" className="w-full h-full object-cover opacity-65 scale-110 animate-pulse" style={{ animationDuration: '7s' }} />
+         <img src={bgBatik} alt="" className="absolute inset-0 w-full h-full object-cover opacity-[0.04] mix-blend-overlay" />
+         <div className="absolute inset-0 bg-gradient-to-t from-[#030B17] via-[#030B17]/40 to-transparent" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center">
