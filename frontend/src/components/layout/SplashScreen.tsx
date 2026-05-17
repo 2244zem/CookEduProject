@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { ChefHat } from 'lucide-react'
-import bgSplash from '../../assets/background/#MyStyle25.jpg'
+import bgSplash from '../../assets/background/MyStyle25.jpg'
 import bgBatik from '../../assets/background/Bold Batik Patterns to Transform Your Home Decor Today!.jpg'
 
 export default function SplashScreen() {

@@ -8,7 +8,7 @@ import {
 import { useAuthStore } from '../../store/authStore';
 
 // Premium background & photographic assets
-import bgImage from '../../assets/background/#MyStyle25.jpg';
+import bgImage from '../../assets/background/MyStyle25.jpg';
 import bgDrop from '../../assets/background/Random but Beautiful.jpg';
 import foodPattern from '../../assets/background/Bold Batik Patterns to Transform Your Home Decor Today!.jpg';
 import img1 from '../../assets/download (1).jpg';

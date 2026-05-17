@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import AiAssistant from '../chat/AiAssistant'
 
 // Immersive premium deep ocean assets
-import bgOcean from '../../assets/background/#MyStyle25.jpg'
+import bgOcean from '../../assets/background/MyStyle25.jpg'
 import bgSunlight from '../../assets/background/Random but Beautiful.jpg'
 import bgBatik from '../../assets/background/Bold Batik Patterns to Transform Your Home Decor Today!.jpg'
 
