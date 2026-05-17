@@ -275,7 +275,7 @@ export default function CookingMode() {
   const progressPercentage = steps.length > 0 ? ((currentStep + 1) / steps.length) * 100 : 0;
 
   return (
-    <div className="min-h-screen relative font-sans overflow-x-hidden bg-[#F0F9FF] text-slate-700 pb-20">
+    <div className="min-h-screen relative font-sans overflow-x-hidden bg-transparent text-slate-800 dark:text-slate-100 pb-20">
       
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40">

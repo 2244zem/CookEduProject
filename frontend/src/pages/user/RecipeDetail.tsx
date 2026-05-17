@@ -66,7 +66,7 @@ export default function RecipeDetail() {
   }
 
   return (
-    <div className="min-h-screen relative font-sans overflow-x-hidden bg-[#F0F9FF]">
+    <div className="min-h-screen relative font-sans overflow-x-hidden bg-transparent text-slate-800 dark:text-slate-100">
       {/* INTERACTIVE COOKING MODE OVERLAY */}
       <AnimatePresence>
         {isCookingMode && (

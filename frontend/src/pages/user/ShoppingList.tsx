@@ -15,7 +15,7 @@ export default function ShoppingList() {
   const { groups, toggleItem, removeGroup, clearChecked } = useShoppingStore()
 
   return (
-    <div className="min-h-screen relative font-sans overflow-x-hidden bg-[#F0F9FF] text-slate-900 pb-40">
+    <div className="min-h-screen relative font-sans overflow-x-hidden bg-transparent text-slate-800 dark:text-slate-100 pb-40">
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />

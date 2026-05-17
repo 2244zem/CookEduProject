@@ -28,9 +28,9 @@ export default function DaftarBelanja() {
     .reduce((acc, curr) => acc + curr.price, 0)
 
   return (
-    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden ${
-      isDarkMode ? 'bg-slate-950 text-white' : 'bg-[#E0F2FE] text-slate-900'
-    } pb-44`}>
+    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent ${
+      isDarkMode ? 'dark text-white' : 'text-slate-800'
+    } pb-40`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />

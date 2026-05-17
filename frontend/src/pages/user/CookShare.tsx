@@ -238,7 +238,7 @@ export default function CookShare() {
   });
 
   return (
-    <div className="min-h-screen text-slate-100 font-sans relative overflow-hidden flex justify-center pb-24 select-none">
+    <div className="min-h-screen font-sans relative overflow-hidden flex justify-center pb-24 select-none text-slate-800 dark:text-slate-100 bg-transparent">
       
       {/* ================= GLOBAL DEEP-BLUE OCEAN PARALLAX BACKDROP ================= */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
@@ -266,11 +266,11 @@ export default function CookShare() {
       <div className="relative z-10 w-full max-w-md p-4 flex flex-col space-y-6">
         
         {/* ================= TRAVELINGG-INSPIRED HEADER PANEL ================= */}
-        <header className="flex items-center justify-between bg-slate-900/50 backdrop-blur-xl border border-sky-350/20 p-4 rounded-3xl shadow-lg shrink-0">
+        <header className="flex items-center justify-between bg-white/40 dark:bg-slate-900/45 backdrop-blur-xl border border-white/50 dark:border-sky-500/10 p-4 rounded-[32px] shadow-sm shrink-0">
           <div className="flex items-center gap-3 text-left">
             <button 
-              onClick={() => navigate('/smart-weather')} 
-              className="w-10 h-10 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl flex items-center justify-center text-white active:scale-95 transition-all"
+              onClick={() => navigate('/')} 
+              className="w-10 h-10 bg-white/60 dark:bg-white/10 hover:bg-white/80 dark:hover:bg-white/20 border border-white/50 dark:border-white/10 rounded-xl flex items-center justify-center text-slate-600 dark:text-white active:scale-95 transition-all shadow-sm"
               aria-label="Kembali"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -287,15 +287,18 @@ export default function CookShare() {
         </header>
 
         {/* ================= SEARCH INPUT ================= */}
-        <div className="relative w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-200/60 w-4 h-4" />
-          <input 
-            type="text" 
-            placeholder="Cari kreasi menu, chef, soto..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-3.5 bg-slate-950/60 border border-sky-350/20 rounded-2xl text-xs font-semibold focus:outline-none focus:border-sky-400 focus:bg-slate-950/80 transition-all text-white placeholder:text-sky-200/40 shadow-inner h-12"
-          />
+        <div className="relative w-full group">
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-300/40 via-teal-300/40 to-sky-400/40 rounded-[28px] blur-md opacity-75 group-focus-within:opacity-100 transition-opacity animate-pulse duration-[4000ms]"></div>
+          <div className="relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/60 dark:border-sky-400/5 p-1 rounded-[28px] shadow-inner flex items-center h-12">
+            <Search className="text-sky-500 ml-4 w-4 h-4 shrink-0" />
+            <input 
+              type="text" 
+              placeholder="Cari kreasi menu, chef, soto..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-3 pr-4 bg-transparent border-none text-xs font-bold focus:outline-none transition-all text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-sky-200/40 h-full"
+            />
+          </div>
         </div>
 
         {/* ================= HORIZONTAL CATEGORIES SLIDER ================= */}
@@ -307,7 +310,7 @@ export default function CookShare() {
               className={`py-2 px-4 rounded-full text-[10px] font-black tracking-wider uppercase shrink-0 transition-all active:scale-95 border ${
                 activeCategory === cat
                   ? "bg-gradient-to-r from-sky-500 to-teal-500 border-sky-400 text-white shadow-md shadow-sky-500/10"
-                  : "bg-slate-950/40 hover:bg-slate-950/70 border-sky-350/10 text-sky-200/70"
+                  : "bg-white/60 dark:bg-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-800/80 border-white/50 dark:border-sky-400/10 text-slate-600 dark:text-sky-200/70"
               }`}
             >
               {cat === "Semua" ? "🔥 Semua" : cat === "Soup" ? "🍵 Sup & Soto" : cat === "Dessert" ? "🍰 Dessert" : "🍳 Main Course"}
@@ -325,7 +328,7 @@ export default function CookShare() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -30 }}
                 transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-                className="group relative bg-slate-950/45 backdrop-blur-xl border border-sky-300/15 rounded-[2.5rem] p-4.5 flex flex-col justify-between hover:shadow-2xl hover:shadow-sky-500/[0.03] hover:border-sky-300/30 transition-all duration-500 shadow-xl overflow-hidden text-left"
+                className="group relative bg-white/70 dark:bg-slate-800/75 backdrop-blur-xl border border-white/60 dark:border-sky-400/10 rounded-[2.5rem] p-4.5 flex flex-col justify-between hover:shadow-2xl hover:shadow-sky-500/[0.03] hover:border-white/80 dark:hover:border-sky-300/30 transition-all duration-500 shadow-xl overflow-hidden text-left"
               >
                 
                 {/* 1. Header: Contributor Credentials */}
@@ -334,14 +337,14 @@ export default function CookShare() {
                     <img 
                       src={post.avatar} 
                       alt={post.user} 
-                      className="w-10 h-10 rounded-full border border-sky-300/30 object-cover bg-slate-800"
+                      className="w-10 h-10 rounded-full border-2 border-white/80 dark:border-sky-300/30 object-cover bg-slate-100 dark:bg-slate-800"
                     />
                     <div className="text-left leading-tight">
-                      <h4 className="text-xs font-black text-white flex items-center gap-1">
+                      <h4 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1">
                         {post.user}
-                        {post.user === "zem" && <UserCheck className="w-3 h-3 text-sky-400" />}
+                        {post.user === "zem" && <UserCheck className="w-3 h-3 text-sky-500 dark:text-sky-400" />}
                       </h4>
-                      <span className="text-[9px] font-bold text-sky-200/50 uppercase tracking-wide block mt-0.5">
+                      <span className="text-[9px] font-bold text-slate-400 dark:text-sky-200/50 uppercase tracking-wide block mt-0.5">
                         {post.role} • {post.time}
                       </span>
                     </div>
@@ -349,11 +352,11 @@ export default function CookShare() {
 
                   <button 
                     onClick={() => handleBookmarkToggle(post.id)}
-                    className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"
+                    className="w-8 h-8 rounded-full bg-slate-100/50 dark:bg-white/5 border border-white/40 dark:border-white/10 flex items-center justify-center active:scale-90 transition-all shadow-sm"
                   >
                     <Bookmark 
                       className={`w-4 h-4 transition-all ${
-                        post.bookmarked ? 'fill-sky-400 text-sky-400 stroke-[2.5]' : 'text-slate-300 hover:text-white'
+                        post.bookmarked ? 'fill-sky-500 text-sky-500 stroke-[2.5]' : 'text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white'
                       }`} 
                     />
                   </button>
@@ -396,10 +399,10 @@ export default function CookShare() {
 
                 {/* 3. Description Block */}
                 <div className="mt-4 space-y-1.5 px-1 text-left z-10">
-                  <h3 className="font-extrabold text-sm text-white leading-snug tracking-tight group-hover:text-sky-300 transition-colors">
+                  <h3 className="font-extrabold text-sm text-slate-850 dark:text-white leading-snug tracking-tight group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors">
                     {post.title}
                   </h3>
-                  <p className="text-[11px] font-medium text-sky-100/70 leading-relaxed line-clamp-2">
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-sky-100/70 leading-relaxed line-clamp-2">
                     {post.description}
                   </p>
                 </div>
@@ -443,7 +446,7 @@ export default function CookShare() {
 
                   </div>
 
-                  <span className="text-[9px] font-black text-sky-300/80 uppercase tracking-widest bg-sky-950/50 border border-sky-850/40 px-2.5 py-1 rounded-xl">
+                  <span className="text-[9px] font-black text-sky-600 dark:text-sky-300/80 uppercase tracking-widest bg-sky-50 dark:bg-sky-950/50 border border-sky-100 dark:border-sky-850/40 px-2.5 py-1 rounded-xl shadow-sm">
                     View Recipe
                   </span>
                 </div>

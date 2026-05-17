@@ -227,8 +227,8 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
   ];
 
   return (
-    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-hidden ${
-      isDarkMode ? 'bg-slate-950 text-white' : 'bg-[#F0F9FF] text-slate-700'
+    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-hidden bg-transparent ${
+      isDarkMode ? 'dark text-white' : 'text-slate-800'
     }`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40">

@@ -46,8 +46,8 @@ export default function Stats() {
   const [isDarkMode, setIsDarkMode] = useState(false)
 
   return (
-    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden ${
-      isDarkMode ? 'bg-slate-950 text-white' : 'bg-[#F0F9FF] text-slate-900'
+    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent ${
+      isDarkMode ? 'dark text-white' : 'text-slate-800'
     } pb-40`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
