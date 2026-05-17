@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "echo 'API Backend: No frontend build required'",
         "dev": "vite"
     },
     "devDependencies": {
