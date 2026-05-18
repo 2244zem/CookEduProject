@@ -108,17 +108,17 @@ Write-Output '[*] Preparing to push to GitHub repository...'
 Write-Output 'Note: Jika diminta, masukkan email/username GitHub dan Personal Access Token (PAT) atau password Anda.'
 Write-Output ''
 
-# Determine branch name (main or master)
+# Determine local branch name
 $branches = & $gitPath branch
-$branchName = 'main'
-if ($branches -match 'master') {
-    $branchName = 'master'
-} else {
-    & $gitPath branch -M main
+$localBranch = 'main'
+if ($branches -match '\* master') {
+    $localBranch = 'master'
+} elseif ($branches -match '\* main') {
+    $localBranch = 'main'
 }
 
-Write-Output "Pushing to branch: $branchName..."
-& $gitPath push -u origin $branchName
+Write-Output "Pushing local $localBranch to remote main..."
+& $gitPath push -u origin ${localBranch}:main --force
 
 Write-Output ''
 Write-Output '========================================================='
