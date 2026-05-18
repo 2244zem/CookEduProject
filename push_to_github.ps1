@@ -59,8 +59,7 @@ Write-Output ''
 Write-Output '[*] Checking remote repository origin...'
 $remotes = & $gitPath remote -v
 if ($remotes -match 'origin') {
-    & $gitPath remote set-url origin $repoUrl
-    Write-Output '[OK] Remote origin updated'
+    Write-Output '[OK] Remote origin already exists, keeping current URL (with credentials).'
 } else {
     & $gitPath remote add origin $repoUrl
     Write-Output '[OK] Remote origin added'
