@@ -1,8 +1,14 @@
 import axios from 'axios';
 import { useDebugStore } from '../store/debugStore';
 
+// Auto-correcting Base URL: automatically prepends https:// if omitted by user
+let rawBaseURL = import.meta.env.VITE_API_URL || '/api';
+if (rawBaseURL && !rawBaseURL.startsWith('http://') && !rawBaseURL.startsWith('https://') && rawBaseURL.includes('railway.app')) {
+  rawBaseURL = 'https://' + rawBaseURL;
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: rawBaseURL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
