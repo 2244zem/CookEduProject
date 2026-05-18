@@ -30,11 +30,10 @@ export default function UserLayout() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window
-      // Normalize position to range [-0.5, 0.5]
       const normX = e.clientX / innerWidth - 0.5
       const normY = e.clientY / innerHeight - 0.5
       
-      mouseX.set(normX * 50) // Max 50px translational shift
+      mouseX.set(normX * 50)
       mouseY.set(normY * 50)
     }
 
@@ -42,7 +41,6 @@ export default function UserLayout() {
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [mouseX, mouseY])
 
-  // Pre-calculate bioluminescent floating plankton coordinates
   const particles = useMemo(() => {
     return Array.from({ length: 16 }, (_, i) => ({
       id: i,
@@ -57,7 +55,7 @@ export default function UserLayout() {
   }, [])
 
   return (
-    <div className="min-h-screen transition-colors duration-500 overflow-x-hidden font-sans relative text-slate-100 selection:bg-teal-500/30">
+    <div className="min-h-screen transition-colors duration-500 overflow-x-hidden font-sans relative text-slate-100 selection:bg-teal-500/30 bg-[#020b18]">
       <AiAssistant />
 
       {/* IMMERSIVE GLOBAL DEEP OCEAN PARALLAX BACKDROP */}
@@ -70,7 +68,6 @@ export default function UserLayout() {
             backgroundImage: `url(${bgOcean})`
           }}
           className="absolute inset-[-50px] bg-cover bg-center opacity-40 lg:opacity-30 scale-[1.05]" 
-          // CATATAN: Opacity diturunkan sedikit di desktop (lg:opacity-30) agar text resep jauh lebih mudah dibaca
         />
 
         {/* 2. Pulsing sunlight underwater overlay */}
@@ -96,7 +93,7 @@ export default function UserLayout() {
           className="absolute inset-[-50px] bg-repeat opacity-[0.02] mix-blend-overlay"
         />
 
-        {/* 4. Ambient light highlights (Lembut & Menenangkan) */}
+        {/* 4. Ambient light highlights */}
         <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-950/20 blur-[130px] rounded-full" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[550px] h-[550px] bg-teal-950/20 blur-[120px] rounded-full" />
 
@@ -130,7 +127,7 @@ export default function UserLayout() {
       {/* STRUCTURED INTERFACE LAYER */}
       <div className="relative z-10 flex flex-col min-h-screen">
         
-        {/* DESKTOP HEADER NAVIGATION (Full-Width Base) */}
+        {/* DESKTOP HEADER NAVIGATION */}
         <div className="hidden lg:block border-b border-white/5 bg-slate-950/20 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-7xl mx-auto">
             <TopNav />
@@ -138,17 +135,17 @@ export default function UserLayout() {
         </div>
 
         {/* RESPONSIVE MAIN CONTENT HUB */}
-        {/* Mobile/Android: Tanpa padding ketat agar terasa full immersion layar sentuh */}
-        {/* Desktop: Menggunakan grid/container standard, dibatasi max-w-7xl agar simetris */}
-        <main className="flex-1 relative z-10 w-full mx-auto max-w-7xl px-0 sm:px-4 lg:px-8 py-0 lg:py-8 pb-24 lg:pb-8">
+        {/* Perubahan: Ditambahkan pb-28 di mobile agar ujung bawah konten tidak tertutup BottomNav */}
+        <main className="flex-1 relative w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 lg:py-8 pb-28 lg:pb-8 z-10">
           <div className="w-full h-full lg:bg-slate-950/15 lg:backdrop-blur-[2px] lg:border lg:border-white/5 lg:rounded-3xl lg:p-6 transition-all duration-300">
             <Outlet />
           </div>
         </main>
 
         {/* ANDROID/MOBILE NAVIGATION (Floating Fixed Bottom) */}
-        <div className="block lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-[#020b18] via-[#020b18]/90 to-transparent pt-6 pb-2 px-4">
-          <div className="max-w-md mx-auto shadow-2xl shadow-cyan-950/50 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-white/10 overflow-hidden">
+        {/* Perubahan: Nilai z-index dinaikkan secara ekstrem ke z-[999] agar mutlak berada di lapisan teratas */}
+        <div className="block lg:hidden fixed bottom-0 left-0 right-0 z-[999] bg-gradient-to-t from-[#020b18] via-[#020b18]/95 to-transparent pt-8 pb-4 px-4 pointer-events-none">
+          <div className="max-w-md mx-auto shadow-2xl shadow-black/80 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 overflow-hidden pointer-events-auto">
             <BottomNav />
           </div>
         </div>
