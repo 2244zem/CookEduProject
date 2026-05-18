@@ -30,10 +30,11 @@ export default function UserLayout() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window
+      // Normalize position to range [-0.5, 0.5]
       const normX = e.clientX / innerWidth - 0.5
       const normY = e.clientY / innerHeight - 0.5
       
-      mouseX.set(normX * 50)
+      mouseX.set(normX * 50) // Max 50px translational shift
       mouseY.set(normY * 50)
     }
 
@@ -41,48 +42,49 @@ export default function UserLayout() {
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [mouseX, mouseY])
 
+  // Pre-calculate bioluminescent floating plankton coordinates to prevent garbage collection hiccups
   const particles = useMemo(() => {
     return Array.from({ length: 16 }, (_, i) => ({
       id: i,
-      size: Math.random() * 8 + 4,
-      left: Math.random() * 100,
-      top: Math.random() * 100,
-      duration: Math.random() * 18 + 12,
-      delay: Math.random() * -25,
-      floatRange: Math.random() * 50 + 20,
+      size: Math.random() * 8 + 4, // 4px to 12px
+      left: Math.random() * 100, // % width
+      top: Math.random() * 100, // % height
+      duration: Math.random() * 18 + 12, // 12s to 30s drift cycles
+      delay: Math.random() * -25, // pre-start
+      floatRange: Math.random() * 50 + 20, // vertical translation px
       glow: Math.random() > 0.4 ? 'from-cyan-400 to-teal-300' : 'from-blue-300 to-teal-400'
     }))
   }, [])
 
   return (
-    <div className="min-h-screen transition-colors duration-500 overflow-x-hidden font-sans relative text-slate-100 selection:bg-teal-500/30 bg-[#020b18]">
+    <div className="min-h-screen transition-colors duration-500 overflow-x-hidden font-sans relative">
       <AiAssistant />
 
       {/* IMMERSIVE GLOBAL DEEP OCEAN PARALLAX BACKDROP */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020b18]">
-        {/* 1. Deep Ocean main backdrop */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#010813]">
+        {/* 1. Deep Ocean main backdrop (shifts matching cursor directions) */}
         <motion.div 
           style={{ 
             x: bgOceanX, 
             y: bgOceanY,
             backgroundImage: `url(${bgOcean})`
           }}
-          className="absolute inset-[-50px] bg-cover bg-center opacity-40 lg:opacity-30 scale-[1.05]" 
+          className="absolute inset-[-50px] bg-cover bg-center opacity-85 scale-[1.05]"
         />
 
-        {/* 2. Pulsing sunlight underwater overlay */}
+        {/* 2. Pulsing sunlight underwater overlay (shifts inversely to simulate immersive 3D depth) */}
         <motion.div 
           style={{ 
             x: bgSunlightX, 
             y: bgSunlightY,
             backgroundImage: `url(${bgSunlight})`
           }}
-          animate={{ opacity: [0.10, 0.25, 0.10] }}
+          animate={{ opacity: [0.18, 0.35, 0.18] }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
           className="absolute inset-[-50px] bg-cover bg-center mix-blend-overlay"
         />
 
-        {/* 3. Repeating luxurious Batik lines watermark overlay */}
+        {/* 3. Repeating luxurious Batik lines watermark overlay (shifts with subtle speed) */}
         <motion.div 
           style={{ 
             x: bgBatikX, 
@@ -90,18 +92,18 @@ export default function UserLayout() {
             backgroundImage: `url(${bgBatik})`,
             backgroundSize: '360px'
           }}
-          className="absolute inset-[-50px] bg-repeat opacity-[0.02] mix-blend-overlay"
+          className="absolute inset-[-50px] bg-repeat opacity-[0.03] mix-blend-overlay"
         />
 
         {/* 4. Ambient light highlights */}
-        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-950/20 blur-[130px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[550px] h-[550px] bg-teal-950/20 blur-[120px] rounded-full" />
+        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-950/40 blur-[135px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[550px] h-[550px] bg-teal-950/35 blur-[125px] rounded-full" />
 
         {/* 5. Bioluminescent floating plankton engine */}
         {particles.map((p) => (
           <motion.div
             key={p.id}
-            className={`absolute bg-gradient-to-tr ${p.glow} rounded-full blur-[2px] opacity-[0.25]`}
+            className={`absolute bg-gradient-to-tr ${p.glow} rounded-full blur-[2px] opacity-[0.35]`}
             style={{
               width: p.size,
               height: p.size,
@@ -111,8 +113,8 @@ export default function UserLayout() {
             animate={{
               y: [0, -p.floatRange, 0],
               x: [0, Math.sin(p.id) * 20, 0],
-              opacity: [0.10, 0.45, 0.10],
-              scale: [1, 1.1, 1],
+              opacity: [0.15, 0.55, 0.15],
+              scale: [1, 1.2, 1],
             }}
             transition={{
               duration: p.duration,
@@ -124,32 +126,19 @@ export default function UserLayout() {
         ))}
       </div>
 
-      {/* STRUCTURED INTERFACE LAYER */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        
-        {/* DESKTOP HEADER NAVIGATION */}
-        <div className="hidden lg:block border-b border-white/5 bg-slate-950/20 backdrop-blur-md sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto">
-            <TopNav />
-          </div>
+        <div className="hidden lg:block">
+           <TopNav />
         </div>
 
-        {/* RESPONSIVE MAIN CONTENT HUB */}
-        {/* Perubahan: Ditambahkan pb-28 di mobile agar ujung bawah konten tidak tertutup BottomNav */}
-        <main className="flex-1 relative w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 lg:py-8 pb-28 lg:pb-8 z-10">
-          <div className="w-full h-full lg:bg-slate-950/15 lg:backdrop-blur-[2px] lg:border lg:border-white/5 lg:rounded-3xl lg:p-6 transition-all duration-300">
-            <Outlet />
-          </div>
+        {/* Page Content */}
+        <main className="flex-1 relative z-10 w-full pb-24 lg:pb-0">
+          <Outlet />
         </main>
 
-        {/* ANDROID/MOBILE NAVIGATION (Floating Fixed Bottom) */}
-        {/* Perubahan: Nilai z-index dinaikkan secara ekstrem ke z-[999] agar mutlak berada di lapisan teratas */}
-        <div className="block lg:hidden fixed bottom-0 left-0 right-0 z-[999] bg-gradient-to-t from-[#020b18] via-[#020b18]/95 to-transparent pt-8 pb-4 px-4 pointer-events-none">
-          <div className="max-w-md mx-auto shadow-2xl shadow-black/80 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 overflow-hidden pointer-events-auto">
-            <BottomNav />
-          </div>
+        <div className="block lg:hidden">
+           <BottomNav />
         </div>
-
       </div>
     </div>
   )
