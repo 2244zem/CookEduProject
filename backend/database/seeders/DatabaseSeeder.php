@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::create([
             'name' => 'Admin CookEdu',
             'email' => 'admin@cookedu.com',
-            'password' => bcrypt('password123'),
+            'password' => 'password123',
             'role' => 'admin',
             'phone' => '08123456789',
         ]);
@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Budi Santoso',
             'email' => 'user@cookedu.com',
-            'password' => bcrypt('password123'),
+            'password' => 'password123',
             'role' => 'user',
             'phone' => '08198765432',
             'preferences' => ['diet' => 'none', 'skill_level' => 'beginner'],

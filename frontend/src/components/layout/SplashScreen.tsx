@@ -14,15 +14,25 @@ export default function SplashScreen() {
       </div>
 
       <div className="relative z-10 flex flex-col items-center">
-        {/* Soft Egg-like Glow Aura */}
+        {/* Soft Egg-like Glow Aura - optimized for mobile performance */}
         <motion.div 
-          animate={{ 
+          animate={window.innerWidth <= 768 ? {
+            opacity: [0.3, 0.6, 0.3]
+          } : { 
             scale: [1, 1.2, 1],
             rotate: [0, 90, 180, 270, 360],
             borderRadius: ["40% 60% 70% 30% / 40% 50% 60% 50%", "60% 40% 30% 70% / 50% 60% 40% 60%", "40% 60% 70% 30% / 40% 50% 60% 50%"]
           }}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className="absolute w-64 h-64 bg-white/10 blur-3xl z-[-1]"
+          transition={window.innerWidth <= 768 ? {
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          } : {
+            duration: 10,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className={`absolute w-64 h-64 bg-white/10 z-[-1] ${window.innerWidth <= 768 ? 'blur-md' : 'blur-3xl'}`}
         />
 
         <div className="flex mb-4">

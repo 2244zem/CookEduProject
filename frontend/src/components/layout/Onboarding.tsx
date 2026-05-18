@@ -74,34 +74,53 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       className="fixed inset-0 z-[100] flex flex-col overflow-hidden font-sans bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${imgBg})` }}
     >
-      {/* Fallback overlay to ensure text readability if image is too bright/dark */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/10 to-[#0077B6]/20 backdrop-blur-[2px]" />
+      {/* Fallback overlay to ensure text readability - optimized for mobile performance */}
+      <div className={`absolute inset-0 bg-gradient-to-b ${window.innerWidth <= 768 ? 'from-white/60 via-white/40 to-[#0077B6]/30' : 'from-white/30 via-white/10 to-[#0077B6]/20 backdrop-blur-[2px]'}`} />
       
       {/* Floating Ocean Theme Ambience (Sun and Clouds) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Animated Sun */}
         <motion.div 
-          animate={{ scale: [1, 1.1, 1], rotate: [0, 10, 0] }} 
-          transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }} 
-          className="absolute top-12 left-12 w-32 h-32 bg-gradient-to-tr from-yellow-300 to-orange-200 rounded-full blur-xl opacity-80 mix-blend-screen"
-        />
-        <motion.div 
-          animate={{ scale: [1, 1.05, 1] }} 
-          transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }} 
-          className="absolute top-16 left-16 w-24 h-24 bg-white rounded-full blur-md opacity-90"
+          animate={window.innerWidth <= 768 ? {
+            opacity: [0.6, 0.8, 0.6]
+          } : { 
+            scale: [1, 1.1, 1], 
+            rotate: [0, 10, 0] 
+          }} 
+          transition={window.innerWidth <= 768 ? {
+            duration: 5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          } : { 
+            repeat: Infinity, 
+            duration: 8, 
+            ease: "easeInOut" 
+          }} 
+          className={`absolute top-12 left-12 rounded-full opacity-80 ${window.innerWidth <= 768 ? 'w-24 h-24 bg-yellow-100 blur-sm' : 'w-32 h-32 bg-gradient-to-tr from-yellow-300 to-orange-200 blur-xl mix-blend-screen'}`}
         />
         
-        {/* Animated Clouds */}
-        <motion.div 
-          animate={{ x: [0, 50, 0] }} 
-          transition={{ repeat: Infinity, duration: 20, ease: "linear" }} 
-          className="absolute top-24 right-10 w-48 h-16 bg-white/40 rounded-full blur-2xl"
-        />
-        <motion.div 
-          animate={{ x: [0, -40, 0] }} 
-          transition={{ repeat: Infinity, duration: 25, ease: "linear" }} 
-          className="absolute top-40 left-1/4 w-64 h-20 bg-white/30 rounded-full blur-3xl"
-        />
+        {/* Hide extra heavy sun and clouds entirely on mobile screen sizes to keep FPS at 60 */}
+        {window.innerWidth > 768 && (
+          <>
+            <motion.div 
+              animate={{ scale: [1, 1.05, 1] }} 
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }} 
+              className="absolute top-16 left-16 w-24 h-24 bg-white rounded-full blur-md opacity-90"
+            />
+            
+            {/* Animated Clouds */}
+            <motion.div 
+              animate={{ x: [0, 50, 0] }} 
+              transition={{ repeat: Infinity, duration: 20, ease: "linear" }} 
+              className="absolute top-24 right-10 w-48 h-16 bg-white/40 rounded-full blur-2xl"
+            />
+            <motion.div 
+              animate={{ x: [0, -40, 0] }} 
+              transition={{ repeat: Infinity, duration: 25, ease: "linear" }} 
+              className="absolute top-40 left-1/4 w-64 h-20 bg-white/30 rounded-full blur-3xl"
+            />
+          </>
+        )}
       </div>
 
       {/* Main Content Area */}
