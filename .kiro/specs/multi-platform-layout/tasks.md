@@ -308,6 +308,12 @@ This implementation plan adds desktop/web layout support to CookEdu while preser
 - [~] 18. Final Checkpoint - Implementation Complete
   - Ensure all tests pass, ask the user if questions arise.
 
+- [x] 19. Production Deploy Fixes (Cloudflare + Railway)
+  - [x] 19.1 Add PWA icon assets (`pwa-192x192.png`, `pwa-512x512.png`, `favicon.svg`)
+  - [x] 19.2 Extend Laravel CORS for `*.workers.dev` / `*.pages.dev` and document `CORS_ALLOWED_ORIGINS`
+  - [x] 19.3 Add `frontend/.env.example` with `VITE_API_URL` for Cloudflare builds
+  - _Requirements: 6.1 (API from desktop web), design Phase 5 CORS_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
