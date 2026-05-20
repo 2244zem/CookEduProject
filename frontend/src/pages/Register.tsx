@@ -38,7 +38,7 @@ export default function Register() {
   }
 
   const fields = [
-    { key: 'name', label: 'Nama Lengkap', type: 'text', icon: User, placeholder: 'John Doe' },
+    { key: 'name', label: 'Nama Lengkap', type: 'text', icon: User, placeholder: 'Your Name' },
     { key: 'email', label: 'Email Address', type: 'email', icon: Mail, placeholder: 'nama@email.com' },
     { key: 'phone', label: 'Phone Number', type: 'tel', icon: Phone, placeholder: '08xxxxxxxxxx' },
   ]
