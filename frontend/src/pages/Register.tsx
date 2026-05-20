@@ -30,6 +30,10 @@ export default function Register() {
       navigate('/')
     } catch (err: any) {
       console.error('Registration error:', err)
+      if (!err.response) {
+        setError('Server API tidak merespons. Backend Railway mungkin sedang down — cek https://cookeduproject-production.up.railway.app/up')
+        return
+      }
       const msgs = err.response?.data?.errors
       setError(msgs ? Object.values(msgs).flat().join(' ') : err.response?.data?.message || 'Oops, sepertinya ada yang terlewat. Mari periksa lagi data kamu.')
     } finally {

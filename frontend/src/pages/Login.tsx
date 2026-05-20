@@ -25,6 +25,10 @@ export default function Login() {
       setAuth(data.user, data.token)
       navigate(data.user.role === 'admin' ? '/admin' : '/')
     } catch (err: any) {
+      if (!err.response) {
+        setError('Server API tidak merespons. Backend Railway mungkin sedang down — cek https://cookeduproject-production.up.railway.app/up')
+        return
+      }
       setError(err.response?.data?.message || 'Oops, sepertinya email atau kata sandi kurang tepat. Mari coba lagi.')
     } finally {
       setLoading(false)

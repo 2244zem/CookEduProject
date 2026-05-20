@@ -1,40 +1,69 @@
-# CookEdu Production Deployment
+# CookEdu Production Deployment (QA checklist)
+
+## Root cause of register "CORS / Network Error"
+
+| Symptom | Actual cause |
+|---------|----------------|
+| `No Access-Control-Allow-Origin` | Railway returns **502** — proxy error, not Laravel CORS |
+| `AxiosError: Network Error` | Browser blocked failed cross-origin preflight |
+| Same bundle `index-Dwgu_ZDx.js` | Old Cloudflare build until redeploy completes |
 
 ## Cloudflare (frontend)
 
 1. **Root directory:** `frontend`
-2. **Build command:** `npm ci && npm run build`
-3. **Output directory:** `dist`
-4. **Environment variable:**
-   - `VITE_API_URL` = `https://cookeduproject-production.up.railway.app/api`
+2. **Build:** `npm ci && npm run build`
+3. **Output:** `dist`
+4. **Env (recommended):** `VITE_API_URL=/api`  
+   Uses same-origin proxy — **no browser CORS**.
 
-After deploy, if PWA icon warnings persist: **DevTools → Application → Clear site data** and unregister the service worker (old cache may have stored HTML instead of PNG).
+### API proxy (required for `/api` on workers.dev)
+
+**Cloudflare Pages:** deploy `functions/api/[[path]].js` (included in repo).
+
+**Cloudflare Workers:** bind `worker.js` + static assets from `dist` via Wrangler.
+
+After deploy, test:
+```powershell
+Invoke-WebRequest -Uri "https://cook-edu.fiksfaa.workers.dev/api/recipes" -UseBasicParsing
+```
 
 ## Railway (backend)
 
-1. **Root directory:** `backend` (not repo root)
-2. **Required variables:**
-   - `APP_KEY` — run `php artisan key:generate --show` locally and paste
-   - `APP_ENV` = `production`
-   - `APP_DEBUG` = `false`
-   - `APP_URL` = `https://cookeduproject-production.up.railway.app`
-   - PostgreSQL vars from Railway plugin (`DATABASE_URL` or `PGHOST`, etc.)
-   - `CORS_ALLOWED_ORIGINS` = `http://localhost:5173,https://cook-edu.fiksfaa.workers.dev`
+1. **Root directory:** `backend` ← critical (not repo root)
+2. **Start command:** `bash scripts/railway-start.sh` (auto via `railway.json`)
+3. **Required variables:**
 
-3. **Verify health:** open `https://cookeduproject-production.up.railway.app/up` — must return **200**, not 502.
+| Variable | Example |
+|----------|---------|
+| `APP_KEY` | output of `php artisan key:generate --show` |
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_URL` | `https://cookeduproject-production.up.railway.app` |
+| `DB_CONNECTION` | `pgsql` |
+| `DATABASE_URL` | from Railway PostgreSQL plugin |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,https://cook-edu.fiksfaa.workers.dev` |
 
-## Why register shows "CORS error"
+4. **Health gate:** `https://cookeduproject-production.up.railway.app/up` must return **200** before register works.
 
-Browsers report *"No Access-Control-Allow-Origin"* when the API **does not respond** (502/timeout). That is not a missing CORS config in code — **Railway Laravel must be running first**.
+### Do NOT run `config:cache` at build time
 
-Check Railway → your service → **Deployments** → logs for crash reasons (missing `APP_KEY`, DB connection, wrong root path).
+Build-time env is empty on Railway. Cached config breaks runtime. `nixpacks.toml` now avoids this.
 
-## Quick tests
+## QA smoke tests (run after both deploys)
 
 ```powershell
-# PWA icon (expect 200 + image/png)
-Invoke-WebRequest -Uri "https://cook-edu.fiksfaa.workers.dev/pwa-192x192.png" -Method Head
+# 1. Railway alive
+(Invoke-WebRequest "https://cookeduproject-production.up.railway.app/up" -UseBasicParsing).StatusCode
 
-# API health (expect 200)
-Invoke-WebRequest -Uri "https://cookeduproject-production.up.railway.app/up"
+# 2. Cloudflare proxy
+(Invoke-WebRequest "https://cook-edu.fiksfaa.workers.dev/api/recipes" -UseBasicParsing).StatusCode
+
+# 3. Register preflight (same-origin via proxy — optional)
+Invoke-WebRequest "https://cook-edu.fiksfaa.workers.dev/api/register" -Method Options -UseBasicParsing
 ```
+
+All should be **200** or **204**, never **502**.
+
+## PWA icon warning
+
+Clear site data + unregister service worker once after deploy.

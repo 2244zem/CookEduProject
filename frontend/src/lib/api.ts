@@ -1,14 +1,29 @@
 import axios from 'axios';
 import { useDebugStore } from '../store/debugStore';
 
-// Auto-correcting Base URL: automatically prepends https:// if omitted by user
-let rawBaseURL = import.meta.env.VITE_API_URL || '/api';
-if (rawBaseURL && !rawBaseURL.startsWith('http://') && !rawBaseURL.startsWith('https://') && rawBaseURL.includes('railway.app')) {
-  rawBaseURL = 'https://' + rawBaseURL;
+function resolveApiBaseUrl(): string {
+  const fromEnv = import.meta.env.VITE_API_URL?.trim();
+  if (fromEnv) {
+    if (!fromEnv.startsWith('http://') && !fromEnv.startsWith('https://') && fromEnv.includes('railway.app')) {
+      return `https://${fromEnv.replace(/^\/+/, '')}`;
+    }
+    return fromEnv;
+  }
+
+  // Production on Cloudflare: same-origin /api proxy (functions/api/[[path]].js)
+  if (import.meta.env.PROD && typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host.endsWith('workers.dev') || host.endsWith('pages.dev')) {
+      return '/api';
+    }
+  }
+
+  return '/api';
 }
 
 const api = axios.create({
-  baseURL: rawBaseURL,
+  baseURL: resolveApiBaseUrl(),
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
