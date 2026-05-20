@@ -10,6 +10,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webmanifest}'],
+        cleanupOutdatedCaches: true,
+        navigateFallbackDenylist: [/^\/pwa-.*\.png$/, /^\/apple-touch-icon\.png$/],
+      },
       manifest: {
         name: 'CookEdu Platform',
         short_name: 'CookEdu',

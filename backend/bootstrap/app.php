@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi('60,1');
 
+        // CORS must run before other middleware (Cloudflare ↔ Railway)
+        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+
         // Register global middleware
         $middleware->append(\App\Http\Middleware\DetectPlatform::class);
 
