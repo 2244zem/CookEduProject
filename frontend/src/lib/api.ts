@@ -12,6 +12,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'X-Platform': 'desktop',
+    'X-Platform-Version': '1.0.0',
   },
 });
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LessonResource;
+use App\Http\Resources\Platform\DesktopLessonResource;
 use App\Models\Lesson;
 use App\Models\QuizResult;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ class LessonController extends Controller
 {
     /**
      * List published lessons grouped by category.
+     * Platform-aware: Returns DesktopLessonResource for desktop platform.
      */
     public function index(Request $request)
     {
@@ -30,11 +32,20 @@ class LessonController extends Controller
 
         $lessons = $query->paginate($request->query('per_page', 20));
 
+        // Detect platform from request attributes (set by DetectPlatform middleware)
+        $platform = $request->attributes->get('platform', 'android');
+        
+        // Return platform-specific resource
+        if ($platform === 'desktop') {
+            return DesktopLessonResource::collection($lessons);
+        }
+
         return LessonResource::collection($lessons);
     }
 
     /**
      * Show a single lesson with accessibility check.
+     * Platform-aware: Returns DesktopLessonResource for desktop platform.
      */
     public function show(Request $request, Lesson $lesson)
     {
@@ -48,6 +59,20 @@ class LessonController extends Controller
                     'prerequisite' => new LessonResource($lesson->prerequisite),
                 ], 403);
             }
+        }
+
+        // Detect platform from request attributes (set by DetectPlatform middleware)
+        $platform = $request->attributes->get('platform', 'android');
+        
+        // Return platform-specific resource
+        if ($platform === 'desktop') {
+            return response()->json([
+                'data' => new DesktopLessonResource($lesson),
+                'meta' => [
+                    'platform' => 'desktop',
+                    'layout' => 'grid',
+                ]
+            ]);
         }
 
         return response()->json([

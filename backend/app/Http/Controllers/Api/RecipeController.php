@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRecipeRequest;
 use App\Http\Requests\UpdateRecipeRequest;
 use App\Http\Resources\RecipeResource;
+use App\Http\Resources\Platform\DesktopRecipeResource;
 use App\Models\Recipe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -13,7 +14,7 @@ use Illuminate\Support\Str;
 class RecipeController extends Controller
 {
     /**
-     * List recipes with filters and search.
+     * List recipes with filters and search - platform-aware.
      */
     public function index(Request $request)
     {
@@ -61,16 +62,38 @@ class RecipeController extends Controller
 
         $recipes = $query->paginate($request->query('per_page', 12));
 
+        // Detect platform from request attributes (set by DetectPlatform middleware)
+        $platform = $request->attributes->get('platform', 'android');
+        
+        // Return platform-appropriate resource
+        if ($platform === 'desktop') {
+            return DesktopRecipeResource::collection($recipes);
+        }
+        
         return RecipeResource::collection($recipes);
     }
 
     /**
-     * Show a single recipe.
+     * Show a single recipe - platform-aware.
      */
-    public function show(Recipe $recipe)
+    public function show(Request $request, Recipe $recipe)
     {
         $recipe->load(['category', 'creator']);
 
+        // Detect platform from request attributes (set by DetectPlatform middleware)
+        $platform = $request->attributes->get('platform', 'android');
+        
+        // Return platform-appropriate response
+        if ($platform === 'desktop') {
+            return response()->json([
+                'data' => new DesktopRecipeResource($recipe),
+                'meta' => [
+                    'platform' => 'desktop',
+                    'layout' => 'grid',
+                ]
+            ]);
+        }
+        
         return response()->json([
             'data' => new RecipeResource($recipe),
         ]);

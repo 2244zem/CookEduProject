@@ -15,8 +15,11 @@ class DashboardController extends Controller
     /**
      * Admin dashboard statistics.
      */
-    public function stats()
+    public function stats(Request $request)
     {
+        // Detect platform from request attributes
+        $platform = $request->attributes->get('platform', 'android');
+
         $totalUsers = User::where('role', 'user')->count();
         $totalAdmins = User::where('role', 'admin')->count();
         $totalRecipes = Recipe::count();
@@ -62,7 +65,8 @@ class DashboardController extends Controller
             ['name' => 'Advanced', 'value' => Recipe::where('difficulty', 'advanced')->count()],
         ];
 
-        return response()->json([
+        // Base response structure
+        $response = [
             'stats' => [
                 'total_users' => $totalUsers,
                 'total_admins' => $totalAdmins,
@@ -76,6 +80,83 @@ class DashboardController extends Controller
             'recent_activity' => $recentActivity,
             'user_growth' => $userGrowth,
             'difficulty_distribution' => $difficultyDistribution,
-        ]);
+        ];
+
+        // Add desktop-specific formatting and additional data
+        if ($platform === 'desktop') {
+            $response = $this->formatForDesktop($response, $request);
+        }
+
+        return response()->json($response);
+    }
+
+    /**
+     * Format dashboard statistics for desktop platform.
+     */
+    private function formatForDesktop(array $baseResponse, Request $request): array
+    {
+        // Add formatted display fields for desktop
+        $baseResponse['display'] = [
+            'total_users_formatted' => number_format($baseResponse['stats']['total_users']),
+            'total_recipes_formatted' => number_format($baseResponse['stats']['total_recipes']),
+            'total_lessons_formatted' => number_format($baseResponse['stats']['total_lessons']),
+            'new_users_growth' => $this->calculateGrowthPercentage(
+                $baseResponse['stats']['new_users_this_month'],
+                $baseResponse['stats']['total_users']
+            ),
+        ];
+
+        // Add recommended recipes for desktop (top 3 most recent published)
+        $baseResponse['recommended_recipes'] = Recipe::where('is_published', true)
+            ->with(['category', 'creator'])
+            ->orderBy('created_at', 'desc')
+            ->take(3)
+            ->get(['id', 'title', 'slug', 'difficulty', 'cooking_time', 'image_url', 'category_id', 'user_id']);
+
+        // Add recommended lessons for desktop (top 3 most recent published)
+        $baseResponse['recommended_lessons'] = Lesson::where('is_published', true)
+            ->with('category')
+            ->orderBy('created_at', 'desc')
+            ->take(3)
+            ->get(['id', 'title', 'slug', 'duration', 'level', 'thumbnail', 'category_id']);
+
+        // Add completion stats for desktop
+        $totalQuizzes = QuizResult::count();
+        $passedQuizzes = QuizResult::where('passed', true)->count();
+        $baseResponse['completion_stats'] = [
+            'total_quizzes' => $totalQuizzes,
+            'passed_quizzes' => $passedQuizzes,
+            'pass_rate' => $totalQuizzes > 0 ? round(($passedQuizzes / $totalQuizzes) * 100, 1) : 0,
+        ];
+
+        // Add trending recipes for desktop (recipes created in last 7 days)
+        $baseResponse['trending_recipes'] = Recipe::where('is_published', true)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->with(['category', 'creator'])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get(['id', 'title', 'slug', 'difficulty', 'cooking_time', 'image_url', 'category_id', 'user_id']);
+
+        // Add platform metadata
+        $baseResponse['meta'] = [
+            'platform' => 'desktop',
+            'layout' => 'grid',
+            'version' => config('platform.api_version.desktop', '1.0.0'),
+        ];
+
+        return $baseResponse;
+    }
+
+    /**
+     * Calculate growth percentage.
+     */
+    private function calculateGrowthPercentage(int $newCount, int $totalCount): string
+    {
+        if ($totalCount === 0) {
+            return '0%';
+        }
+
+        $percentage = round(($newCount / $totalCount) * 100, 1);
+        return $percentage > 0 ? "+{$percentage}%" : "{$percentage}%";
     }
 }

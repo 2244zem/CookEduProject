@@ -1,0 +1,358 @@
+/**
+ * CookEdu Design System Tokens
+ * 
+ * Design Philosophy:
+ * - Apple/Shopee/Tokopedia inspired design
+ * - Clean, modern, and friendly aesthetic
+ * - Generous whitespace for breathing room
+ * - Subtle shadows for depth
+ * - Smooth but lightweight animations
+ * 
+ * Performance Note:
+ * Transitions use CSS transforms and opacity for better performance.
+ * Kept lightweight to avoid lag on lower-end devices.
+ */
+
+:root {
+  /* ============================================
+     COLOR PALETTE
+     ============================================ */
+  
+  /* Primary Colors - iOS Blue */
+  --color-primary: #007AFF;
+  --color-primary-hover: #0056CC;
+  --color-primary-active: #004999;
+  --color-primary-light: #E5F2FF;
+  --color-primary-dark: #003D66;
+  
+  /* Secondary Colors - Shopee Orange warmth */
+  --color-secondary: #FF9500;
+  --color-secondary-hover: #E68600;
+  --color-secondary-active: #CC7700;
+  --color-secondary-light: #FFF4E5;
+  --color-secondary-dark: #B35F00;
+  
+  /* Success - Shopee/iOS Green */
+  --color-success: #34C759;
+  --color-success-hover: #2DA84A;
+  --color-success-active: #268A3D;
+  --color-success-light: #E8F8EC;
+  --color-success-dark: #1F6B30;
+  
+  /* Error - iOS Red */
+  --color-error: #FF3B30;
+  --color-error-hover: #E62E24;
+  --color-error-active: #CC2619;
+  --color-error-light: #FFE8E7;
+  --color-error-dark: #991C13;
+  
+  /* Warning - iOS Orange */
+  --color-warning: #FF9500;
+  --color-warning-hover: #E68600;
+  --color-warning-active: #CC7700;
+  --color-warning-light: #FFF4E5;
+  --color-warning-dark: #B35F00;
+  
+  /* Info - Light Blue */
+  --color-info: #5AC8FA;
+  --color-info-hover: #3ABAEF;
+  --color-info-active: #1AACE4;
+  --color-info-light: #EBF9FF;
+  --color-info-dark: #0D8ABF;
+  
+  /* Neutral Colors - Tokopedia/Shopee style grays */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F5F5F5;
+  --color-bg-tertiary: #EEEEEE;
+  --color-bg-hover: #FAFAFA;
+  --color-bg-disabled: #E0E0E0;
+  
+  --color-text-primary: #212121;
+  --color-text-secondary: #757575;
+  --color-text-tertiary: #9E9E9E;
+  --color-text-disabled: #BDBDBD;
+  --color-text-inverse: #FFFFFF;
+  
+  --color-border: #E0E0E0;
+  --color-border-light: #F0F0F0;
+  --color-border-dark: #BDBDBD;
+  --color-border-focus: var(--color-primary);
+  
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-overlay-light: rgba(0, 0, 0, 0.3);
+  
+  /* ============================================
+     TYPOGRAPHY
+     ============================================ */
+  
+  /* Font Families */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+                      'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+  
+  /* Font Sizes - Hierarchical scale */
+  --font-size-xs: 0.75rem;      /* 12px */
+  --font-size-sm: 0.875rem;     /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;     /* 18px */
+  --font-size-xl: 1.25rem;      /* 20px */
+  --font-size-2xl: 1.5rem;      /* 24px */
+  --font-size-3xl: 1.875rem;    /* 30px */
+  --font-size-4xl: 2.25rem;     /* 36px */
+  --font-size-5xl: 3rem;        /* 48px */
+  --font-size-6xl: 3.75rem;     /* 60px */
+  
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+  
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  
+  /* ============================================
+     SPACING - Generous whitespace
+     ============================================ */
+  
+  --space-0: 0;
+  --space-1: 0.25rem;     /* 4px */
+  --space-2: 0.5rem;      /* 8px */
+  --space-3: 0.75rem;     /* 12px */
+  --space-4: 1rem;        /* 16px */
+  --space-5: 1.25rem;     /* 20px */
+  --space-6: 1.5rem;      /* 24px */
+  --space-7: 1.75rem;     /* 28px */
+  --space-8: 2rem;        /* 32px */
+  --space-9: 2.25rem;     /* 36px */
+  --space-10: 2.5rem;     /* 40px */
+  --space-12: 3rem;       /* 48px */
+  --space-14: 3.5rem;     /* 56px */
+  --space-16: 4rem;       /* 64px */
+  --space-20: 5rem;       /* 80px */
+  --space-24: 6rem;       /* 96px */
+  --space-32: 8rem;       /* 128px */
+  
+  /* ============================================
+     SHADOWS - iOS-style subtle shadows
+     ============================================ */
+  
+  /* Elevation shadows - layered and subtle */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 
+               0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 
+               0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 
+               0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 
+               0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  
+  /* Special shadows */
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-outline: 0 0 0 3px rgba(0, 122, 255, 0.15);
+  --shadow-outline-error: 0 0 0 3px rgba(255, 59, 48, 0.15);
+  --shadow-outline-success: 0 0 0 3px rgba(52, 199, 89, 0.15);
+  
+  /* Card shadows - for recipe cards and content blocks */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.1);
+  
+  /* ============================================
+     BORDER RADIUS - Rounded, friendly
+     ============================================ */
+  
+  --radius-none: 0;
+  --radius-xs: 0.25rem;     /* 4px */
+  --radius-sm: 0.375rem;    /* 6px */
+  --radius-md: 0.5rem;      /* 8px */
+  --radius-lg: 0.75rem;     /* 12px */
+  --radius-xl: 1rem;        /* 16px */
+  --radius-2xl: 1.5rem;     /* 24px */
+  --radius-3xl: 2rem;       /* 32px */
+  --radius-full: 9999px;    /* Fully rounded */
+  
+  /* Component-specific radius */
+  --radius-button: var(--radius-md);
+  --radius-card: var(--radius-lg);
+  --radius-input: var(--radius-md);
+  --radius-modal: var(--radius-xl);
+  --radius-badge: var(--radius-full);
+  
+  /* ============================================
+     TRANSITIONS - Smooth but lightweight
+     Performance optimized using transform/opacity
+     ============================================ */
+  
+  /* Duration */
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 350ms;
+  --duration-slower: 500ms;
+  
+  /* Easing functions */
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  
+  /* Common transitions - optimized for performance */
+  --transition-fast: var(--duration-fast) var(--ease-out);
+  --transition-base: var(--duration-base) var(--ease-in-out);
+  --transition-slow: var(--duration-slow) var(--ease-in-out);
+  
+  /* Property-specific transitions */
+  --transition-colors: color var(--duration-fast) var(--ease-out),
+                       background-color var(--duration-fast) var(--ease-out),
+                       border-color var(--duration-fast) var(--ease-out);
+  
+  --transition-transform: transform var(--duration-base) var(--ease-smooth);
+  
+  --transition-opacity: opacity var(--duration-fast) var(--ease-out);
+  
+  --transition-shadow: box-shadow var(--duration-base) var(--ease-out);
+  
+  /* Combined transitions for interactive elements */
+  --transition-interactive: transform var(--duration-fast) var(--ease-out),
+                           box-shadow var(--duration-fast) var(--ease-out),
+                           opacity var(--duration-fast) var(--ease-out);
+  
+  /* ============================================
+     LAYOUT & CONTAINERS
+     ============================================ */
+  
+  /* Container widths */
+  --container-xs: 480px;
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+  --container-max: var(--container-xl);
+  
+  /* Container padding */
+  --container-padding-mobile: 1rem;
+  --container-padding-tablet: 1.5rem;
+  --container-padding-desktop: 2rem;
+  
+  /* Grid gaps */
+  --gap-xs: var(--space-2);
+  --gap-sm: var(--space-3);
+  --gap-md: var(--space-4);
+  --gap-lg: var(--space-6);
+  --gap-xl: var(--space-8);
+  
+  /* ============================================
+     Z-INDEX LAYERS
+     ============================================ */
+  
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-fixed: 1200;
+  --z-modal-backdrop: 1300;
+  --z-modal: 1400;
+  --z-popover: 1500;
+  --z-tooltip: 1600;
+  --z-toast: 1700;
+  
+  /* ============================================
+     BREAKPOINTS (for reference in JS)
+     ============================================ */
+  
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  /* ============================================
+     COMPONENT-SPECIFIC TOKENS
+     ============================================ */
+  
+  /* Buttons */
+  --button-height-sm: 2rem;
+  --button-height-md: 2.5rem;
+  --button-height-lg: 3rem;
+  --button-padding-x-sm: var(--space-3);
+  --button-padding-x-md: var(--space-4);
+  --button-padding-x-lg: var(--space-6);
+  
+  /* Inputs */
+  --input-height-sm: 2rem;
+  --input-height-md: 2.5rem;
+  --input-height-lg: 3rem;
+  --input-padding-x: var(--space-3);
+  --input-border-width: 1px;
+  
+  /* Cards */
+  --card-padding-sm: var(--space-4);
+  --card-padding-md: var(--space-6);
+  --card-padding-lg: var(--space-8);
+  
+  /* Header/Navigation */
+  --header-height: 4rem;
+  --sidebar-width: 16rem;
+  --sidebar-width-collapsed: 4rem;
+  
+  /* Recipe Grid - Responsive columns */
+  --grid-columns-mobile: 1;
+  --grid-columns-tablet: 2;
+  --grid-columns-desktop: 3;
+  --grid-columns-wide: 4;
+}
+
+/* ============================================
+   DARK MODE SUPPORT (Optional)
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark mode colors can be added here in future */
+    /* For now, keeping light mode only as per requirements */
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Smooth transitions for all interactive elements */
+.transition-smooth {
+  transition: var(--transition-interactive);
+}
+
+/* Performance-optimized transform */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* Elevation classes */
+.elevation-0 { box-shadow: none; }
+.elevation-1 { box-shadow: var(--shadow-sm); }
+.elevation-2 { box-shadow: var(--shadow-md); }
+.elevation-3 { box-shadow: var(--shadow-lg); }
+.elevation-4 { box-shadow: var(--shadow-xl); }
+
+/* Focus visible for accessibility */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-outline);
+}
