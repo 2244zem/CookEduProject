@@ -1,9 +1,3 @@
-[phases.setup]
-nixPkgs = ["php82", "php82Packages.composer"]
-
-[phases.install]
-cmds = ["composer install --no-dev --optimize-autoloader --no-interaction"]
-
 # Do NOT config:cache here — build-time env is empty and breaks Railway runtime
 [phases.build]
 cmds = ["chmod +x scripts/railway-start.sh"]
