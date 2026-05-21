@@ -15,7 +15,7 @@ export default function SmartWeatherDashboard() {
   const [deviceMode, setDeviceMode] = useState<'mobile' | 'desktop'>('mobile');
   const [isRealMobileDevice, setIsRealMobileDevice] = useState(false);
   const [liveTime, setLiveTime] = useState('');
-  const [weatherCache, setWeatherCache] = useState({ temp: 74, city: 'Bandung', cond: 'Partly Cloudy' });
+  const [weatherCache, setWeatherCache] = useState({ temp: 23, city: 'Bandung', cond: 'Partly Cloudy' });
 
   // 1. Live Ticking Clock for Status Bar & Console
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function SmartWeatherDashboard() {
         if (stored) {
           const parsed = JSON.parse(stored);
           setWeatherCache({
-            temp: parsed.temp || 74,
+            temp: parsed.temp || 23,
             city: parsed.city || 'Bandung',
             cond: parsed.condition || 'Partly Cloudy'
           });
@@ -83,13 +83,13 @@ export default function SmartWeatherDashboard() {
       </div>
 
       {/* ================= LEFT PRESENTATION SIDEBAR ================= */}
-      <aside className="w-full lg:w-[350px] shrink-0 bg-white/80 backdrop-blur-2xl border-b lg:border-b-0 lg:border-r border-sky-100 p-6 flex flex-col justify-between z-20 shadow-lg relative">
+      <aside className="w-full lg:w-[350px] shrink-0 bg-white/80 backdrop-blur-sm border-b lg:border-b-0 lg:border-r border-sky-100 p-6 flex flex-col justify-between z-20 shadow-sm relative">
         <div className="space-y-8">
           
           {/* Logo Brand Header */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-tr from-sky-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-md">
-              <Compass className="w-5 h-5 animate-spin-slow text-white" />
+              <Compass className="w-5 h-5  text-white" />
             </div>
             <div className="text-left">
               <h2 className="text-sm font-black text-slate-800 tracking-tight leading-none">CookEdu Simulator</h2>
@@ -158,7 +158,7 @@ export default function SmartWeatherDashboard() {
           {/* Live System Geocoding & Weather Telemetry */}
           <div className="bg-sky-50/50 border border-sky-100/80 rounded-2xl p-4 space-y-3.5 text-left">
             <div className="flex items-center gap-2 text-slate-650">
-              <Activity className="w-4 h-4 text-sky-500 animate-pulse" />
+              <Activity className="w-4 h-4 text-sky-500 " />
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Live Telemetri Dapur</span>
             </div>
             
@@ -169,7 +169,7 @@ export default function SmartWeatherDashboard() {
               </div>
               <div className="flex justify-between border-b border-sky-100/50 pb-1.5">
                 <span className="text-slate-400">Suhu Sync:</span>
-                <span className="text-sky-600 font-black">{weatherCache.temp}°F</span>
+                <span className="text-sky-600 font-black">{weatherCache.temp}°C</span>
               </div>
               <div className="flex justify-between border-b border-sky-100/50 pb-1.5">
                 <span className="text-slate-400">Status Cuaca:</span>
@@ -207,7 +207,7 @@ export default function SmartWeatherDashboard() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: 'spring', damping: 22, stiffness: 120 }}
-              className="w-[375px] h-[780px] rounded-[52px] border-[12px] border-slate-900 bg-white shadow-2xl relative flex flex-col overflow-hidden ring-4 ring-slate-800/30 scale-[0.85] sm:scale-95 md:scale-100"
+              className="w-[375px] h-[780px] rounded-[52px] border-[12px] border-slate-900 bg-white shadow-sm relative flex flex-col overflow-hidden ring-4 ring-slate-800/30 scale-[0.85] sm:scale-95 md:scale-100"
             >
               {/* simulated phone physical camera notch/top speaker */}
               <div className="absolute top-0 inset-x-0 mx-auto w-36 h-6 bg-slate-900 rounded-b-2xl z-[150] flex items-center justify-center">
@@ -215,7 +215,7 @@ export default function SmartWeatherDashboard() {
               </div>
 
               {/* simulated phone status bar */}
-              <div className="h-10 bg-white/70 backdrop-blur-md px-6 flex items-center justify-between z-[140] shrink-0 text-slate-700 text-[10px] font-black border-b border-sky-100/20">
+              <div className="h-10 bg-white/70 backdrop-blur-sm px-6 flex items-center justify-between z-[140] shrink-0 text-slate-700 text-[10px] font-black border-b border-sky-100/20">
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3 text-slate-650" />
                   <span>{liveTime}</span>
@@ -237,7 +237,7 @@ export default function SmartWeatherDashboard() {
               </div>
 
               {/* simulated phone bottom swipe pill navigation */}
-              <div className="h-6 bg-white/70 backdrop-blur-md flex items-center justify-center z-[140] shrink-0 border-t border-sky-100/20">
+              <div className="h-6 bg-white/70 backdrop-blur-sm flex items-center justify-center z-[140] shrink-0 border-t border-sky-100/20">
                 <div className="w-28 h-1 bg-slate-900/40 rounded-full" />
               </div>
 
@@ -250,7 +250,7 @@ export default function SmartWeatherDashboard() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
               transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-              className="w-full h-full bg-white/50 backdrop-blur-md rounded-[32px] border border-sky-150 shadow-2xl flex flex-col overflow-hidden max-w-6xl mx-auto"
+              className="w-full h-full bg-white/50 backdrop-blur-sm rounded-[32px] border border-sky-150 shadow-sm flex flex-col overflow-hidden max-w-6xl mx-auto"
             >
               {/* browser-like title header */}
               <div className="h-10 bg-white/70 border-b border-sky-150 flex items-center px-4 justify-between shrink-0">

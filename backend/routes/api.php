@@ -6,6 +6,10 @@ use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\OAuthController;
+use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\LikeController;
+use App\Http\Controllers\Api\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,6 +21,10 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/password/otp', [AuthController::class, 'sendOTP']);
 Route::post('/password/reset', [AuthController::class, 'resetPassword']);
+
+// OAuth
+Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirect']);
+Route::get('/auth/{provider}/callback', [OAuthController::class, 'callback']);
 
 // Public recipe browsing
 Route::get('/recipes', [RecipeController::class, 'index']);
@@ -44,6 +52,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ChefAI (Removed throttle for local development to isolate Gemini 429 issues)
     Route::post('/chef-ai', [\App\Http\Controllers\Api\ChefAiController::class, 'ask']);
+
+    // Comments & Likes
+    Route::get('/recipes/{recipe}/comments', [CommentController::class, 'index']);
+    Route::post('/recipes/{recipe}/comments', [CommentController::class, 'store']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+    
+    Route::post('/recipes/{recipe}/like', [LikeController::class, 'toggle']);
+
+    // Subscriptions
+    Route::get('/subscriptions/plans', [SubscriptionController::class, 'plans']);
+    Route::post('/subscriptions/subscribe', [SubscriptionController::class, 'subscribe']);
+    Route::post('/subscriptions/cancel', [SubscriptionController::class, 'cancel']);
 
     /*
     |--------------------------------------------------------------------------

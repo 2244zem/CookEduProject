@@ -46,7 +46,7 @@ const PRESET_RECIPES: LocalRecipe[] = [
     prepTime: "25 Mins",
     difficulty: "Easy",
     ingredients: ["Ayam", "Bumbu Soto", "Garam", "Bawang"],
-    suitableTemp: { min: 20, max: 78 },
+    suitableTemp: { min: -6, max: 25 },
     description: "Soto ayam hangat khas Lamongan dengan kuah kaldu rempah gurih berlimpah koyo.",
     likes: 184,
     commentsCount: 22,
@@ -61,7 +61,7 @@ const PRESET_RECIPES: LocalRecipe[] = [
     prepTime: "15 Mins",
     difficulty: "Easy",
     ingredients: ["Durian", "Santan", "Gula Merah", "Tepung Beras"],
-    suitableTemp: { min: 79, max: 110 },
+    suitableTemp: { min: 26, max: 43 },
     description: "Es serut cendol kenyal berpadu aroma durian mewah menyegarkan hari panas.",
     likes: 310,
     commentsCount: 42,
@@ -76,7 +76,7 @@ const PRESET_RECIPES: LocalRecipe[] = [
     prepTime: "120 Mins",
     difficulty: "Hard",
     ingredients: ["Daging Sapi", "Santan", "Bawang", "Cabai"],
-    suitableTemp: { min: 45, max: 92 },
+    suitableTemp: { min: 7, max: 33 },
     description: "Rendang daging karamelisasi kering bercita rasa tinggi pusaka Nusantara.",
     likes: 540,
     commentsCount: 88,
@@ -91,7 +91,7 @@ const PRESET_RECIPES: LocalRecipe[] = [
     prepTime: "20 Mins",
     difficulty: "Easy",
     ingredients: ["Telur", "Kecap", "Bawang", "Cabai"],
-    suitableTemp: { min: 35, max: 105 },
+    suitableTemp: { min: 2, max: 40 },
     description: "Resep Nasi Goreng warisan ibu dengan aroma wajan membara dan kehangatan rumah.",
     isLegacy: true,
     likes: 92,
@@ -107,7 +107,7 @@ const PRESET_RECIPES: LocalRecipe[] = [
     prepTime: "25 Mins",
     difficulty: "Medium",
     ingredients: ["Tahu", "Bawang", "Ayam", "Cabai"],
-    suitableTemp: { min: 10, max: 68 },
+    suitableTemp: { min: -12, max: 20 },
     description: "Sup kimchi panas mendidih masam pedas yang menghangatkan tubuh di kala cuaca dingin.",
     likes: 85,
     commentsCount: 14,
@@ -122,7 +122,7 @@ const PRESET_RECIPES: LocalRecipe[] = [
     prepTime: "45 Mins",
     difficulty: "Medium",
     ingredients: ["Daging Sapi", "Bumbu Soto", "Bawang", "Garam"],
-    suitableTemp: { min: 25, max: 80 },
+    suitableTemp: { min: -4, max: 26 },
     description: "Kuah soto daging pekat bersantan gurih berlimpah jeroan khas pulau Madura.",
     isLegacy: true,
     likes: 215,
@@ -185,7 +185,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
   }, [fridgeIngredients]);
 
   // Weather States
-  const [temperature, setTemperature] = useState(74);
+  const [temperature, setTemperature] = useState(23);
   const [weatherCondition, setWeatherCondition] = useState("Partly Cloudy");
   const [userAddress, setUserAddress] = useState("Bandung, ID");
   const [searchAddressInput, setSearchAddressInput] = useState("Bandung, ID");
@@ -244,7 +244,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
       if (geoData && geoData.length > 0) {
         const { lat, lon, name, country } = geoData[0];
         // Fetch Fahrenheit weather info
-        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`;
+        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
         const weatherRes = await fetch(weatherUrl);
         const wData = await weatherRes.json();
         
@@ -270,7 +270,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
     } catch (err) {
       console.warn("Weather API skip, using premium mockup coordinates fallback:", err);
       // Fallback
-      setTemperature(74);
+      setTemperature(23);
       setWeatherCondition("Partly Cloudy");
       setUserAddress(city);
       setPrecipitation(68);
@@ -388,7 +388,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
       prepTime: newTime,
       difficulty: "Medium",
       ingredients: newIngredientsInput.split(",").map(x => x.trim()).filter(Boolean),
-      suitableTemp: { min: 20, max: 95 },
+      suitableTemp: { min: -6, max: 35 },
       description: newDesc || "Karya kuliner autentik yang dibagikan secara bangga oleh zem.",
       likes: 1,
       commentsCount: 0,
@@ -423,12 +423,12 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
       {/* 3D PARALLAX AMBIENT BACKDROP SHELL FOR DESKTOP VIEWS */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden opacity-60 dark:opacity-20 hidden sm:block">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})` }} />
-        <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay animate-pulse" style={{ backgroundImage: `url(${bgDrop})`, animationDuration: '16s' }} />
+        <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay " style={{ backgroundImage: `url(${bgDrop})`, animationDuration: '16s' }} />
         <div className="absolute inset-0 bg-repeat opacity-[0.015]" style={{ backgroundImage: `url(${foodPattern})`, backgroundSize: '300px' }} />
       </div>
 
       {/* CENTERED NATIVE ANDROID PORTVIEW SIMULATOR FRAME */}
-      <div className="relative w-full sm:max-w-[430px] h-full sm:h-[880px] bg-sky-100/30 dark:bg-slate-900/65 sm:rounded-[50px] sm:border-[8px] sm:border-slate-800 sm:shadow-2xl overflow-hidden flex flex-col z-10 backdrop-blur-3xl border border-white/30">
+      <div className="relative w-full sm:max-w-[430px] h-full sm:h-[880px] bg-sky-100/30 dark:bg-slate-900/65 sm:rounded-[50px] sm:border-[8px] sm:border-slate-800 sm:shadow-sm overflow-hidden flex flex-col z-10 backdrop-blur-sm border border-white/30">
         
         {/* Android Status Bar (Status Bar Notch matching high-end mockup) */}
         <div className="hidden sm:flex bg-slate-950/20 px-6 py-2.5 items-center justify-between text-[11px] font-bold text-slate-800 dark:text-sky-200 shrink-0 select-none z-30">
@@ -441,7 +441,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
         </div>
 
         {/* ================= FIXED MAIN HEADER VIEWPORT ================= */}
-        <header className="p-4 flex items-center justify-between sticky top-0 z-40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border-b border-white/40 dark:border-sky-400/10 shrink-0">
+        <header className="p-4 flex items-center justify-between sticky top-0 z-40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm border-b border-white/40 dark:border-sky-400/10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full border-2 border-sky-400 p-0.5 bg-white dark:bg-slate-800 shadow-sm relative shrink-0">
               <img 
@@ -453,12 +453,12 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
             </div>
             <div onClick={() => navigate('/profile')} className="cursor-pointer text-left">
               <span className="text-[10px] uppercase tracking-wider font-bold text-sky-600/80 dark:text-sky-300 block leading-none">Welcome back</span>
-              <h1 className="text-base font-black text-slate-800 dark:text-white tracking-tight mt-0.5">Halo, zem</h1>
+              <h1 className="text-base font-black text-slate-800 dark:text-white tracking-tight mt-0.5">Halo, {activeUser.name}</h1>
             </div>
           </div>
 
           {/* FLOATING ACTION PILL (Twin Buttons) */}
-          <div className="flex items-center bg-white/80 dark:bg-slate-800/85 border border-sky-100 dark:border-sky-400/10 rounded-full p-1 shadow-sm backdrop-blur-md">
+          <div className="flex items-center bg-white/80 dark:bg-slate-800/85 border border-sky-100 dark:border-sky-400/10 rounded-full p-1 shadow-sm backdrop-blur-sm">
             <button 
               onClick={() => setIsCartOpen(true)}
               className="p-2.5 bg-gradient-to-tr from-sky-500 to-teal-500 text-white rounded-full shadow-md active:scale-95 transition-all relative"
@@ -498,8 +498,8 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                 
                 {/* OCEAN-SHIMMER SEARCH BAR */}
                 <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-sky-300/40 via-teal-300/40 to-sky-400/40 rounded-2xl blur-md opacity-75 group-focus-within:opacity-100 transition-opacity animate-pulse duration-[4000ms]"></div>
-                  <div className="relative flex items-center bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/60 dark:border-sky-400/5 rounded-2xl p-3.5 shadow-inner">
+                  <div className="absolute inset-0 bg-gradient-to-r from-sky-300/40 via-teal-300/40 to-sky-400/40 rounded-2xl blur-md opacity-75 group-focus-within:opacity-100 transition-opacity  duration-[4000ms]"></div>
+                  <div className="relative flex items-center bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/60 dark:border-sky-400/5 rounded-2xl p-3.5 shadow-inner">
                     <Search className="text-sky-500 w-5 h-5 mr-3 shrink-0" />
                     <input 
                       type="text" 
@@ -517,13 +517,13 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                 </div>
 
                 {/* HIGH-FIDELITY LIVE WEATHER CARD WITH OPENWEATHER GEOLOCATION */}
-                <section className="relative rounded-3xl bg-gradient-to-br from-sky-500/95 to-teal-655/95 text-white p-5 shadow-xl shadow-sky-900/10 overflow-hidden border border-white/20">
+                <section className="relative rounded-3xl bg-gradient-to-br from-sky-500/95 to-teal-655/95 text-white p-5 shadow-sm shadow-sky-900/10 overflow-hidden border border-white/20">
                   <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
                   
                   {/* Weather Interactive Address Geocoder */}
                   <div className="flex justify-between items-start relative z-10">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-[10px] text-sky-100 font-semibold bg-white/15 px-2.5 py-0.5 rounded-full w-fit backdrop-blur-md border border-white/10">
+                      <div className="flex items-center gap-1.5 text-[10px] text-sky-100 font-semibold bg-white/15 px-2.5 py-0.5 rounded-full w-fit backdrop-blur-sm border border-white/10">
                         <MapPin className="w-3 h-3 text-sky-200" />
                         <input 
                           type="text" 
@@ -534,13 +534,13 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                           placeholder="Bandung, ID"
                         />
                       </div>
-                      <div className="text-4xl font-black tracking-tighter mt-2">{temperature}°F</div>
+                      <div className="text-4xl font-black tracking-tighter mt-2">{temperature}°C</div>
                       <p className="text-xs font-bold text-teal-50 uppercase tracking-widest">{weatherCondition}</p>
                     </div>
 
                     <button 
                       onClick={() => handleFetchWeather(searchAddressInput)}
-                      className="p-3 bg-white/20 hover:bg-white/30 rounded-2xl backdrop-blur-xl border border-white/20 shadow-lg active:scale-95 transition-transform"
+                      className="p-3 bg-white/20 hover:bg-white/30 rounded-2xl backdrop-blur-sm border border-white/20 shadow-sm active:scale-95 transition-transform"
                     >
                       <CloudSun className="w-10 h-10 text-white drop-shadow" />
                     </button>
@@ -550,16 +550,16 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                   <div className="grid grid-cols-4 gap-2 mt-4 pt-3.5 border-t border-white/15 relative z-10">
                     
                     {/* Pod 1: Feels like */}
-                    <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-md flex flex-col justify-between h-18">
+                    <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-sm flex flex-col justify-between h-18">
                       <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center mx-auto text-[8px]">🌡️</div>
                       <div>
-                        <span className="block text-[10px] font-black">{temperature}°F</span>
+                        <span className="block text-[10px] font-black">{temperature}°C</span>
                         <span className="text-[7px] text-sky-200 block uppercase font-medium">Feels like</span>
                       </div>
                     </div>
 
                     {/* Pod 2: Precipitation */}
-                    <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-md flex flex-col justify-between h-18">
+                    <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-sm flex flex-col justify-between h-18">
                       <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center mx-auto text-[8px]">💧</div>
                       <div>
                         <span className="block text-[10px] font-black">{precipitation}%</span>
@@ -568,7 +568,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                     </div>
 
                     {/* Pod 3: Visibility */}
-                    <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-md flex flex-col justify-between h-18">
+                    <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-sm flex flex-col justify-between h-18">
                       <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center mx-auto text-[8px]">👁️</div>
                       <div>
                         <span className="block text-[10px] font-black">{visibility}m</span>
@@ -577,7 +577,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                     </div>
 
                     {/* Pod 4: Humidity */}
-                    <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-md flex flex-col justify-between h-18">
+                    <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-sm flex flex-col justify-between h-18">
                       <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center mx-auto text-[8px]">💦</div>
                       <div>
                         <span className="block text-[10px] font-black">{humidity}%</span>
@@ -627,9 +627,9 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
 
                   {sortedRecipes.length === 0 ? (
                     <div className="bg-white/60 dark:bg-slate-800/60 rounded-3xl p-10 text-center text-slate-400 border border-sky-100/40">
-                      <AlertCircle className="w-8 h-8 text-sky-400/40 mx-auto mb-2 animate-bounce" />
+                      <AlertCircle className="w-8 h-8 text-sky-400/40 mx-auto mb-2 " />
                       <p className="text-xs font-bold text-slate-700 dark:text-white">Tidak ada menu untuk suhu saat ini</p>
-                      <p className="text-[10px] text-slate-400 mt-1 max-w-[280px] mx-auto">Suhu {temperature}°F tidak mencakup catalog resep. Coba ganti suhu ideal kota Anda!</p>
+                      <p className="text-[10px] text-slate-400 mt-1 max-w-[280px] mx-auto">Suhu {temperature}°C tidak mencakup catalog resep. Coba ganti suhu ideal kota Anda!</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-4">
@@ -641,7 +641,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                         return (
                           <div 
                             key={recipe.id}
-                            className="bg-white/85 dark:bg-slate-800/80 border border-sky-100/70 dark:border-sky-400/5 backdrop-blur-md rounded-3xl p-3 shadow-md flex flex-col justify-between group transition-all duration-300 hover:shadow-lg relative"
+                            className="bg-white/85 dark:bg-slate-800/80 border border-sky-100/70 dark:border-sky-400/5 backdrop-blur-sm rounded-3xl p-3 shadow-md flex flex-col justify-between group transition-all duration-300 hover:shadow-sm relative"
                           >
                             {/* Card Image Frame */}
                             <div 
@@ -664,13 +664,13 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                                   e.stopPropagation();
                                   handleToggleLike(recipe.id);
                                 }}
-                                className={`absolute top-2 right-2 z-20 p-2 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md rounded-full shadow-sm active:scale-90 transition-transform ${isLiked ? 'text-rose-500' : 'text-slate-400'}`}
+                                className={`absolute top-2 right-2 z-20 p-2 bg-white/85 dark:bg-slate-900/85 backdrop-blur-sm rounded-full shadow-sm active:scale-90 transition-transform ${isLiked ? 'text-rose-500' : 'text-slate-400'}`}
                               >
                                 <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
                               </button>
 
                               {/* Prep time floating badge */}
-                              <span className="absolute bottom-2.5 left-2.5 z-20 text-[8px] font-black tracking-wider text-white uppercase bg-slate-900/70 backdrop-blur-md px-2 py-0.5 rounded-md">
+                              <span className="absolute bottom-2.5 left-2.5 z-20 text-[8px] font-black tracking-wider text-white uppercase bg-slate-900/70 backdrop-blur-sm px-2 py-0.5 rounded-md">
                                 {recipe.prepTime}
                               </span>
                             </div>
@@ -949,7 +949,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
               >
                 
                 {/* HERO PROFILE CARD */}
-                <section className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/60 dark:border-sky-400/5 rounded-3xl p-5 shadow-sm text-center relative overflow-hidden">
+                <section className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/60 dark:border-sky-400/5 rounded-3xl p-5 shadow-sm text-center relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-teal-400/10 rounded-full blur-xl -mr-5 -mt-5"></div>
                   
                   <div className="relative inline-block mx-auto">
@@ -989,7 +989,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2">CookEdu Engine Features</h4>
                   
-                  <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/60 dark:border-sky-400/5 rounded-2xl divide-y divide-slate-100 dark:divide-sky-400/10 overflow-hidden shadow-sm">
+                  <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/60 dark:border-sky-400/5 rounded-2xl divide-y divide-slate-100 dark:divide-sky-400/10 overflow-hidden shadow-sm">
                     
                     {/* FEATURE 1: COOKSHARE HUB */}
                     <div onClick={() => navigate('/cookshare')} className="flex items-center justify-between p-4 active:bg-sky-50/50 dark:active:bg-slate-700/50 transition-colors cursor-pointer group">
@@ -1032,7 +1032,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
 
                 {/* UTILITIES PANEL */}
                 <section className="space-y-2">
-                  <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/60 dark:border-sky-400/5 rounded-2xl divide-y divide-slate-100 dark:divide-sky-400/10 overflow-hidden shadow-sm">
+                  <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/60 dark:border-sky-400/5 rounded-2xl divide-y divide-slate-100 dark:divide-sky-400/10 overflow-hidden shadow-sm">
                     
                     {/* UTILITY: THEME CONTEXT SWITCHER */}
                     <div className="flex items-center justify-between p-4">
@@ -1096,7 +1096,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
             initial={{ y: 80 }}
             animate={{ y: 0 }}
             onClick={() => navigate('/')}
-            className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-sky-100 dark:border-sky-400/10 rounded-full py-3 px-8 shadow-xl text-sky-600 dark:text-cyan-400 font-black text-xs uppercase tracking-widest flex items-center gap-2 active:scale-95 transition-all"
+            className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-sky-100 dark:border-sky-400/10 rounded-full py-3 px-8 shadow-sm text-sky-600 dark:text-cyan-400 font-black text-xs uppercase tracking-widest flex items-center gap-2 active:scale-95 transition-all"
           >
             <Utensils className="w-4 h-4" />
             Back to Main App
@@ -1111,7 +1111,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
             aria-hidden="true"
           />
           
-          <div className={`relative w-full bg-sky-50/95 dark:bg-slate-900/95 backdrop-blur-3xl rounded-t-[36px] shadow-2xl border-t border-sky-300/35 flex flex-col max-h-[75vh] overflow-hidden transform transition-transform duration-300 ease-out z-20 ${isCartOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+          <div className={`relative w-full bg-sky-50/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-t-[36px] shadow-sm border-t border-sky-300/35 flex flex-col max-h-[75vh] overflow-hidden transform transition-transform duration-300 ease-out z-20 ${isCartOpen ? 'translate-y-0' : 'translate-y-full'}`}>
             {/* Draw Handle bar */}
             <div 
               className="w-12 h-1.5 bg-sky-300/40 rounded-full mx-auto my-3 shrink-0 cursor-pointer"
@@ -1119,7 +1119,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
             />
 
             {/* Redesigned light-themed header for the drawer */}
-            <div className="px-5 py-3 border-b border-sky-200/40 dark:border-sky-400/5 flex items-center justify-between shrink-0 bg-white/90 dark:bg-slate-850/90 backdrop-blur-xl">
+            <div className="px-5 py-3 border-b border-sky-200/40 dark:border-sky-400/5 flex items-center justify-between shrink-0 bg-white/90 dark:bg-slate-850/90 backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-sky-600 dark:text-cyan-400" />
                 <span className="font-black text-xs text-slate-800 dark:text-white uppercase tracking-widest">Weekly Shopping List</span>
@@ -1146,7 +1146,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
             <div className="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar text-left">
               {shoppingCart.length === 0 ? (
                 <div className="py-12 text-center text-slate-400">
-                  <ShoppingBag className="w-12 h-12 text-sky-400/35 mx-auto mb-3 animate-pulse" />
+                  <ShoppingBag className="w-12 h-12 text-sky-400/35 mx-auto mb-3 " />
                   <p className="text-xs font-bold text-slate-700 dark:text-sky-200">Daftar belanja masih kosong</p>
                   <p className="text-[9px] text-slate-450 mt-1">Kembali ke home resep dan ketuk tombol + di rekomendasi masakan untuk memasukkan bahan!</p>
                 </div>
@@ -1215,7 +1215,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="relative w-full max-w-[360px] bg-sky-50 dark:bg-slate-900 border border-white/50 dark:border-sky-400/10 rounded-[36px] shadow-2xl p-5 text-left z-10 overflow-hidden"
+                className="relative w-full max-w-[360px] bg-sky-50 dark:bg-slate-900 border border-white/50 dark:border-sky-400/10 rounded-[36px] shadow-sm p-5 text-left z-10 overflow-hidden"
               >
                 <div className="flex justify-between items-center pb-3 border-b mb-4 border-sky-100/40 dark:border-sky-400/5">
                   <div>
