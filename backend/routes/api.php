@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\OAuthController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\AdminController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,6 +26,9 @@ Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 // OAuth
 Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirect']);
 Route::get('/auth/{provider}/callback', [OAuthController::class, 'callback']);
+
+// Webhook
+Route::post('/payment/webhook', [SubscriptionController::class, 'webhook']);
 
 // Public recipe browsing
 Route::get('/recipes', [RecipeController::class, 'index']);
@@ -63,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Subscriptions
     Route::get('/subscriptions/plans', [SubscriptionController::class, 'plans']);
     Route::post('/subscriptions/subscribe', [SubscriptionController::class, 'subscribe']);
+    Route::post('/payment/charge', [SubscriptionController::class, 'charge']);
     Route::post('/subscriptions/cancel', [SubscriptionController::class, 'cancel']);
 
     /*
@@ -91,6 +96,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/categories', [CategoryController::class, 'store']);
         Route::put('/categories/{category}', [CategoryController::class, 'update']);
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+
+        // User Role Override
+        Route::put('/users/{id}/role-override', [AdminController::class, 'roleOverride']);
 
         // Audit Logs
         Route::get('/audit-logs', [AuditLogController::class, 'index']);

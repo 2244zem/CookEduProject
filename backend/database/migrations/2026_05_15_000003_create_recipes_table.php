@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('recipes', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('description');
@@ -21,8 +21,8 @@ return new class extends Migration
             $table->integer('prep_time')->default(0); // in minutes
             $table->integer('servings')->default(1);
             $table->jsonb('nutrition')->nullable(); // {calories, protein, carbs, fat}
-            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
-            $table->foreignId('created_by')->constrained('users');
+            $table->foreignUuid('category_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->foreignUuid('created_by')->constrained('users');
             $table->boolean('is_published')->default(true);
             $table->softDeletes();
             $table->timestamps();

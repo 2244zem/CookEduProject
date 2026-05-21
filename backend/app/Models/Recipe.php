@@ -5,11 +5,12 @@ namespace App\Models;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Recipe extends Model
 {
-    use HasFactory, SoftDeletes, Auditable;
+    use HasFactory, HasUuids, SoftDeletes, Auditable;
 
     protected $fillable = [
         'title',

@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('subscriptions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('plan_id')->constrained()->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('plan_id')->constrained()->cascadeOnDelete();
             $table->string('midtrans_subscription_id')->nullable();
             $table->string('status'); // e.g. active, canceled, past_due
             $table->timestamp('starts_at')->nullable();

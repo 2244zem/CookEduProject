@@ -34,6 +34,14 @@ class AuthController extends Controller
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
+        // Strict Identity Validation (SMTP/DNS check)
+        $emailDomain = substr(strrchr($validated['email'], "@"), 1);
+        if (!checkdnsrr($emailDomain, 'MX')) {
+            throw ValidationException::withMessages([
+                'email' => ['Domain email tidak valid atau tidak memiliki mail server (MX record).'],
+            ]);
+        }
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -114,11 +122,15 @@ class AuthController extends Controller
         if ($request->hasFile('avatar')) {
             // Delete old avatar if exists
             if ($user->avatar) {
-                Storage::disk('public')->delete($user->avatar);
+                // If it's a relative path on local storage, we might need a different check, 
+                // but assuming it's all S3 from now on:
+                $oldAvatarPath = str_replace(Storage::disk('s3')->url(''), '', $user->avatar);
+                Storage::disk('s3')->delete($oldAvatarPath);
             }
             
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $validated['avatar'] = $path;
+            $path = $request->file('avatar')->store('avatars', 's3');
+            // Store the absolute cloud URL
+            $validated['avatar'] = Storage::disk('s3')->url($path);
         }
 
         $user->update($validated);

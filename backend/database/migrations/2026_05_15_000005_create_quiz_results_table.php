@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('quiz_results', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('lesson_id')->constrained('lessons')->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignUuid('lesson_id')->constrained('lessons')->cascadeOnDelete();
             $table->integer('score');
             $table->integer('total_questions');
             $table->jsonb('answers')->nullable(); // Store user answers

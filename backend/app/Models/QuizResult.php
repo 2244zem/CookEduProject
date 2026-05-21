@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class QuizResult extends Model
 {
+    use HasUuids;
     protected $fillable = [
         'user_id',
         'lesson_id',
