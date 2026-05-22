@@ -108,37 +108,46 @@ class AuthController extends Controller
      */
     public function updateProfile(Request $request)
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'preferences' => 'nullable|array',
-            'preferences.diet' => 'nullable|string',
-            'preferences.skill_level' => 'nullable|in:beginner,intermediate,advanced',
-        ]);
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'phone' => 'nullable|string|max:20',
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'preferences' => 'nullable|array',
+                'preferences.diet' => 'nullable|string',
+                'preferences.skill_level' => 'nullable|in:beginner,intermediate,advanced',
+            ]);
 
-        if ($request->hasFile('avatar')) {
-            // Delete old avatar if exists
-            if ($user->avatar) {
-                // If it's a relative path on local storage, we might need a different check, 
-                // but assuming it's all S3 from now on:
-                $oldAvatarPath = str_replace(Storage::disk('s3')->url(''), '', $user->avatar);
-                Storage::disk('s3')->delete($oldAvatarPath);
+            if ($request->hasFile('avatar')) {
+                // Delete old avatar if exists in S3
+                if ($user->avatar) {
+                    $oldAvatarPath = str_replace(Storage::disk('s3')->url(''), '', $user->avatar);
+                    if (Storage::disk('s3')->exists($oldAvatarPath)) {
+                        Storage::disk('s3')->delete($oldAvatarPath);
+                    }
+                }
+                
+                $path = $request->file('avatar')->store('avatars', 's3');
+                $validated['avatar'] = Storage::disk('s3')->url($path);
             }
+
+            $user->update($validated);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Profil berhasil diperbarui.',
+                'user' => new UserResource($user->fresh()),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Profile Update Error: ' . $e->getMessage());
             
-            $path = $request->file('avatar')->store('avatars', 's3');
-            // Store the absolute cloud URL
-            $validated['avatar'] = Storage::disk('s3')->url($path);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Internal Server Error: ' . $e->getMessage()
+            ], 500);
         }
-
-        $user->update($validated);
-
-        return response()->json([
-            'message' => 'Profil berhasil diperbarui.',
-            'user' => new UserResource($user->fresh()),
-        ]);
     }
 
     /**

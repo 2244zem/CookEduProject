@@ -37,67 +37,31 @@ export default function Login() {
 
   return (
     <div className="min-h-screen font-sans flex flex-col relative overflow-hidden bg-surface transition-colors duration-500">
-      {/* Drifting Clouds & Ethereal Background - Calmer Pacing */}
-      <div className="absolute inset-0 z-0">
-         <img src={bgHero} alt="" className="w-full h-full object-cover opacity-20 scale-125 animate-float-slow" />
-         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-surface/60 to-primary/5 dark:from-primary/10 dark:via-black/60 dark:to-primary/10" />
-         
-         {/* Animated Soft Clouds (Radial Gradients) - Slower for reduced anxiety */}
-         <motion.div animate={{ x: [-50, 50], y: [-20, 20] }} transition={{ duration: 40, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }} className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-white/60 dark:bg-primary/5 blur-[120px] rounded-full" />
-         <motion.div animate={{ x: [50, -50], y: [20, -20] }} transition={{ duration: 45, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }} className="absolute bottom-[10%] right-[10%] w-[600px] h-[600px] bg-primary/10 blur-[150px] rounded-full" />
+      <div className="absolute inset-0 z-0 bg-slate-50 dark:bg-slate-900">
+         <img src={bgHero} alt="" className="w-full h-full object-cover opacity-10" />
       </div>
 
-      {/* Multi-Layered Sea Waves (Organic) */}
-      <div className="relative h-[320px] md:h-[400px] w-full shrink-0 z-10 overflow-hidden pointer-events-none">
-         {/* Wave Layer 1 (Deepest) */}
-         <motion.div 
-           animate={{ x: [-30, 0, -30] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute inset-0 bg-primary/10 backdrop-blur-2xl"
-           style={{ clipPath: 'ellipse(100% 60% at 50% 0%)' }}
-         />
-         
-         {/* Wave Layer 2 (Middle) */}
-         <motion.div 
-           animate={{ x: [0, -20, 0] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute inset-0 bg-primary/20 backdrop-blur-3xl"
-           style={{ clipPath: 'ellipse(120% 50% at 40% 0%)' }}
-         />
-
-         {/* Wave Layer 3 (Top/Front) */}
-         <motion.div 
-           className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-secondary/80 shadow-2xl"
-           style={{ clipPath: 'ellipse(110% 45% at 50% 0%)' }}
-         >
+      <div className="relative h-[250px] md:h-[300px] w-full shrink-0 z-10 overflow-hidden pointer-events-none bg-primary">
+         <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary-dark">
             <img src={bgPattern} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-         </motion.div>
+         </div>
 
-         <div className="relative z-20 h-full flex flex-col items-center justify-center text-center p-6 mt-[-40px] pointer-events-auto">
-            <motion.div 
-              initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="w-20 h-20 bg-white/20 backdrop-blur-2xl rounded-[32px] flex items-center justify-center mb-6 border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.1)]"
-            >
-               <ChefHat className="w-10 h-10 text-white" />
-            </motion.div>
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-               <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter uppercase leading-none">
+         <div className="relative z-20 h-full flex flex-col items-center justify-center text-center p-6 pointer-events-auto">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+               <ChefHat className="w-8 h-8 text-white" />
+            </div>
+            <div>
+               <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none">
                   Cook<span className="text-white/60">Edu</span>
                </h1>
-               <p className="text-white/80 font-black uppercase tracking-[0.4em] text-[10px] mt-3">Culinary Excellence Awaits</p>
-            </motion.div>
+               <p className="text-white/80 font-bold uppercase tracking-widest text-[10px] mt-2">Culinary Excellence Awaits</p>
+            </div>
          </div>
       </div>
 
       {/* Organic Floating Form Section */}
-      <motion.div 
-        initial={{ y: 50, opacity: 0 }} 
-        animate={{ y: 0, opacity: 1 }} 
-        transition={{ delay: 0.4, type: "spring", damping: 25 }}
-        className="flex-1 flex flex-col items-center p-6 md:p-12 relative z-20 mt-[-60px]"
-      >
-         <div className="w-full max-w-md bg-white/40 dark:bg-white/5 backdrop-blur-2xl p-8 md:p-12 rounded-[40px] shadow-[0_40px_80px_rgba(0,0,0,0.05)] border border-white/60 dark:border-white/10 relative">
-            {/* Soft Shadow Glow behind form */}
-            <div className="absolute -inset-4 bg-primary/5 blur-3xl z-[-1] rounded-[60px]" />
+      <div className="flex-1 flex flex-col items-center p-6 md:p-12 relative z-20 mt-[-40px]">
+         <div className="w-full max-w-md bg-white dark:bg-slate-800 p-8 md:p-12 rounded-[24px] shadow-xl border border-gray-100 dark:border-white/10">
 
             <div className="text-center mb-8">
                <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white">Selamat Datang Kembali</h2>
@@ -159,8 +123,8 @@ export default function Login() {
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <a
-                  href={`${import.meta.env.VITE_API_URL}/api/v1/auth/google/redirect`}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[20px] shadow-sm hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
+                  href={`${import.meta.env.VITE_API_URL || 'https://cookeduproject-production.up.railway.app'}/api/v1/auth/google/redirect`}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-[12px] hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -173,8 +137,8 @@ export default function Login() {
                 </a>
 
                 <a
-                  href={`${import.meta.env.VITE_API_URL}/api/v1/auth/facebook/redirect`}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-[20px] shadow-sm transition-colors"
+                  href={`${import.meta.env.VITE_API_URL || 'https://cookeduproject-production.up.railway.app'}/api/v1/auth/facebook/redirect`}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-[12px] transition-colors"
                 >
                   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -191,7 +155,7 @@ export default function Login() {
                </p>
             </div>
          </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

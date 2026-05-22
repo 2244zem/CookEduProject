@@ -49,50 +49,29 @@ export default function Register() {
 
   return (
     <div className="min-h-screen font-sans flex flex-col relative overflow-hidden bg-surface transition-colors duration-500">
-      {/* Drifting Clouds & Ethereal Background - Calmer Pacing */}
-      <div className="absolute inset-0 z-0">
-         <img src={bgHero} alt="" className="w-full h-full object-cover opacity-20 scale-125 animate-float-slow" />
-         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-surface/60 to-primary/5 dark:from-primary/10 dark:via-black/60 dark:to-primary/10" />
-         
-         {/* Animated Soft Clouds - Slower for reduced anxiety */}
-         <motion.div animate={{ x: [-40, 40], y: [-20, 20] }} transition={{ duration: 45, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }} className="absolute top-[5%] right-[20%] w-[500px] h-[500px] bg-white/60 dark:bg-primary/5 blur-[120px] rounded-full" />
-         <motion.div animate={{ x: [40, -40], y: [20, -20] }} transition={{ duration: 50, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }} className="absolute bottom-[5%] left-[10%] w-[600px] h-[600px] bg-primary/10 blur-[150px] rounded-full" />
+      <div className="absolute inset-0 z-0 bg-slate-50 dark:bg-slate-900">
+         <img src={bgHero} alt="" className="w-full h-full object-cover opacity-10" />
       </div>
 
-      {/* Multi-Layered Sea Waves */}
-      <div className="relative h-[280px] md:h-[350px] w-full shrink-0 z-10 overflow-hidden pointer-events-none">
-         <motion.div 
-           animate={{ x: [-20, 0, -20] }} transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute inset-0 bg-primary/15 backdrop-blur-2xl"
-           style={{ clipPath: 'ellipse(100% 60% at 50% 0%)' }}
-         />
-         <motion.div 
-           className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-secondary shadow-2xl"
-           style={{ clipPath: 'ellipse(110% 45% at 50% 0%)' }}
-         >
+      <div className="relative h-[250px] md:h-[300px] w-full shrink-0 z-10 overflow-hidden pointer-events-none bg-primary">
+         <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary-dark">
             <img src={bgPattern} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay" />
-         </motion.div>
+         </div>
 
-         <div className="relative z-20 h-full flex flex-col items-center justify-center text-center p-6 mt-[-30px] pointer-events-auto">
-            <motion.div 
-              initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-[28px] flex items-center justify-center mb-5 border border-white/40 shadow-xl"
-            >
-               <ChefHat className="w-9 h-9 text-white" />
-            </motion.div>
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-               <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-none drop-shadow-sm">Mulai Perjalananmu</h1>
-               <p className="text-white/90 font-medium tracking-[0.1em] text-[12px] mt-3 drop-shadow-sm">TEMUKAN KEAJAIBAN DI SETIAP RESEP</p>
-            </motion.div>
+         <div className="relative z-20 h-full flex flex-col items-center justify-center text-center p-6 pointer-events-auto">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+               <ChefHat className="w-8 h-8 text-white" />
+            </div>
+            <div>
+               <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-none">Mulai Perjalananmu</h1>
+               <p className="text-white/90 font-medium tracking-[0.1em] text-[12px] mt-2">TEMUKAN KEAJAIBAN DI SETIAP RESEP</p>
+            </div>
          </div>
       </div>
 
       {/* Organic Floating Form Section */}
-      <motion.div 
-        initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4, type: "spring", damping: 25 }}
-        className="flex-1 flex flex-col items-center p-6 md:p-8 relative z-20 mt-[-50px] pb-20"
-      >
-         <div className="w-full max-w-lg bg-white/50 dark:bg-white/5 backdrop-blur-3xl p-8 md:p-12 rounded-[50px] shadow-[0_40px_80px_rgba(0,0,0,0.05)] border border-white/80 dark:border-white/10 relative">
+      <div className="flex-1 flex flex-col items-center p-6 md:p-8 relative z-20 mt-[-40px] pb-20">
+         <div className="w-full max-w-lg bg-white dark:bg-slate-800 p-8 md:p-12 rounded-[24px] shadow-xl border border-gray-100 dark:border-white/10">
             {error && (
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="mb-8 p-4 bg-rose-50/80 border border-rose-100 text-rose-600 text-[13px] font-medium rounded-[20px] text-center shadow-sm">
                  {error}
@@ -162,8 +141,8 @@ export default function Register() {
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <a
-                  href={`${import.meta.env.VITE_API_URL}/api/v1/auth/google/redirect`}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[20px] shadow-sm hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
+                  href={`${import.meta.env.VITE_API_URL || 'https://cookeduproject-production.up.railway.app'}/api/v1/auth/google/redirect`}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-[12px] hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -176,8 +155,8 @@ export default function Register() {
                 </a>
 
                 <a
-                  href={`${import.meta.env.VITE_API_URL}/api/v1/auth/facebook/redirect`}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-[20px] shadow-sm transition-colors"
+                  href={`${import.meta.env.VITE_API_URL || 'https://cookeduproject-production.up.railway.app'}/api/v1/auth/facebook/redirect`}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-[12px] transition-colors"
                 >
                   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -192,9 +171,9 @@ export default function Register() {
                   Sudah memiliki akses?{' '}
                   <Link to="/login" className="text-primary hover:text-primary-dark hover:underline font-semibold ml-1 transition-colors">Masuk di Sini</Link>
                </p>
-            </div>
-         </div>
-      </motion.div>
+             </div>
+          </div>
+       </div>
     </div>
   )
 }
