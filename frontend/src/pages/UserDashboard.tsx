@@ -420,15 +420,13 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
   return (
     <div className={`min-h-screen font-sans flex items-center justify-center p-0 sm:p-6 transition-colors duration-500 overflow-x-hidden ${isDarkMode ? 'bg-[#030712] text-slate-150' : 'bg-gradient-to-b from-[#E0F2FE] via-[#F0F9FF] to-white text-slate-800'}`}>
       
-      {/* 3D PARALLAX AMBIENT BACKDROP SHELL FOR DESKTOP VIEWS */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden opacity-60 dark:opacity-20 hidden sm:block">
+      {/* SIMPLE BACKGROUND FOR DESKTOP VIEWS */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden opacity-30 dark:opacity-10 hidden sm:block">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})` }} />
-        <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay " style={{ backgroundImage: `url(${bgDrop})`, animationDuration: '16s' }} />
-        <div className="absolute inset-0 bg-repeat opacity-[0.015]" style={{ backgroundImage: `url(${foodPattern})`, backgroundSize: '300px' }} />
       </div>
 
       {/* CENTERED NATIVE ANDROID PORTVIEW SIMULATOR FRAME */}
-      <div className="relative w-full sm:max-w-[430px] h-full sm:h-[880px] bg-sky-100/30 dark:bg-slate-900/65 sm:rounded-[50px] sm:border-[8px] sm:border-slate-800 sm:shadow-sm overflow-hidden flex flex-col z-10 backdrop-blur-sm border border-white/30">
+      <div className="relative w-full sm:max-w-[430px] h-full sm:h-[880px] bg-sky-50 dark:bg-slate-900 sm:rounded-[50px] sm:border-[8px] sm:border-slate-800 sm:shadow-sm overflow-hidden flex flex-col z-10 border border-slate-100 dark:border-white/10">
         
         {/* Android Status Bar (Status Bar Notch matching high-end mockup) */}
         <div className="hidden sm:flex bg-slate-950/20 px-6 py-2.5 items-center justify-between text-[11px] font-bold text-slate-800 dark:text-sky-200 shrink-0 select-none z-30">
@@ -441,7 +439,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
         </div>
 
         {/* ================= FIXED MAIN HEADER VIEWPORT ================= */}
-        <header className="p-4 flex items-center justify-between sticky top-0 z-40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm border-b border-white/40 dark:border-sky-400/10 shrink-0">
+        <header className="p-4 flex items-center justify-between sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full border-2 border-sky-400 p-0.5 bg-white dark:bg-slate-800 shadow-sm relative shrink-0">
               <img 
@@ -458,7 +456,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
           </div>
 
           {/* FLOATING ACTION PILL (Twin Buttons) */}
-          <div className="flex items-center bg-white/80 dark:bg-slate-800/85 border border-sky-100 dark:border-sky-400/10 rounded-full p-1 shadow-sm backdrop-blur-sm">
+          <div className="flex items-center bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-full p-1 shadow-sm">
             <button 
               onClick={() => setIsCartOpen(true)}
               className="p-2.5 bg-gradient-to-tr from-sky-500 to-teal-500 text-white rounded-full shadow-md active:scale-95 transition-all relative"
@@ -498,8 +496,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                 
                 {/* OCEAN-SHIMMER SEARCH BAR */}
                 <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-sky-300/40 via-teal-300/40 to-sky-400/40 rounded-2xl blur-md opacity-75 group-focus-within:opacity-100 transition-opacity  duration-[4000ms]"></div>
-                  <div className="relative flex items-center bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/60 dark:border-sky-400/5 rounded-2xl p-3.5 shadow-inner">
+                  <div className="relative flex items-center bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-3.5 shadow-sm">
                     <Search className="text-sky-500 w-5 h-5 mr-3 shrink-0" />
                     <input 
                       type="text" 
@@ -517,8 +514,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                 </div>
 
                 {/* HIGH-FIDELITY LIVE WEATHER CARD WITH OPENWEATHER GEOLOCATION */}
-                <section className="relative rounded-3xl bg-gradient-to-br from-sky-500/95 to-teal-655/95 text-white p-5 shadow-sm shadow-sky-900/10 overflow-hidden border border-white/20">
-                  <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                <section className="relative rounded-3xl bg-gradient-to-br from-sky-500 to-teal-600 text-white p-5 shadow-sm overflow-hidden border border-sky-400">
                   
                   {/* Weather Interactive Address Geocoder */}
                   <div className="flex justify-between items-start relative z-10">
@@ -540,7 +536,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
 
                     <button 
                       onClick={() => handleFetchWeather(searchAddressInput)}
-                      className="p-3 bg-white/20 hover:bg-white/30 rounded-2xl backdrop-blur-sm border border-white/20 shadow-sm active:scale-95 transition-transform"
+                      className="p-3 bg-white/20 hover:bg-white/30 rounded-2xl border border-white/20 shadow-sm active:scale-95 transition-transform"
                     >
                       <CloudSun className="w-10 h-10 text-white drop-shadow" />
                     </button>
@@ -641,7 +637,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                         return (
                           <div 
                             key={recipe.id}
-                            className="bg-white/85 dark:bg-slate-800/80 border border-sky-100/70 dark:border-sky-400/5 backdrop-blur-sm rounded-3xl p-3 shadow-md flex flex-col justify-between group transition-all duration-300 hover:shadow-sm relative"
+                            className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-3xl p-3 shadow-sm flex flex-col justify-between group transition-all duration-300 relative"
                           >
                             {/* Card Image Frame */}
                             <div 
@@ -664,13 +660,13 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                                   e.stopPropagation();
                                   handleToggleLike(recipe.id);
                                 }}
-                                className={`absolute top-2 right-2 z-20 p-2 bg-white/85 dark:bg-slate-900/85 backdrop-blur-sm rounded-full shadow-sm active:scale-90 transition-transform ${isLiked ? 'text-rose-500' : 'text-slate-400'}`}
+                                className={`absolute top-2 right-2 z-20 p-2 bg-white dark:bg-slate-900 rounded-full shadow-sm active:scale-90 transition-transform ${isLiked ? 'text-rose-500' : 'text-slate-400'}`}
                               >
                                 <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
                               </button>
 
                               {/* Prep time floating badge */}
-                              <span className="absolute bottom-2.5 left-2.5 z-20 text-[8px] font-black tracking-wider text-white uppercase bg-slate-900/70 backdrop-blur-sm px-2 py-0.5 rounded-md">
+                              <span className="absolute bottom-2.5 left-2.5 z-20 text-[8px] font-black tracking-wider text-white uppercase bg-slate-900/70 px-2 py-0.5 rounded-md">
                                 {recipe.prepTime}
                               </span>
                             </div>

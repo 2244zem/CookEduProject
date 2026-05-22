@@ -121,16 +121,25 @@ class AuthController extends Controller
             ]);
 
             if ($request->hasFile('avatar')) {
-                // Delete old avatar if exists in S3
+                // Determine the active disk (fallback to public)
+                $disk = env('FILESYSTEM_DISK', 'public');
+                
                 if ($user->avatar) {
-                    $oldAvatarPath = str_replace(Storage::disk('s3')->url(''), '', $user->avatar);
-                    if (Storage::disk('s3')->exists($oldAvatarPath)) {
-                        Storage::disk('s3')->delete($oldAvatarPath);
+                    $oldAvatarPath = str_replace(Storage::disk($disk)->url(''), '', $user->avatar);
+                    if (Storage::disk($disk)->exists($oldAvatarPath)) {
+                        Storage::disk($disk)->delete($oldAvatarPath);
                     }
                 }
                 
-                $path = $request->file('avatar')->store('avatars', 's3');
-                $validated['avatar'] = Storage::disk('s3')->url($path);
+                $path = $request->file('avatar')->store('avatars', $disk);
+                $url = Storage::disk($disk)->url($path);
+                
+                // Force HTTPS to prevent mixed content on proxy environments
+                if (str_starts_with($url, 'http://')) {
+                    $url = str_replace('http://', 'https://', $url);
+                }
+                
+                $validated['avatar'] = $url;
             }
 
             $user->update($validated);

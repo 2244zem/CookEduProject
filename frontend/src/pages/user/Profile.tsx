@@ -84,9 +84,8 @@ export default function Profile() {
       isDarkMode ? 'dark text-white' : 'text-slate-800'
     } pb-40`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
-        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
-        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-10">
+        <div className="absolute inset-0 bg-slate-50 dark:bg-slate-900" />
       </div>
 
       <div className="relative z-10 max-w-lg mx-auto">
@@ -139,7 +138,7 @@ export default function Profile() {
                   type="text" 
                   value={form.name}
                   onChange={(e) => setForm({...form, name: e.target.value})}
-                  className="w-full bg-white/70 backdrop-blur-xl border-2 border-white rounded-2xl px-6 py-3 font-black text-xl text-center focus:border-cyan-500/20 transition-all outline-none shadow-premium"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-3 font-black text-xl text-center outline-none shadow-sm"
                   placeholder="Nama Lengkap"
                 />
                 <button 
@@ -165,21 +164,21 @@ export default function Profile() {
         <main className="px-6 space-y-6">
           {/* STATS GRID */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/70 backdrop-blur-2xl p-6 rounded-[32px] border border-white shadow-premium">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-[32px] border border-slate-100 dark:border-slate-700 shadow-sm">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Learning Progress</p>
               <p className="text-2xl font-black text-cyan-600">78%</p>
-              <div className="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
                 <div className="bg-cyan-500 h-full w-[78%]" />
               </div>
             </div>
-            <div className="bg-white/70 backdrop-blur-2xl p-6 rounded-[32px] border border-white shadow-premium flex flex-col justify-center">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-[32px] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-center">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Resep Dikuasai</p>
-              <p className="text-2xl font-black text-slate-900">12</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white">12</p>
             </div>
           </div>
 
           {/* MENU LIST */}
-          <div className="bg-white/70 backdrop-blur-2xl rounded-[40px] border border-white shadow-premium overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-[40px] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
             <MenuLink icon={Mail} label="Email" value={user?.email} disabled />
             <MenuLink 
               icon={Phone} 
