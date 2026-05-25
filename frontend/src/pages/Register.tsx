@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { authApi } from '../lib/api'
+import { authApi, resolveApiBaseUrl } from '../lib/api'
 import { ChefHat, Mail, Lock, User, Phone, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import bgHero from '../assets/background.png'
@@ -47,7 +47,7 @@ export default function Register() {
     { key: 'phone', label: 'Phone Number', type: 'tel', icon: Phone, placeholder: '08xxxxxxxxxx' },
   ]
 
-  const OAUTH_URL = import.meta.env.VITE_API_URL || 'https://cookeduproject-production.up.railway.app';
+  const OAUTH_URL = resolveApiBaseUrl();
 
   return (
     <div className="min-h-screen font-sans flex flex-col relative overflow-hidden bg-surface transition-colors duration-500">
@@ -143,7 +143,7 @@ export default function Register() {
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <a
-                  href={`${OAUTH_URL}/api/auth/google/redirect`}
+                  href={`${OAUTH_URL}/auth/google/redirect`}
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -157,7 +157,7 @@ export default function Register() {
                 </a>
 
                 <a
-                  href={`${OAUTH_URL}/api/auth/facebook/redirect`}
+                  href={`${OAUTH_URL}/auth/facebook/redirect`}
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-xl shadow-sm transition-colors"
                 >
                   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">

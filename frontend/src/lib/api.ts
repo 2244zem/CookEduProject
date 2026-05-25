@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useDebugStore } from '../store/debugStore';
 
-function resolveApiBaseUrl(): string {
+export function resolveApiBaseUrl(): string {
   const fromEnv = import.meta.env.VITE_API_URL?.trim();
   if (fromEnv) {
     if (!fromEnv.startsWith('http://') && !fromEnv.startsWith('https://') && fromEnv.includes('railway.app')) {
