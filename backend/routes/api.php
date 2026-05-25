@@ -23,6 +23,20 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/password/otp', [AuthController::class, 'sendOTP']);
 Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 
+Route::get('/run-migration', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
+        return response()->json([
+            'message' => 'Database successfully migrated (migrate:fresh)!',
+            'output' => \Illuminate\Support\Facades\Artisan::output()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Migration failed',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
 // OAuth
 Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirect']);
 Route::get('/auth/{provider}/callback', [OAuthController::class, 'callback']);
