@@ -16,7 +16,15 @@ class RecipeResource extends JsonResource
             'description' => $this->description,
             'ingredients' => $this->ingredients,
             'steps' => $this->steps,
-            'image_url' => $this->image_url ? (str_starts_with($this->image_url, 'http') ? $this->image_url : asset('storage/' . $this->image_url)) : null,
+            'image_url' => $this->image_url ? (
+                str_starts_with($this->image_url, 'http')
+                    ? $this->image_url
+                    : (
+                        (str_contains(config('app.url'), 'localhost') || str_contains(config('app.url'), '127.0.0.1'))
+                            ? $request->getSchemeAndHttpHost() . '/storage/' . $this->image_url
+                            : asset('storage/' . $this->image_url)
+                    )
+            ) : null,
             'difficulty' => $this->difficulty,
             'cooking_time' => $this->cooking_time,
             'nutritional_info' => $this->nutritional_info,

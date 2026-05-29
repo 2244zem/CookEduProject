@@ -48,11 +48,29 @@ class RecipeFactory extends Factory
 
         $steps[] = ['instruction' => 'Sajikan selagi hangat untuk rasa terbaik.', 'tip' => 'Tambahkan hiasan sayuran.'];
 
+        $foodImages = [
+            'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&w=800',
+            'https://images.unsplash.com/photo-1604152135912-04a022e23696?auto=format&fit=crop&w=800',
+            'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&q=80&w=800'
+        ];
+
         return [
             'title' => $title,
             'slug' => Str::slug($title),
             'description' => 'Resep lezat ' . $name . ' yang diolah dengan bahan pilihan dan bumbu rahasia CookEdu.',
-            'image_url' => "https://source.unsplash.com/featured/800x600?food,{$data['keywords']}",
+            'image_url' => $this->faker->randomElement($foodImages),
             'difficulty' => $this->faker->randomElement(['beginner', 'intermediate', 'advanced']),
             'ingredients' => [
                 ['item' => 'Bahan Utama ' . $name, 'amount' => '500', 'unit' => 'gram', 'calories' => $data['cal'] * 0.7, 'protein' => $data['prot'] * 0.7, 'carbs' => $data['carbs'] * 0.7, 'fat' => $data['fat'] * 0.7],
