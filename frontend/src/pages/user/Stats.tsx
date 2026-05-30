@@ -49,7 +49,7 @@ export default function Stats() {
       isDarkMode ? 'dark text-white' : 'text-slate-800'
     } pb-40`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>

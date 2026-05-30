@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { authApi } from '../lib/api'
-import { ChefHat, Mail, Lock, User, Phone, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react'
+import { ChefHat, Mail, Lock, User, Phone, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import bgHero from '../assets/background.png'
 import bgPattern from '../assets/food_drawing.jpg'
@@ -44,116 +44,127 @@ export default function Register() {
   ]
 
   return (
-    <div className="min-h-screen font-sans flex flex-col relative overflow-hidden bg-surface transition-colors duration-500">
-      {/* Drifting Clouds & Ethereal Background - Calmer Pacing */}
+    <div className="min-h-screen font-sans relative overflow-hidden bg-surface p-4 transition-colors duration-500 lg:p-8">
       <div className="absolute inset-0 z-0">
-         <img src={bgHero} alt="" className="w-full h-full object-cover opacity-20 scale-125 animate-float-slow" />
-         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-surface/60 to-primary/5 dark:from-primary/10 dark:via-black/60 dark:to-primary/10" />
-         
-         {/* Animated Soft Clouds - Slower for reduced anxiety */}
-         <motion.div animate={{ x: [-40, 40], y: [-20, 20] }} transition={{ duration: 45, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }} className="absolute top-[5%] right-[20%] w-[500px] h-[500px] bg-white/60 dark:bg-primary/5 blur-[120px] rounded-full" />
-         <motion.div animate={{ x: [40, -40], y: [20, -20] }} transition={{ duration: 50, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }} className="absolute bottom-[5%] left-[10%] w-[600px] h-[600px] bg-primary/10 blur-[150px] rounded-full" />
+        <img src={bgHero} alt="" className="h-full w-full scale-110 object-cover opacity-10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-sky-50/80 to-primary/10" />
       </div>
 
-      {/* Multi-Layered Sea Waves */}
-      <div className="relative h-[280px] md:h-[350px] w-full shrink-0 z-10 overflow-hidden pointer-events-none">
-         <motion.div 
-           animate={{ x: [-20, 0, -20] }} transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute inset-0 bg-primary/15 backdrop-blur-2xl"
-           style={{ clipPath: 'ellipse(100% 60% at 50% 0%)' }}
-         />
-         <motion.div 
-           className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-secondary shadow-2xl"
-           style={{ clipPath: 'ellipse(110% 45% at 50% 0%)' }}
-         >
-            <img src={bgPattern} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay" />
-         </motion.div>
-
-         <div className="relative z-20 h-full flex flex-col items-center justify-center text-center p-6 mt-[-30px] pointer-events-auto">
-            <motion.div 
-              initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-[28px] flex items-center justify-center mb-5 border border-white/40 shadow-xl"
-            >
-               <ChefHat className="w-9 h-9 text-white" />
-            </motion.div>
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-               <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-none drop-shadow-sm">Mulai Perjalananmu</h1>
-               <p className="text-white/90 font-medium tracking-[0.1em] text-[12px] mt-3 drop-shadow-sm">TEMUKAN KEAJAIBAN DI SETIAP RESEP</p>
-            </motion.div>
-         </div>
-      </div>
-
-      {/* Organic Floating Form Section */}
-      <motion.div 
-        initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4, type: "spring", damping: 25 }}
-        className="flex-1 flex flex-col items-center p-6 md:p-8 relative z-20 mt-[-50px] pb-20"
-      >
-         <div className="w-full max-w-lg bg-white/50 dark:bg-white/5 backdrop-blur-3xl p-8 md:p-12 rounded-[50px] shadow-[0_40px_80px_rgba(0,0,0,0.05)] border border-white/80 dark:border-white/10 relative">
-            {error && (
-              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="mb-8 p-4 bg-rose-50/80 border border-rose-100 text-rose-600 text-[13px] font-medium rounded-[20px] text-center shadow-sm">
-                 {error}
-              </motion.div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   {fields.map(({ key, label, type, icon: Icon, placeholder }, idx) => (
-                    <motion.div key={key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + idx * 0.1 }} className="space-y-2">
-                       <label className="text-xs font-semibold text-gray-500 ml-5">{label}</label>
-                       <div className="relative group">
-                          <input 
-                            type={type} value={(form as any)[key]} onChange={(e) => update(key, e.target.value)}
-                            className="w-full relative z-10 bg-white/70 dark:bg-white/10 border border-gray-100 dark:border-white/10 rounded-[24px] py-4 px-6 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-gray-700 dark:text-white placeholder:text-gray-400 shadow-sm text-sm"
-                            placeholder={placeholder} required={key !== 'phone'}
-                          />
-                          <Icon className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors pointer-events-none z-20" />
-                       </div>
-                    </motion.div>
-                  ))}
-
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="space-y-2">
-                     <label className="text-xs font-semibold text-gray-500 ml-5">Kata Sandi</label>
-                     <div className="relative group">
-                        <input 
-                          type={showPass ? 'text' : 'password'} value={form.password} onChange={(e) => update('password', e.target.value)}
-                          className="w-full relative z-10 bg-white/70 dark:bg-white/10 border border-gray-100 dark:border-white/10 rounded-[24px] py-4 px-6 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-gray-700 dark:text-white placeholder:text-gray-400 shadow-sm text-sm"
-                          placeholder="Minimal 8 karakter" required
-                        />
-                        <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors focus:outline-none z-20">
-                           {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                        </button>
-                     </div>
-                  </motion.div>
-
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="space-y-2 md:col-span-2">
-                     <label className="text-xs font-semibold text-gray-500 ml-5">Ulangi Kata Sandi</label>
-                     <div className="relative group">
-                        <input 
-                          type="password" value={form.password_confirmation} onChange={(e) => update('password_confirmation', e.target.value)}
-                          className="w-full relative z-10 bg-white/70 dark:bg-white/10 border border-gray-100 dark:border-white/10 rounded-[24px] py-4 px-6 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-gray-700 dark:text-white placeholder:text-gray-400 shadow-sm text-sm"
-                          placeholder="Masukkan kembali kata sandi" required
-                        />
-                        <Lock className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors pointer-events-none z-20" />
-                     </div>
-                  </motion.div>
-               </div>
-
-               <button 
-                 type="submit" disabled={loading}
-                 className="w-full bg-gradient-to-r from-primary to-primary-dark text-white rounded-[24px] py-4 font-bold text-[14px] shadow-[0_10px_20px_rgba(0,180,216,0.2)] hover:shadow-[0_15px_30px_rgba(0,180,216,0.3)] transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] mt-10"
-               >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Buat Akun Saya'}
-               </button>
-            </form>
-
-            <div className="mt-10 text-center">
-               <p className="text-gray-500 font-medium text-sm">
-                  Sudah memiliki akses?{' '}
-                  <Link to="/login" className="text-primary hover:text-primary-dark hover:underline font-semibold ml-1 transition-colors">Masuk di Sini</Link>
-               </p>
+      <div className="relative z-10 mx-auto grid min-h-[calc(100vh-2rem)] w-full max-w-6xl items-center gap-6 lg:min-h-[calc(100vh-4rem)] lg:grid-cols-[minmax(0,0.85fr)_minmax(520px,1fr)]">
+        <section className="hidden h-full min-h-[640px] overflow-hidden rounded-[44px] bg-gradient-to-br from-primary via-primary to-primary-dark p-10 text-white shadow-2xl lg:flex lg:flex-col lg:justify-between">
+          <div className="absolute inset-0 pointer-events-none hidden lg:block">
+            <img src={bgPattern} alt="" className="h-full w-full object-cover opacity-10 mix-blend-overlay" />
+          </div>
+          <div className="relative">
+            <div className="flex h-16 w-16 items-center justify-center rounded-[24px] bg-white/18 ring-1 ring-white/25">
+              <ChefHat className="h-9 w-9" />
             </div>
-         </div>
-      </motion.div>
+            <h1 className="mt-10 max-w-xl text-5xl font-black leading-[0.98] tracking-tight">
+              Mulai perjalanan memasak yang lebih rapi.
+            </h1>
+            <p className="mt-5 max-w-md text-base font-bold leading-7 text-white/75">
+              Daftar sekali, lalu sinkronkan resep, catatan, dan progres belajar dengan backend CookEdu.
+            </p>
+          </div>
+          <div className="relative rounded-[32px] bg-white/12 p-5 ring-1 ring-white/15">
+            <p className="text-xs font-black uppercase tracking-widest text-white/60">Cook Edu</p>
+            <p className="mt-2 text-sm font-bold leading-6 text-white/80">Layout desktop dibuat lega agar form tidak terasa sempit.</p>
+          </div>
+        </section>
+
+        <motion.div
+          initial={{ y: 24, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', damping: 24 }}
+          className="mx-auto w-full max-w-2xl rounded-[36px] border border-white/80 bg-white/85 p-7 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:p-9"
+        >
+          <div className="mb-8 text-left">
+            <div className="mb-6 flex items-center gap-3 lg:hidden">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white">
+                <ChefHat className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xl font-black tracking-tight text-slate-900">Cook Edu</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">Daftar</p>
+              </div>
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">Buat Akun</h2>
+            <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">Isi data utama untuk membuka pengalaman belajar penuh.</p>
+          </div>
+
+          {error && (
+            <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="mb-6 rounded-2xl border border-rose-100 bg-rose-50/90 p-4 text-center text-[13px] font-semibold text-rose-600">
+              {error}
+            </motion.div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              {fields.map(({ key, label, type, icon: Icon, placeholder }) => (
+                <div key={key} className={key === 'phone' ? 'md:col-span-2 lg:col-span-1' : ''}>
+                  <label className="ml-1 text-xs font-black uppercase tracking-wide text-slate-500">{label}</label>
+                  <div className="relative mt-2">
+                    <input
+                      type={type}
+                      value={(form as any)[key]}
+                      onChange={(e) => update(key, e.target.value)}
+                      className="h-14 w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 pr-12 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:border-primary/40 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
+                      placeholder={placeholder}
+                      required={key !== 'phone'}
+                    />
+                    <Icon className="absolute right-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  </div>
+                </div>
+              ))}
+
+              <div>
+                <label className="ml-1 text-xs font-black uppercase tracking-wide text-slate-500">Kata Sandi</label>
+                <div className="relative mt-2">
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    value={form.password}
+                    onChange={(e) => update('password', e.target.value)}
+                    className="h-14 w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 pr-12 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:border-primary/40 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
+                    placeholder="Minimal 8 karakter"
+                    required
+                  />
+                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-primary">
+                    {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="ml-1 text-xs font-black uppercase tracking-wide text-slate-500">Ulangi Kata Sandi</label>
+                <div className="relative mt-2">
+                  <input
+                    type="password"
+                    value={form.password_confirmation}
+                    onChange={(e) => update('password_confirmation', e.target.value)}
+                    className="h-14 w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 pr-12 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:border-primary/40 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
+                    placeholder="Masukkan kembali kata sandi"
+                    required
+                  />
+                  <Lock className="absolute right-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-sm font-black text-white shadow-[0_16px_32px_rgba(0,180,216,0.22)] transition hover:translate-y-[-1px] disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Buat Akun Saya'}
+            </button>
+          </form>
+
+          <p className="mt-8 text-center text-sm font-semibold text-slate-500">
+            Sudah memiliki akses?{' '}
+            <Link to="/login" className="font-black text-primary hover:text-primary-dark">Masuk di Sini</Link>
+          </p>
+        </motion.div>
+      </div>
     </div>
   )
 }

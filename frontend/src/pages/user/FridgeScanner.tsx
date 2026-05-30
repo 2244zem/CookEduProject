@@ -90,13 +90,13 @@ export default function FridgeScanner() {
       isDarkMode ? 'dark text-white' : 'text-slate-800'
     } pb-40`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      <div className="relative z-10 max-w-lg mx-auto">
-        <header className="px-6 pt-12">
+      <div className="relative z-10 mx-auto max-w-lg lg:max-w-7xl">
+        <header className="px-6 pt-12 lg:px-0 lg:pt-2">
           <motion.button 
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate('/')}
@@ -119,7 +119,7 @@ export default function FridgeScanner() {
           </div>
         </header>
 
-        <main className="px-6 space-y-8">
+        <main className="px-6 space-y-8 lg:grid lg:grid-cols-[420px_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0 lg:px-0">
           {/* INPUT CARD */}
           <div className="bg-white/70 backdrop-blur-2xl p-8 rounded-[40px] shadow-premium border border-white/80">
             <div className="relative mb-6">
@@ -220,7 +220,7 @@ export default function FridgeScanner() {
                 <p className="text-sm text-slate-400 mt-2">Coba tambahkan bahan dasar lain.</p>
               </motion.div>
             ) : recipes.length > 0 ? (
-              <div className="space-y-6">
+              <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
                 {recipes.map((recipe, i) => (
                   <motion.div 
                     key={recipe.id}

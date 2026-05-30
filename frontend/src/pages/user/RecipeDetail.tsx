@@ -151,13 +151,13 @@ export default function RecipeDetail() {
       </AnimatePresence>
 
       {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
       {/* TOP IMAGE SECTION */}
-      <div className="relative h-[55vh] w-full overflow-hidden z-10">
+      <div className="relative z-10 h-[55vh] w-full overflow-hidden rounded-none lg:h-[45vh] lg:rounded-[36px]">
         <motion.img 
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
@@ -208,14 +208,14 @@ export default function RecipeDetail() {
       </div>
 
       {/* FROSTED GLASS LOWER PANEL */}
-      <div className="relative z-20 -mt-10 max-w-2xl mx-auto px-4 pb-32">
+      <div className="relative z-20 -mt-10 mx-auto max-w-2xl px-4 pb-32 lg:max-w-6xl">
         <motion.div 
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="bg-white/70 backdrop-blur-3xl rounded-[48px] shadow-2xl border border-white/80 p-8 md:p-12"
+          className="rounded-[48px] border border-white/80 bg-white/70 p-8 shadow-2xl backdrop-blur-3xl md:p-12 lg:bg-white"
         >
           {/* Minimalist Metrics Grid */}
-          <div className="grid grid-cols-4 gap-4 mb-12 border-b border-cyan-50 pb-10">
+          <div className="mb-12 grid grid-cols-2 gap-4 border-b border-cyan-50 pb-10 sm:grid-cols-4">
             {[
               { icon: Clock, label: 'Waktu', val: recipe.prepTime, color: 'text-cyan-600', bg: 'bg-cyan-50' },
               { icon: Flame, label: 'Kalori', val: recipe.calories, color: 'text-rose-500', bg: 'bg-rose-50' },
@@ -247,8 +247,8 @@ export default function RecipeDetail() {
                 <Heart className="w-12 h-12 text-amber-600" />
               </div>
               <div className="flex gap-4 items-start relative z-10">
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                  <span className="text-xl">👩‍🍳</span>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                  <ChefHat className="h-5 w-5" />
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-amber-800 uppercase tracking-widest mb-1">Catatan Ibu</h4>
@@ -286,7 +286,7 @@ export default function RecipeDetail() {
             </section>
           )}
 
-          <div className="space-y-16">
+          <div className="space-y-16 lg:grid lg:grid-cols-[0.9fr_1.1fr] lg:gap-12 lg:space-y-0">
             {/* Ingredients Section */}
             <section>
               <div className="flex items-center gap-4 mb-8">
@@ -372,7 +372,7 @@ export default function RecipeDetail() {
           </div>
 
           {/* Master Cooking CTA */}
-          <div className="mt-20 flex flex-col gap-4">
+          <div className="mt-20 flex flex-col gap-4 lg:flex-row">
             <motion.button
               whileHover={{ scale: 1.02, y: -5 }}
               whileTap={{ scale: 0.98 }}

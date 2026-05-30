@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Heart, MessageCircle, Share2, Bookmark, Play, Plus, Search, 
-  ArrowLeft, Send, Star, X, Sparkles, Image, Video, Compass, UserCheck
+  ArrowLeft, Send, Star, X, Sparkles, Image, Compass, UserCheck
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
@@ -241,7 +241,7 @@ export default function CookShare() {
     <div className="min-h-screen font-sans relative overflow-hidden flex justify-center pb-24 select-none text-slate-800 dark:text-slate-100 bg-transparent">
       
       {/* ================= GLOBAL DEEP-BLUE OCEAN PARALLAX BACKDROP ================= */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden lg:hidden">
         {/* 1. Deep ocean fluid wallpaper */}
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-90 scale-105"
@@ -263,10 +263,10 @@ export default function CookShare() {
       </div>
 
       {/* ================= VIEWPORT MAIN WRAPPER CONTAINER ================= */}
-      <div className="relative z-10 w-full max-w-md p-4 flex flex-col space-y-6">
+      <div className="relative z-10 w-full max-w-md p-4 flex flex-col space-y-6 lg:max-w-6xl lg:p-8">
         
         {/* ================= TRAVELINGG-INSPIRED HEADER PANEL ================= */}
-        <header className="flex items-center justify-between bg-white/40 dark:bg-slate-900/45 backdrop-blur-xl border border-white/50 dark:border-sky-500/10 p-4 rounded-[32px] shadow-sm shrink-0">
+        <header className="flex items-center justify-between bg-white/40 dark:bg-slate-900/45 backdrop-blur-xl border border-white/50 dark:border-sky-500/10 p-4 rounded-[32px] shadow-sm shrink-0 lg:bg-white lg:p-5 lg:shadow-md">
           <div className="flex items-center gap-3 text-left">
             <button 
               onClick={() => navigate('/')} 
@@ -282,13 +282,13 @@ export default function CookShare() {
           </div>
 
           <div className="w-10 h-10 bg-gradient-to-tr from-sky-400 to-teal-400 rounded-xl flex items-center justify-center text-white shadow-md shadow-sky-500/20">
-            <Compass className="w-5 h-5 animate-spin-slow text-white" />
+            <Compass className="w-5 h-5 text-white" />
           </div>
         </header>
 
         {/* ================= SEARCH INPUT ================= */}
         <div className="relative w-full group">
-          <div className="absolute inset-0 bg-gradient-to-r from-sky-300/40 via-teal-300/40 to-sky-400/40 rounded-[28px] blur-md opacity-75 group-focus-within:opacity-100 transition-opacity animate-pulse duration-[4000ms]"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-300/25 via-teal-300/25 to-sky-400/25 rounded-[28px] blur-md opacity-70 group-focus-within:opacity-100 transition-opacity"></div>
           <div className="relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/60 dark:border-sky-400/5 p-1 rounded-[28px] shadow-inner flex items-center h-12">
             <Search className="text-sky-500 ml-4 w-4 h-4 shrink-0" />
             <input 
@@ -307,19 +307,21 @@ export default function CookShare() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`py-2 px-4 rounded-full text-[10px] font-black tracking-wider uppercase shrink-0 transition-all active:scale-95 border ${
+              className={`relative py-2 px-4 rounded-full text-[0px] font-black tracking-wider uppercase shrink-0 transition-all active:scale-95 border ${
                 activeCategory === cat
                   ? "bg-gradient-to-r from-sky-500 to-teal-500 border-sky-400 text-white shadow-md shadow-sky-500/10"
                   : "bg-white/60 dark:bg-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-800/80 border-white/50 dark:border-sky-400/10 text-slate-600 dark:text-sky-200/70"
               }`}
             >
-              {cat === "Semua" ? "🔥 Semua" : cat === "Soup" ? "🍵 Sup & Soto" : cat === "Dessert" ? "🍰 Dessert" : "🍳 Main Course"}
+              <span className="text-[10px]">
+                {cat === "Semua" ? "Semua" : cat === "Soup" ? "Sup & Soto" : cat === "Dessert" ? "Dessert" : "Main Course"}
+              </span>
             </button>
           ))}
         </div>
 
         {/* ================= FEED CARDS CATALOG ================= */}
-        <main className="space-y-6 overflow-y-auto max-h-[calc(100vh-270px)] pr-0.5 no-scrollbar pb-16">
+        <main className="space-y-6 overflow-y-auto max-h-[calc(100vh-270px)] pr-0.5 no-scrollbar pb-16 lg:grid lg:max-h-none lg:grid-cols-2 lg:gap-6 lg:space-y-0 lg:overflow-visible lg:pb-20 xl:grid-cols-3">
           <AnimatePresence>
             {filteredPosts.map((post) => (
               <motion.div
@@ -469,7 +471,7 @@ export default function CookShare() {
         {/* ================= FLOATING ACTION BUTTON: SHARE MASTERPIECE ================= */}
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="fixed bottom-6 right-6 md:right-auto md:left-[calc(50%+130px)] z-40 bg-gradient-to-tr from-sky-500 to-teal-500 hover:from-sky-600 hover:to-teal-600 text-white rounded-full p-4.5 shadow-2xl flex items-center justify-center border border-white/20 active:scale-95 transition-transform"
+          className="fixed bottom-6 right-6 z-40 bg-gradient-to-tr from-sky-500 to-teal-500 hover:from-sky-600 hover:to-teal-600 text-white rounded-full p-4.5 shadow-2xl flex items-center justify-center border border-white/20 active:scale-95 transition-transform lg:bottom-10 lg:right-10"
           title="Share Preview Karya Anda"
           aria-label="Bagikan Karya"
         >
@@ -481,7 +483,7 @@ export default function CookShare() {
       {/* ================= BOTTOM SHEET DRAWER: COMMENT SECTION (Thumb-Zone Rule) ================= */}
       <AnimatePresence>
         {selectedPostForComments && (
-          <div className="fixed inset-0 z-[120] flex flex-col justify-end">
+          <div className="fixed inset-0 z-[120] flex flex-col justify-end lg:items-center lg:justify-center lg:p-8">
             
             {/* Backdrop layer */}
             <motion.div
@@ -498,7 +500,7 @@ export default function CookShare() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: 'spring', damping: 24, stiffness: 140 }}
-              className="relative w-full max-w-md mx-auto bg-[#071324]/95 border-t border-sky-300/30 rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[75vh] z-10 overflow-hidden text-left"
+              className="relative w-full max-w-md mx-auto bg-[#071324]/95 border-t border-sky-300/30 rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[75vh] z-10 overflow-hidden text-left lg:max-w-2xl lg:rounded-[2.25rem] lg:border"
             >
               {/* Drag Pill Handle */}
               <div 
@@ -589,7 +591,7 @@ export default function CookShare() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-sm bg-[#071324]/95 border border-sky-300/30 rounded-[2.5rem] shadow-2xl p-6 z-10 overflow-hidden text-left"
+               className="relative w-full max-w-sm bg-[#071324]/95 border border-sky-300/30 rounded-[2.5rem] shadow-2xl p-6 z-10 overflow-hidden text-left lg:max-w-2xl lg:p-8"
             >
               
               {/* Modal Header */}
@@ -690,9 +692,9 @@ export default function CookShare() {
                 {/* Submit button */}
                 <button
                   type="submit"
-                  className="w-full py-3.5 mt-2 bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-650 hover:to-teal-650 text-white rounded-xl text-xs font-black tracking-wider uppercase shadow-md active:scale-95 transition-all"
+                  className="w-full py-3.5 mt-2 bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-650 hover:to-teal-650 text-white rounded-xl text-[0px] font-black tracking-wider uppercase shadow-md active:scale-95 transition-all"
                 >
-                  Terbitkan Karya 🚀
+                  <span className="text-xs">Terbitkan Karya</span>
                 </button>
 
               </form>
@@ -721,7 +723,7 @@ export default function CookShare() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-md bg-black rounded-[2.5rem] border border-sky-300/30 overflow-hidden shadow-2xl aspect-video z-10"
+              className="relative w-full max-w-md bg-black rounded-[2.5rem] border border-sky-300/30 overflow-hidden shadow-2xl aspect-video z-10 lg:max-w-4xl"
             >
               <iframe
                 src={activeVideoUrl}

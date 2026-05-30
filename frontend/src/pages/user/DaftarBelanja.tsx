@@ -32,14 +32,14 @@ export default function DaftarBelanja() {
       isDarkMode ? 'dark text-white' : 'text-slate-800'
     } pb-40`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      <div className="relative z-10 max-w-lg mx-auto">
+      <div className="relative z-10 mx-auto max-w-lg lg:max-w-7xl">
         {/* SERENE HEADER */}
-        <header className="px-6 pt-10 flex items-center justify-between">
+        <header className="px-6 pt-10 flex items-center justify-between lg:px-0 lg:pt-2">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -74,7 +74,7 @@ export default function DaftarBelanja() {
         </header>
 
         {/* SEARCH BOX */}
-        <section className="px-6 mt-8">
+        <section className="px-6 mt-8 lg:px-0">
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -90,7 +90,7 @@ export default function DaftarBelanja() {
         </section>
 
         {/* SHOPPING TABS */}
-        <section className="px-6 mt-8">
+        <section className="px-6 mt-8 lg:px-0">
           <h3 className="text-sm font-black text-slate-800 mb-4 ml-1">Grup Belanja & Inventaris</h3>
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
             {[
@@ -118,7 +118,7 @@ export default function DaftarBelanja() {
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-6 mt-8"
+            className="px-6 mt-8 lg:px-0"
           >
             <div className="bg-cyan-600 text-white p-6 rounded-[32px] shadow-xl flex items-center justify-between overflow-hidden relative">
               <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-white/10 blur-[40px] rounded-full" />
@@ -136,12 +136,12 @@ export default function DaftarBelanja() {
           </motion.div>
         )}
 
-        <main className="px-6 mt-8 space-y-6">
+        <main className="px-6 mt-8 space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0 lg:px-0 xl:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {activeTab === 'merged' || activeTab === 'inventory' ? (
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="bg-white/80 backdrop-blur-2xl border-2 border-white rounded-[40px] p-6 shadow-xl"
+                className="rounded-[40px] border-2 border-white bg-white/80 p-6 shadow-xl backdrop-blur-2xl lg:col-span-2 xl:col-span-3"
               >
                 <div className="flex items-center gap-4 mb-6">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${activeTab === 'merged' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
@@ -193,7 +193,7 @@ export default function DaftarBelanja() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white/70 backdrop-blur-2xl p-12 rounded-[40px] text-center border border-white shadow-premium"
+                className="rounded-[40px] border border-white bg-white/70 p-12 text-center shadow-premium backdrop-blur-2xl lg:col-span-2 xl:col-span-3"
               >
                 <ShoppingCart className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                 <p className="text-sm text-slate-400 font-bold">Belum ada daftar belanja.</p>

@@ -304,7 +304,7 @@ export default function CookingMode() {
                  <Award className="w-10 h-10 text-white animate-pulse" />
               </div>
               
-              <h2 className="text-2xl font-black mb-1.5 text-slate-800 tracking-tight">Koki Hebat! 👩‍🍳</h2>
+              <h2 className="text-2xl font-black mb-1.5 text-slate-800 tracking-tight">Koki Hebat!</h2>
               
               <div className="inline-flex items-center justify-center gap-1.5 mb-5 bg-teal-50 border border-teal-100 py-1.5 px-4 rounded-full">
                  <Sparkles className="w-3.5 h-3.5 text-teal-600" />

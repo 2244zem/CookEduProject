@@ -65,18 +65,18 @@ export default function Learning() {
   return (
     <div className="min-h-screen relative font-sans overflow-x-hidden bg-transparent text-slate-800 dark:text-slate-100 pb-40">
       {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      <div className="relative z-10 max-w-lg mx-auto">
+      <div className="relative z-10 mx-auto max-w-lg lg:max-w-6xl">
         {/* HEADER SECTION */}
-        <header className="px-6 pt-12 pb-8">
+        <header className="px-6 pt-12 pb-8 lg:px-0 lg:pt-2 lg:pb-10">
           <motion.h1 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-5xl font-black mb-4 tracking-tighter leading-none text-slate-900"
+            className="text-5xl font-black mb-4 tracking-tighter leading-none text-slate-900 lg:text-6xl"
           >
             Kurikulum <span className="text-cyan-600">Eksklusif</span>
           </motion.h1>
@@ -85,7 +85,7 @@ export default function Learning() {
           </p>
         </header>
 
-        <main className="px-6 space-y-16">
+        <main className="px-6 space-y-16 lg:px-0">
           {loading ? (
             <div className="space-y-8">
               {[1, 2, 3].map((i) => (
@@ -113,7 +113,7 @@ export default function Learning() {
                       </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
                       {categoryLessons.map((lesson) => (
                         <LessonCard 
                           key={lesson.id} 
@@ -133,7 +133,7 @@ export default function Learning() {
       {/* PREMIUM LESSON MODAL */}
       <AnimatePresence>
         {showModal && selectedLesson && (
-          <div className="fixed inset-0 z-[60] flex items-end justify-center">
+          <div className="fixed inset-0 z-[60] flex items-end justify-center lg:items-center lg:p-8">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -147,7 +147,7 @@ export default function Learning() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-xl bg-white rounded-t-[50px] overflow-hidden shadow-2xl flex flex-col max-h-[92vh] border-t border-white"
+              className="relative flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-t-[50px] border-t border-white bg-white shadow-2xl lg:max-w-5xl lg:rounded-[42px] lg:border"
             >
               <div className="absolute top-6 left-6 z-10 flex gap-2">
                 <button 

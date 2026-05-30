@@ -84,14 +84,14 @@ export default function Profile() {
       isDarkMode ? 'dark text-white' : 'text-slate-800'
     } pb-40`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      <div className="relative z-10 max-w-lg mx-auto">
+      <div className="relative z-10 mx-auto max-w-lg lg:grid lg:max-w-6xl lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-6">
         {/* HEADER SECTION */}
-        <header className="px-6 pt-12 pb-8 flex flex-col items-center">
+        <header className="px-6 pt-12 pb-8 flex flex-col items-center lg:sticky lg:top-28 lg:self-start lg:rounded-[36px] lg:border lg:border-cyan-100 lg:bg-white lg:p-8 lg:shadow-sm">
           <div className="relative mb-8">
             <div className="w-32 h-32 rounded-[40px] bg-white border-4 border-white shadow-2xl overflow-hidden relative group">
               {preview ? (
@@ -162,9 +162,9 @@ export default function Profile() {
           </div>
         </header>
 
-        <main className="px-6 space-y-6">
+        <main className="px-6 space-y-6 lg:px-0 lg:py-12">
           {/* STATS GRID */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <div className="bg-white/70 backdrop-blur-2xl p-6 rounded-[32px] border border-white shadow-premium">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Learning Progress</p>
               <p className="text-2xl font-black text-cyan-600">78%</p>
@@ -179,7 +179,7 @@ export default function Profile() {
           </div>
 
           {/* MENU LIST */}
-          <div className="bg-white/70 backdrop-blur-2xl rounded-[40px] border border-white shadow-premium overflow-hidden">
+          <div className="grid overflow-hidden rounded-[40px] border border-white bg-white/70 shadow-premium backdrop-blur-2xl lg:grid-cols-2 lg:border-cyan-100 lg:bg-white">
             <MenuLink icon={Mail} label="Email" value={user?.email} disabled />
             <MenuLink 
               icon={Phone} 

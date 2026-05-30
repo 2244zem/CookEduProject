@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Send, ChevronLeft, Bot, User, 
-  Sparkles, Coffee, Utensils, Zap,
-  Bookmark, BookOpen, Snowflake, Globe, Moon, Sun, CloudRain,
-  Flame, CheckCircle2, ShoppingCart, HelpCircle, ArrowLeft
+import {
+  Send, Bot, Sparkles, Utensils, Zap, Moon, Sun, CloudRain, ArrowLeft
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, useThemeStore } from '../../store';
@@ -66,13 +63,13 @@ export default function AiAssistant() {
 
     if (temp >= 80) {
       // Hot day greeting
-      greetingText = `Halo Kak ${username}! 🌴 Hari ini cuaca di ${weather.city} terpantau cukup hangat (${temp}°F, ${weather.condition}). Biar masak makin asyik dan segar di tenggorokan, Chef Bot menyarankan resep yang sejuk dan menyegarkan seperti Salad Buah Tropis Madu atau Es Kelapa Muda Jeruk. Apakah kakak ingin Chef pandu cara membuatnya? ✨`;
+      greetingText = `Halo Kak ${username}! Hari ini cuaca di ${weather.city} terpantau cukup hangat (${temp}F, ${weather.condition}). Biar masak makin asyik dan segar di tenggorokan, Chef Bot menyarankan resep yang sejuk dan menyegarkan seperti Salad Buah Tropis Madu atau Es Kelapa Muda Jeruk. Apakah kakak ingin Chef pandu cara membuatnya?`;
     } else if (temp <= 66) {
       // Cold day greeting
-      greetingText = `Halo Kak ${username}! 🥣 Wih, udara di ${weather.city} sedang cukup dingin menusuk nih (${temp}°F, ${weather.condition}). Paling pas dan mantap kalau kita memasak hidangan berkuah hangat yang kaya rempah seperti Soto Ayam Lamongan hangat atau Sup Ramen Pedas! Ingin Chef pandu langkah memasaknya untuk menghangatkan hari ini? 🔥`;
+      greetingText = `Halo Kak ${username}! Wih, udara di ${weather.city} sedang cukup dingin menusuk nih (${temp}F, ${weather.condition}). Paling pas dan mantap kalau kita memasak hidangan berkuah hangat yang kaya rempah seperti Soto Ayam Lamongan hangat atau Sup Ramen Pedas! Ingin Chef pandu langkah memasaknya untuk menghangatkan hari ini?`;
     } else {
       // Cool/Nice day greeting
-      greetingText = `Halo Kak ${username}! ☁️ Cuaca di ${weather.city} saat ini terpantau sangat sejuk dan bersahabat (${temp}°F, ${weather.condition}). Suasana syahdu begini paling cocok untuk menikmati santapan lezat seperti Spaghetti Carbonara Creamy atau Pisang Goreng Keju Crispy hangat ditemani secangkir teh. Resep apa yang ingin kita ulik hari ini? 🍳`;
+      greetingText = `Halo Kak ${username}! Cuaca di ${weather.city} saat ini terpantau sangat sejuk dan bersahabat (${temp}F, ${weather.condition}). Suasana syahdu begini paling cocok untuk menikmati santapan lezat seperti Spaghetti Carbonara Creamy atau Pisang Goreng Keju Crispy hangat ditemani secangkir teh. Resep apa yang ingin kita ulik hari ini?`;
     }
 
     setMessages([
@@ -103,7 +100,7 @@ export default function AiAssistant() {
     if (query.includes('resep') || query.includes('cuaca') || query.includes('rekomendasi') || query.includes('makan') || query.includes('menu')) {
       if (weather.temp >= 80) {
         return {
-          text: `### 🌴 Rekomendasi Menu Hari Hangat (${weather.temp}°F)
+          text: `### Rekomendasi Menu Hari Hangat (${weather.temp}F)
 
 **Menu Pilihan: Salad Buah Tropis Madu Mint**
 * 🕒 **Waktu Pembuatan**: 15 Menit | 🟢 **Tingkat**: Sangat Mudah
@@ -115,7 +112,7 @@ Mau Chef pandu langkah-langkah detail pembuatannya sekarang?`,
         };
       } else if (weather.temp <= 66) {
         return {
-          text: `### 🥣 Rekomendasi Menu Udara Dingin (${weather.temp}°F)
+          text: `### Rekomendasi Menu Udara Dingin (${weather.temp}F)
 
 **Menu Pilihan: Sup Ramen Pedas Kaldu Creamy**
 * 🕒 **Waktu Pembuatan**: 30 Menit | 🔴 **Tingkat**: Sedang
@@ -127,11 +124,11 @@ Tulis **"langkah"** jika Kakak ingin memulai proses memasak sup ramen pedas ini 
         };
       } else {
         return {
-          text: `### 🍝 Rekomendasi Menu Cuaca Sejuk (${weather.temp}°F)
+          text: `### Rekomendasi Menu Cuaca Sejuk (${weather.temp}F)
 
 **Menu Pilihan: Creamy Spaghetti Carbonara Masterpiece**
 * 🕒 **Waktu Pembuatan**: 20 Menit | 🟡 **Tingkat**: Mudah
-* 🍝 **Bahan Utama**: Pasta spaghetti, smoked beef slice, keju parmesan parut, kuning telur segar, cooking cream, bawang putih cincang halus, mentega.
+* **Bahan Utama**: Pasta spaghetti, smoked beef slice, keju parmesan parut, kuning telur segar, cooking cream, bawang putih cincang halus, mentega.
 * 💡 **Kenapa Cocok?**: Cita rasa saus keju gurih creamy berpadu dengan kehangatan pasta segar sangat menyatu dengan angin sepoi sejuk hari ini!
 
 Ketik **"langkah"** untuk langsung membuka panduan masak langkah demi langkah!`,
@@ -171,10 +168,10 @@ Mari kita mulai masak bersama, Chef! Silakan ikuti instruksi berikut:
 
 Kehabisan bahan di dapur? Tenang Chef, ini alternatif cerdas yang tetap menghasilkan cita rasa lezat:
 
-* 🥛 **Cooking Cream / Susu Krim** ➡️ Ganti dengan **Susu Cair + Sedikit Mentega Cair** (untuk pasta) atau **Santan Kental** (untuk masakan lokal).
-* 🧀 **Keju Parmesan** ➡️ Ganti dengan **Keju Cheddar parut halus** yang dijemur sebentar agar teksturnya lebih kering.
-* 🥩 **Daging Sapi (Beef Slice)** ➡️ Ganti dengan **Irisan Dada Ayam**, **Jamur Tiram**, atau **Tahu Putih Sutra** yang gurih sehat!
-* 🌶️ **Minyak Cabai (Chili Oil)** ➡️ Ganti dengan **Cabai Bubuk halus + Minyak Goreng hangat** yang diaduk rata.
+* **Cooking Cream / Susu Krim** - Ganti dengan **Susu Cair + Sedikit Mentega Cair** (untuk pasta) atau **Santan Kental** (untuk masakan lokal).
+* **Keju Parmesan** - Ganti dengan **Keju Cheddar parut halus** yang dijemur sebentar agar teksturnya lebih kering.
+* **Daging Sapi (Beef Slice)** - Ganti dengan **Irisan Dada Ayam**, **Jamur Tiram**, atau **Tahu Putih Sutra** yang gurih sehat!
+* **Minyak Cabai (Chili Oil)** - Ganti dengan **Cabai Bubuk halus + Minyak Goreng hangat** yang diaduk rata.
 
 Adakah bahan lain yang ingin Kakak tanyakan penggantinya? Tulis di bawah!`,
         richType: 'substitution'
@@ -183,9 +180,9 @@ Adakah bahan lain yang ingin Kakak tanyakan penggantinya? Tulis di bawah!`,
 
     // 4. Default Interactive response
     return {
-      text: `Pertanyaan yang bagus Kak! 👨‍🍳 
+      text: `Pertanyaan yang bagus Kak!
 
-Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan adalah kunci utama. Jika Kakak ingin mengetahui lebih jauh, silakan gunakan menu cepat di atas atau tanyakan resep, langkah masak, maupun bahan pengganti yang sedang Kakak butuhkan di dapur. Chef selalu siap memandu! ✨`,
+Di tengah kondisi cuaca ${weather.temp}F saat ini, mengontrol suhu masakan adalah kunci utama. Jika Kakak ingin mengetahui lebih jauh, silakan gunakan menu cepat di atas atau tanyakan resep, langkah masak, maupun bahan pengganti yang sedang Kakak butuhkan di dapur. Chef selalu siap memandu!`,
       richType: 'standard'
     };
   };
@@ -226,25 +223,74 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
     { label: "Substitusi Bahan Kreatif", icon: Zap, query: "substitusi bahan makanan alternatif" }
   ];
 
+  const cleanMessageText = (text: string) =>
+    text
+      .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '')
+      .replace(/[ \t]{2,}/g, ' ');
+
   return (
-    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-hidden bg-transparent ${
+    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-hidden bg-transparent lg:px-8 lg:py-8 ${
       isDarkMode ? 'dark text-white' : 'text-slate-800'
     }`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      <div className="relative z-10 max-w-lg mx-auto h-screen flex flex-col">
+      <div className="relative z-10 max-w-lg mx-auto h-screen flex flex-col lg:h-[calc(100vh-160px)] lg:max-w-6xl lg:flex-row lg:gap-6">
+        <aside className="hidden lg:flex w-80 shrink-0 flex-col gap-5 rounded-[36px] border border-sky-100 bg-white p-6 shadow-sm">
+          <button
+            onClick={() => navigate('/smart-weather')}
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-sky-600 transition hover:bg-sky-100"
+            aria-label="Kembali"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-sky-500">Chef Assistant</p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">AI masak yang lebih tenang.</h1>
+            <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">
+              Tanya resep, substitusi bahan, atau panduan langkah memasak tanpa memenuhi layar dengan efek berat.
+            </p>
+          </div>
+
+          <div className="rounded-[28px] border border-sky-100 bg-sky-50/70 p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-sky-600 shadow-sm">
+                {weather.temp <= 66 ? <CloudRain className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase text-slate-900">{weather.city}</p>
+                <p className="text-2xl font-black text-sky-600">{weather.temp}F</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {suggestions.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => handleSend(s.query)}
+                className="flex w-full items-center gap-3 rounded-2xl border border-sky-100 bg-white px-4 py-3 text-left text-xs font-black text-slate-600 shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
+              >
+                <s.icon className="h-4 w-4 text-sky-500" />
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:rounded-[36px] lg:border lg:border-sky-100 lg:bg-white lg:shadow-sm">
         
         {/* ================= HEADER ================= */}
-        <header className="px-6 pt-8 pb-4 flex items-center justify-between bg-white/70 backdrop-blur-xl border-b border-sky-100/50 shadow-sm">
+        <header className="px-6 pt-8 pb-4 flex items-center justify-between bg-white/70 backdrop-blur-xl border-b border-sky-100/50 shadow-sm lg:px-7 lg:pt-6">
           <div className="flex items-center gap-4">
             <motion.button 
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate('/smart-weather')}
-              className="w-10 h-10 rounded-xl bg-white border border-sky-100 shadow-md flex items-center justify-center text-slate-500 hover:text-slate-700 active:scale-95"
+              className="w-10 h-10 rounded-xl bg-white border border-sky-100 shadow-md flex items-center justify-center text-slate-500 hover:text-slate-700 active:scale-95 lg:hidden"
               title="Kembali ke Dashboard"
             >
               <ArrowLeft className="w-5 h-5 text-sky-600" />
@@ -253,9 +299,9 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-600 flex items-center justify-center text-white shadow-lg">
-                  <Bot className="w-6 h-6 animate-pulse" />
+                  <Bot className="w-6 h-6" />
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-bounce" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
               </div>
               <div className="text-left">
                 <h2 className="text-sm font-black text-slate-800 tracking-tight leading-none">Chef AI Sous-Chef</h2>
@@ -265,8 +311,8 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
                   ) : (
                     <Sun className="w-3 h-3 text-amber-500" />
                   )}
-                  <span className="text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider">
-                    {weather.city}: {weather.temp}°F
+                  <span className="text-[0px] font-extrabold text-emerald-600 uppercase tracking-wider">
+                    <span className="text-[9px]">{weather.city}: {weather.temp}F</span>
                   </span>
                 </div>
               </div>
@@ -283,7 +329,7 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
         </header>
 
         {/* ================= MESSAGES AREA ================= */}
-        <main className="flex-1 overflow-y-auto px-6 py-6 space-y-5 custom-scrollbar pb-36">
+        <main className="flex-1 overflow-y-auto px-6 py-6 space-y-5 custom-scrollbar pb-36 lg:px-8 lg:pb-32">
           <AnimatePresence initial={false}>
             {messages.map((msg) => (
               <motion.div
@@ -308,7 +354,7 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
                   {/* Render Markdown-like content for visual excellence */}
                   {msg.isRichContent && msg.sender === 'ai' ? (
                     <div className="space-y-3 text-xs font-semibold leading-relaxed">
-                      {msg.text.split('\n\n').map((paragraph, index) => {
+                      {cleanMessageText(msg.text).split('\n\n').map((paragraph, index) => {
                         if (paragraph.startsWith('###')) {
                           return (
                             <h3 key={index} className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-teal-600 uppercase tracking-tight border-b border-sky-100/30 pb-1 mt-2">
@@ -371,7 +417,7 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs font-semibold leading-relaxed">{msg.text}</p>
+                    <p className="text-xs font-semibold leading-relaxed">{cleanMessageText(msg.text)}</p>
                   )}
 
                   <span className={`text-[8px] font-bold uppercase mt-2.5 block opacity-40 ${
@@ -401,7 +447,7 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
         </main>
 
         {/* ================= SUGGESTIONS FOOT PANEL ================= */}
-        <div className="absolute bottom-28 inset-x-0 px-6 py-2 flex gap-2 overflow-x-auto no-scrollbar z-20">
+        <div className="absolute bottom-28 inset-x-0 px-6 py-2 flex gap-2 overflow-x-auto no-scrollbar z-20 lg:hidden">
           {suggestions.map((s, i) => (
             <motion.button
               key={i}
@@ -416,7 +462,7 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
         </div>
 
         {/* ================= INPUT CHAT AREA ================= */}
-        <footer className="absolute bottom-6 inset-x-0 px-6 z-20">
+        <footer className="absolute bottom-6 inset-x-0 px-6 z-20 lg:px-8">
           <div className="bg-white border border-sky-100/80 rounded-[32px] p-2 flex items-center gap-2 shadow-xl ring-1 ring-sky-100/50">
             <input 
               type="text"
@@ -437,6 +483,7 @@ Di tengah kondisi cuaca ${weather.temp}°F saat ini, mengontrol suhu masakan ada
           </div>
         </footer>
 
+        </div>
       </div>
     </div>
   );

@@ -154,13 +154,13 @@ export default function RecipeList() {
           // Trigger dynamic culinary weather alerts
           if (cond.toLowerCase().includes('rain') || cond.toLowerCase().includes('storm')) {
             setWeatherAlert({
-              title: "🌧️ Cuaca Hujan Terdeteksi!",
-              msg: `Suhu ${temp}°F di ${name} terasa dingin. Chef merekomendasikan memasak hidangan berkuah hangat seperti Soto Ayam hari ini!`
+              title: "Cuaca Hujan Terdeteksi",
+              msg: `Suhu ${temp}F di ${name} terasa dingin. Chef merekomendasikan memasak hidangan berkuah hangat seperti Soto Ayam hari ini!`
             });
           } else if (temp > 80) {
             setWeatherAlert({
-              title: "☀️ Suhu Panas Terdeteksi!",
-              msg: `Udara ${temp}°F cukup terik di ${name}. Waktunya menyegarkan diri dengan hidangan penutup dingin seperti Es Cendol!`
+              title: "Suhu Panas Terdeteksi",
+              msg: `Udara ${temp}F cukup terik di ${name}. Waktunya menyegarkan diri dengan hidangan penutup dingin seperti Es Cendol!`
             });
           }
         }
@@ -181,10 +181,10 @@ export default function RecipeList() {
     const cond = weather.condition.toLowerCase();
     const isRainy = cond.includes('rain') || cond.includes('storm') || cond.includes('drizzle');
     
-    if (isRainy) return { label: "🌧️ Rainy Day Warmth", color: "bg-indigo-650/90", priority: 'soup' }
-    if (weather.temp < 65) return { label: "❄️ Cold Day Comfort", color: "bg-sky-550/90", priority: 'warm' }
-    if (weather.temp >= 65 && weather.temp <= 80) return { label: "🏡 Home Cooking Comfort", color: "bg-teal-550/90", priority: 'standard' }
-    return { label: "☀️ Sunny Refreshments", color: "bg-amber-550/90", priority: 'refreshing' }
+    if (isRainy) return { label: "Rainy Day Warmth", color: "bg-indigo-650/90", priority: 'soup' }
+    if (weather.temp < 65) return { label: "Cold Day Comfort", color: "bg-sky-550/90", priority: 'warm' }
+    if (weather.temp >= 65 && weather.temp <= 80) return { label: "Home Cooking Comfort", color: "bg-teal-550/90", priority: 'standard' }
+    return { label: "Sunny Refreshments", color: "bg-amber-550/90", priority: 'refreshing' }
   }, [weather]);
 
   const filteredRecipes = useMemo(() => {
@@ -294,7 +294,7 @@ export default function RecipeList() {
                   onClick={() => setWeatherAlert(null)}
                   className="mt-3 text-[10px] font-black text-sky-600 dark:text-cyan-400 uppercase tracking-widest hover:text-sky-700"
                 >
-                  Siap, Chef! ✨
+                  Siap, Chef!
                 </button>
               </div>
               <button 
@@ -406,7 +406,9 @@ export default function RecipeList() {
               
               {/* Pod 1: Feels like */}
               <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-md flex flex-col justify-between h-16">
-                <div className="w-4.5 h-4.5 bg-white/20 rounded-full flex items-center justify-center mx-auto text-[7px]">🌡️</div>
+                <div className="w-4.5 h-4.5 bg-white/20 rounded-full flex items-center justify-center mx-auto">
+                  <Thermometer className="w-2.5 h-2.5" />
+                </div>
                 <div>
                   <span className="block text-[9px] font-black">{weather.feelsLike}°F</span>
                   <span className="text-[6px] text-sky-200 block uppercase font-medium">Feels like</span>
@@ -415,7 +417,9 @@ export default function RecipeList() {
 
               {/* Pod 2: Precipitation */}
               <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-md flex flex-col justify-between h-16">
-                <div className="w-4.5 h-4.5 bg-white/20 rounded-full flex items-center justify-center mx-auto text-[7px]">💧</div>
+                <div className="w-4.5 h-4.5 bg-white/20 rounded-full flex items-center justify-center mx-auto">
+                  <CloudSun className="w-2.5 h-2.5" />
+                </div>
                 <div>
                   <span className="block text-[9px] font-black">{weather.precipitation}%</span>
                   <span className="text-[6px] text-sky-200 block uppercase font-medium">Precip</span>
@@ -424,7 +428,9 @@ export default function RecipeList() {
 
               {/* Pod 3: Visibility */}
               <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-md flex flex-col justify-between h-16">
-                <div className="w-4.5 h-4.5 bg-white/20 rounded-full flex items-center justify-center mx-auto text-[7px]">👁️</div>
+                <div className="w-4.5 h-4.5 bg-white/20 rounded-full flex items-center justify-center mx-auto">
+                  <Globe className="w-2.5 h-2.5" />
+                </div>
                 <div>
                   <span className="block text-[9px] font-black">{weather.visibility}m</span>
                   <span className="text-[6px] text-sky-200 block uppercase font-medium">Visibility</span>
@@ -433,7 +439,9 @@ export default function RecipeList() {
 
               {/* Pod 4: Humidity */}
               <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-md flex flex-col justify-between h-16">
-                <div className="w-4.5 h-4.5 bg-white/20 rounded-full flex items-center justify-center mx-auto text-[7px]">💦</div>
+                <div className="w-4.5 h-4.5 bg-white/20 rounded-full flex items-center justify-center mx-auto">
+                  <Activity className="w-2.5 h-2.5" />
+                </div>
                 <div>
                   <span className="block text-[9px] font-black">{weather.humidity}%</span>
                   <span className="text-[6px] text-sky-200 block uppercase font-medium">Humidity</span>
@@ -451,7 +459,7 @@ export default function RecipeList() {
             animate={{ y: 0, opacity: 1 }}
             className="relative group"
           >
-             <div className="absolute inset-0 bg-gradient-to-r from-sky-300/40 via-teal-300/40 to-sky-400/40 rounded-[32px] blur-md opacity-75 group-focus-within:opacity-100 transition-opacity animate-pulse duration-[4000ms]"></div>
+             <div className="absolute inset-0 bg-gradient-to-r from-sky-300/25 via-teal-300/25 to-sky-400/25 rounded-[32px] blur-md opacity-70 group-focus-within:opacity-100 transition-opacity"></div>
              <div className="relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/60 dark:border-sky-400/5 p-2 rounded-[32px] shadow-inner flex items-center gap-2">
                 <Search className="w-5 h-5 text-sky-500 ml-4 shrink-0" />
                 <input 
@@ -1153,7 +1161,6 @@ function DesktopRecipeCard({ recipe, onOpen, onAdd, onDelete }: any) {
 
 function cleanText(value: string) {
   return value
-    .replace(/ðŸŒ§ï¸|â˜€ï¸|âœ¨/g, '')
-    .replace(/Â°F/g, '°F')
+    .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '')
     .trim()
 }

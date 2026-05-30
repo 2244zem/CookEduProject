@@ -38,14 +38,14 @@ export default function CatatanIbu() {
       isDarkMode ? 'dark text-white' : 'text-slate-800'
     } pb-40`}>
       {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      <div className="relative z-10 max-w-lg mx-auto">
+      <div className="relative z-10 mx-auto max-w-lg lg:max-w-6xl">
         {/* HEADER SECTION */}
-        <header className="px-6 pt-12 pb-8">
+        <header className="px-6 pt-12 pb-8 lg:px-0 lg:pt-2">
           <motion.button 
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate(-1)}
@@ -54,7 +54,7 @@ export default function CatatanIbu() {
             <ArrowLeft className="w-6 h-6" />
           </motion.button>
 
-          <div className="text-center">
+          <div className="text-center lg:text-left">
             <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -65,7 +65,7 @@ export default function CatatanIbu() {
             <motion.h1 
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              className="text-4xl font-black tracking-tight text-slate-900"
+              className="text-4xl font-black tracking-tight text-slate-900 lg:text-6xl"
             >
               Catatan Ibu
             </motion.h1>
@@ -95,7 +95,7 @@ export default function CatatanIbu() {
         </header>
 
         {/* RECIPE LIST */}
-        <main className="px-6 space-y-8">
+        <main className="px-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0 lg:px-0 xl:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filteredRecipes.map((item, index) => (
               <motion.div 
