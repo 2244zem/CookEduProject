@@ -8,6 +8,7 @@ import { useLocation } from 'react-router-dom'
 import api from '../../lib/api'
 import { useDebugStore } from '../../store/debugStore'
 import { useAuthStore } from '../../store/authStore'
+import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 import foodDrawing from '../../assets/food_drawing.jpg'
 import telorImg from '../../assets/telor.png'
 
@@ -22,6 +23,7 @@ export default function AiAssistant() {
   const location = useLocation()
   const { addLog } = useDebugStore()
   const { user } = useAuthStore()
+  const { isDesktop, shouldReduceMotion } = useDeviceProfile()
   
   // Load history from localStorage
   const [messages, setMessages] = useState<Message[]>(() => {
@@ -140,7 +142,7 @@ export default function AiAssistant() {
 
   return (
     <>
-      <div className="fixed bottom-24 md:bottom-10 right-6 z-[90] flex flex-col gap-4">
+      <div className={`fixed z-[90] flex flex-col gap-4 ${isDesktop ? 'bottom-6 right-8' : 'bottom-24 right-6'}`}>
         <AnimatePresence>
           {isOpen && (
             <motion.button 
@@ -157,11 +159,20 @@ export default function AiAssistant() {
         
         <div className="relative">
            {/* Concentric Ring Effect */}
-           <div className="absolute inset-0 bg-[#0077B6]/30 rounded-full blur-md animate-ping" />
+           {!isDesktop && !shouldReduceMotion && (
+             <div className="absolute inset-0 bg-[#0077B6]/30 rounded-full blur-md animate-ping" />
+           )}
            <motion.button
-             initial={{ scale: 0 }} animate={{ scale: 1 }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+             initial={shouldReduceMotion ? false : { scale: 0 }}
+             animate={{ scale: 1 }}
+             whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
+             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
              onClick={() => setIsOpen(!isOpen)}
-             className={`w-20 h-20 bg-gradient-to-tr from-[#FFD166] to-[#F77F00] text-white rounded-full shadow-[0_0_40px_rgba(247,127,0,0.6)] flex items-center justify-center border-4 border-white/60 ring-4 ring-[#F77F00]/40 transition-all relative overflow-hidden group`}
+             className={`bg-gradient-to-tr from-[#FFD166] to-[#F77F00] text-white flex items-center justify-center transition-all relative overflow-hidden group ${
+               isDesktop
+                 ? 'h-14 w-14 rounded-2xl border-2 border-white shadow-lg'
+                 : 'h-20 w-20 rounded-full border-4 border-white/60 shadow-[0_0_40px_rgba(247,127,0,0.6)] ring-4 ring-[#F77F00]/40'
+             }`}
            >
              {isLoading && (
                <motion.div 
@@ -170,15 +181,15 @@ export default function AiAssistant() {
                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
                />
              )}
-             <Sparkles className="absolute top-4 right-4 w-5 h-5 animate-pulse text-white drop-shadow-md" />
-             {isOpen ? <X className="w-10 h-10 text-white drop-shadow-md" /> : (
+             {!isDesktop && <Sparkles className="absolute top-4 right-4 w-5 h-5 animate-pulse text-white drop-shadow-md" />}
+             {isOpen ? <X className={`${isDesktop ? 'h-7 w-7' : 'h-10 w-10'} text-white drop-shadow-md`} /> : (
                <div className="relative">
                  <motion.img 
                    src={telorImg} 
                    alt="Egg AI" 
-                   animate={{ rotate: [-10, 10, -10], y: [0, -5, 0] }}
+                   animate={isDesktop || shouldReduceMotion ? undefined : { rotate: [-10, 10, -10], y: [0, -5, 0] }}
                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                   className="w-12 h-12 drop-shadow-2xl filter contrast-125"
+                   className={`${isDesktop ? 'h-9 w-9' : 'h-12 w-12'} drop-shadow-2xl filter contrast-125`}
                  />
                </div>
              )}

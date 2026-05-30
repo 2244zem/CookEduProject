@@ -1,8 +1,6 @@
-import { motion } from 'framer-motion'
-import { Home, User, Search, Moon, Sun, Wand2, Bookmark, ShoppingBag } from 'lucide-react'
+import { Home, User, Moon, Sun, Wand2, Bookmark, ShoppingBag, BookOpen, CloudSun } from 'lucide-react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useThemeStore, useAuthStore } from '../../store'
-import foodDrawing from '../../assets/food_drawing.jpg'
 
 const TopNav = () => {
   const location = useLocation()
@@ -11,80 +9,61 @@ const TopNav = () => {
   const { isAuthenticated } = useAuthStore()
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Home' },
+    { path: '/', icon: Home, label: 'Beranda' },
     { path: '/catatan-ibu', icon: Bookmark, label: 'Catatan' },
     { path: '/daftar-belanja', icon: ShoppingBag, label: 'Belanja' },
     { path: '/fridge', icon: Wand2, label: 'Scanner' },
+    { path: '/learning', icon: BookOpen, label: 'Belajar' },
+    { path: '/smart-weather', icon: CloudSun, label: 'Cuaca' },
   ]
 
   return (
-    <div className="sticky top-0 z-50 w-full px-4 py-4 md:px-6">
-      <motion.nav 
-        initial={{ y: -100, opacity: 0 }} 
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="max-w-7xl mx-auto w-full h-[72px] flex justify-between items-center rounded-[40px] shadow-premium px-6 md:px-8 border-2 border-white/80 dark:border-white/10 relative overflow-hidden"
-      >
-        {/* Background Image Layer */}
-        <div className="absolute inset-0 z-0">
-           <img src={foodDrawing} alt="" className="w-full h-full object-cover opacity-20" />
-           <div className="absolute inset-0 bg-primary/95 dark:bg-black/90 backdrop-blur-md" />
+    <div className="w-full px-6 py-4">
+      <nav className="mx-auto flex h-16 w-full max-w-[1480px] items-center justify-between rounded-[28px] border border-cyan-100 bg-white px-5 shadow-sm">
+        <Link to="/" className="flex items-center gap-3 text-2xl font-black tracking-tight text-slate-950">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white">
+            <Home className="h-5 w-5" />
+          </span>
+          Cook<span className="-ml-2 text-primary">Edu</span>
+        </Link>
+
+        <div className="hidden items-center gap-1 lg:flex">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`flex h-11 items-center gap-2 rounded-2xl px-4 text-sm font-black transition ${
+                  isActive
+                    ? 'bg-cyan-50 text-primary shadow-sm'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </button>
+            )
+          })}
         </div>
 
-        <div className="relative z-10 flex items-center justify-between w-full">
-          <Link to="/" className="text-white font-black text-2xl tracking-tighter flex items-center gap-2 drop-shadow-sm">
-            Cook<span className="text-teal-200">Edu</span>
-          </Link>
-          
-          <div className="hidden lg:flex items-center gap-2">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))
-              return (
-                <button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className={`relative px-4 h-11 rounded-full flex items-center gap-2 transition-all duration-300 outline-none ${
-                    isActive ? 'bg-white/20 shadow-inner' : 'hover:bg-black/10 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <item.icon 
-                    className={`w-5 h-5 transition-colors duration-300 ${
-                      isActive ? 'text-white' : 'text-white/80'
-                    }`} 
-                  />
-                  <span className={`font-medium text-sm ${isActive ? 'text-white' : 'text-white/80'}`}>
-                    {item.label}
-                  </span>
-                  {isActive && (
-                    <motion.div 
-                      layoutId="active-top-glow"
-                      className="absolute inset-0 rounded-full bg-white/10 blur-[2px]"
-                    />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggleDarkMode}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-black/10 dark:hover:bg-white/10 text-white"
-            >
-              <motion.div whileTap={{ rotate: 180, scale: 0.8 }}>
-                {isDarkMode ? <Sun className="w-5 h-5 text-yellow-300" /> : <Moon className="w-5 h-5" />}
-              </motion.div>
-            </button>
-            <button
-              onClick={() => navigate(isAuthenticated ? '/profile' : '/login')}
-              className="px-5 h-10 rounded-full bg-white text-primary font-bold text-sm hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-2"
-            >
-              {isAuthenticated ? <User className="w-4 h-4" /> : <Search className="w-4 h-4" />}
-              {isAuthenticated ? 'Profil' : 'Masuk'}
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleDarkMode}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-white text-slate-600 transition hover:border-cyan-200 hover:text-primary"
+            title="Ganti tema"
+          >
+            {isDarkMode ? <Sun className="h-5 w-5 text-amber-500" /> : <Moon className="h-5 w-5" />}
+          </button>
+          <button
+            onClick={() => navigate(isAuthenticated ? '/profile' : '/login')}
+            className="flex h-11 items-center gap-2 rounded-2xl bg-primary px-5 text-sm font-black text-white shadow-sm transition hover:bg-primary-dark"
+          >
+            <User className="h-4 w-4" />
+            {isAuthenticated ? 'Profil' : 'Masuk'}
+          </button>
         </div>
-      </motion.nav>
+      </nav>
     </div>
   )
 }

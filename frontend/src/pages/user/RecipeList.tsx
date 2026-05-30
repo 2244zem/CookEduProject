@@ -14,6 +14,7 @@ import { recipeApi, categoryApi } from '../../lib/api'
 import { recipes as initialRecipes, type Recipe } from '../../data/recipes'
 import { useShoppingStore } from '../../store/shoppingStore'
 import { useAuthStore, useThemeStore } from '../../store'
+import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -27,6 +28,7 @@ export default function RecipeList() {
   const location = useLocation()
   const { user } = useAuthStore()
   const { isDarkMode } = useThemeStore()
+  const { isDesktop } = useDeviceProfile()
   const [activeCategory, setActiveCategory] = useState("SEMUA")
   const [searchQuery, setSearchQuery] = useState("")
   const { addGroup, groups } = useShoppingStore()
@@ -238,6 +240,32 @@ export default function RecipeList() {
     formData.append('steps', JSON.stringify([{ instruction: 'Siapkan bahan dan masak sesuai selera.', duration: newRecipeForm.cooking_time }]))
     
     createMutation.mutate(formData)
+  }
+
+  if (isDesktop) {
+    return (
+      <DesktopRecipeHome
+        user={user}
+        weather={weather}
+        weatherAlert={weatherAlert}
+        setWeatherAlert={setWeatherAlert}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        searchAddressInput={searchAddressInput}
+        setSearchAddressInput={setSearchAddressInput}
+        handleFetchWeather={handleFetchWeather}
+        categories={categories}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+        filteredRecipes={filteredRecipes}
+        isLoadingRecipes={isLoadingRecipes}
+        cartCount={cartCount}
+        navigate={navigate}
+        onCreate={() => setIsModalOpen(true)}
+        onAddRecipeToShopping={handleAddRecipeToShopping}
+        deleteRecipe={(id: number) => deleteMutation.mutate(id)}
+      />
+    )
   }
 
   return (
@@ -827,4 +855,305 @@ export default function RecipeList() {
       </AnimatePresence>
     </div>
   )
+}
+
+function DesktopRecipeHome({
+  user,
+  weather,
+  weatherAlert,
+  setWeatherAlert,
+  searchQuery,
+  setSearchQuery,
+  searchAddressInput,
+  setSearchAddressInput,
+  handleFetchWeather,
+  categories,
+  activeCategory,
+  setActiveCategory,
+  filteredRecipes,
+  isLoadingRecipes,
+  cartCount,
+  navigate,
+  onCreate,
+  onAddRecipeToShopping,
+  deleteRecipe,
+}: any) {
+  const spotlight = filteredRecipes[0]
+  const recipeGrid = filteredRecipes.slice(0, 9)
+  const featuredImages = [inspiration1, inspiration2, inspiration3]
+  const categoryLabels = ['SEMUA', ...categories.map((category: any) => category.name.toUpperCase())]
+
+  return (
+    <div className="space-y-6">
+      {weatherAlert && (
+        <section className="rounded-[28px] border border-cyan-100 bg-white p-5 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-white">
+              <ChefHat className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-black uppercase tracking-wide text-slate-950">{cleanText(weatherAlert.title)}</h2>
+              <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{cleanText(weatherAlert.msg)}</p>
+              <button
+                onClick={() => setWeatherAlert(null)}
+                className="mt-3 text-xs font-black uppercase tracking-widest text-primary hover:text-primary-dark"
+              >
+                Siap, Chef
+              </button>
+            </div>
+            <button
+              onClick={() => setWeatherAlert(null)}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+              title="Tutup"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </section>
+      )}
+
+      <section className="grid grid-cols-[minmax(0,1fr)_360px] gap-6">
+        <div className="rounded-[32px] border border-cyan-100 bg-white p-6 shadow-sm">
+          <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-6">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
+                <Sparkles className="h-4 w-4" />
+                Desktop Dashboard
+              </div>
+              <h1 className="mt-4 max-w-3xl text-5xl font-black leading-tight tracking-tight text-slate-950">
+                Selamat datang, {user?.name || 'Chef'}.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base font-semibold leading-8 text-slate-600">
+                Jelajahi resep, cek rekomendasi cuaca, dan susun daftar belanja dari satu layar yang nyaman untuk desktop.
+              </p>
+
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                <DesktopMetric icon={BookOpen} label="Resep siap" value={filteredRecipes.length || 0} />
+                <DesktopMetric icon={ShoppingCart} label="Daftar belanja" value={cartCount} />
+                <DesktopMetric icon={CloudSun} label="Suhu" value={`${weather.temp}°F`} />
+              </div>
+            </div>
+
+            <div className="rounded-[28px] bg-gradient-to-br from-primary to-cyan-600 p-5 text-white shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-white/75">Cuaca dapur</p>
+                  <div className="mt-3 text-5xl font-black tracking-tight">{weather.temp}°F</div>
+                  <p className="mt-1 text-sm font-black uppercase tracking-wider">{weather.condition}</p>
+                </div>
+                <button
+                  onClick={() => handleFetchWeather(searchAddressInput)}
+                  className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-white hover:bg-white/25"
+                  title="Perbarui cuaca"
+                >
+                  <CloudSun className="h-7 w-7" />
+                </button>
+              </div>
+              <div className="mt-5 rounded-2xl bg-white/12 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-white/80" />
+                  <input
+                    value={searchAddressInput}
+                    onChange={(event) => setSearchAddressInput(event.target.value)}
+                    onKeyDown={(event) => event.key === 'Enter' && handleFetchWeather(searchAddressInput)}
+                    className="w-full bg-transparent text-sm font-black uppercase text-white outline-none placeholder:text-white/50"
+                    placeholder="Bandung, ID"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                <WeatherMini label="Precip" value={`${weather.precipitation}%`} />
+                <WeatherMini label="Visibility" value={`${weather.visibility}m`} />
+                <WeatherMini label="Humidity" value={`${weather.humidity}%`} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside className="rounded-[32px] border border-cyan-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black text-slate-950">Spotlight</h2>
+            <button
+              onClick={onCreate}
+              className="flex h-10 items-center gap-2 rounded-2xl bg-slate-950 px-4 text-xs font-black text-white hover:bg-primary"
+            >
+              <Plus className="h-4 w-4" />
+              Resep
+            </button>
+          </div>
+          <div className="mt-5 overflow-hidden rounded-[24px] border border-slate-100">
+            <img
+              src={spotlight?.imageUrl || spotlight?.image_url || featuredImages[0]}
+              alt={spotlight?.title || 'Resep pilihan'}
+              className="h-52 w-full object-cover"
+            />
+            <div className="p-4">
+              <p className="text-xs font-black uppercase tracking-widest text-primary">
+                {(spotlight?.category?.name || spotlight?.category || 'Pilihan Chef').toString()}
+              </p>
+              <h3 className="mt-2 line-clamp-2 text-xl font-black leading-tight text-slate-950">
+                {spotlight?.title || 'Resep pilihan hari ini'}
+              </h3>
+              <button
+                onClick={() => spotlight?.id && navigate(`/recipes/${spotlight.id}`)}
+                className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-cyan-50 text-sm font-black text-primary hover:bg-primary hover:text-white"
+              >
+                Buka Detail
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section className="grid grid-cols-[280px_minmax(0,1fr)] gap-6">
+        <aside className="rounded-[32px] border border-cyan-100 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-black text-slate-950">Kategori</h2>
+          <div className="mt-4 space-y-2">
+            {categoryLabels.slice(0, 10).map((category: string) => {
+              const isActive = activeCategory === category
+              return (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  className={`flex h-12 w-full items-center justify-between rounded-2xl px-4 text-left text-sm font-black transition ${
+                    isActive ? 'bg-primary text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-cyan-50 hover:text-primary'
+                  }`}
+                >
+                  <span className="truncate">{category}</span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )
+            })}
+          </div>
+        </aside>
+
+        <div className="rounded-[32px] border border-cyan-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Cari resep, bahan, atau menu hari ini..."
+                className="h-14 w-full rounded-2xl border border-cyan-100 bg-cyan-50/45 pl-12 pr-4 text-sm font-bold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:bg-white"
+              />
+            </div>
+            <button
+              onClick={onCreate}
+              className="flex h-14 items-center gap-2 rounded-2xl bg-primary px-5 text-sm font-black text-white shadow-sm hover:bg-primary-dark"
+            >
+              <PlusCircle className="h-5 w-5" />
+              Tambah Resep
+            </button>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 gap-4">
+            {isLoadingRecipes ? (
+              <div className="col-span-3 rounded-3xl border border-dashed border-cyan-200 p-12 text-center">
+                <ChefHat className="mx-auto h-10 w-10 text-primary" />
+                <p className="mt-3 text-sm font-black text-slate-500">Memuat resep...</p>
+              </div>
+            ) : (
+              recipeGrid.map((recipe: any, index: number) => (
+                <DesktopRecipeCard
+                  key={`${recipe.id || recipe.title}-${index}`}
+                  recipe={recipe}
+                  onOpen={() => navigate(`/recipes/${recipe.id || `temp-${index}`}`)}
+                  onAdd={() => onAddRecipeToShopping(recipe)}
+                  onDelete={user?.role === 'admin' ? () => deleteRecipe(recipe.id) : undefined}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function DesktopMetric({ icon: Icon, label, value }: any) {
+  return (
+    <div className="rounded-2xl border border-cyan-100 bg-cyan-50/50 p-4">
+      <Icon className="h-5 w-5 text-primary" />
+      <p className="mt-4 text-2xl font-black text-slate-950">{value}</p>
+      <p className="mt-1 text-xs font-black uppercase tracking-wide text-slate-500">{label}</p>
+    </div>
+  )
+}
+
+function WeatherMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white/12 px-3 py-3">
+      <p className="text-sm font-black">{value}</p>
+      <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-white/65">{label}</p>
+    </div>
+  )
+}
+
+function DesktopRecipeCard({ recipe, onOpen, onAdd, onDelete }: any) {
+  const img = recipe.imageUrl || recipe.image_url || ''
+
+  return (
+    <article className="group overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <button onClick={onOpen} className="block w-full text-left">
+        <div className="relative h-40 overflow-hidden bg-slate-100">
+          <img
+            src={img || `https://api.dicebear.com/7.x/shapes/svg?seed=${recipe.title || 'cookedu'}`}
+            alt={recipe.title}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          />
+          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-primary">
+            {(recipe.category?.name || recipe.category || 'Resep').toString()}
+          </span>
+        </div>
+        <div className="p-4">
+          <h3 className="line-clamp-2 min-h-[44px] text-base font-black leading-snug text-slate-950">
+            {recipe.title || 'Resep Tanpa Nama'}
+          </h3>
+          <div className="mt-4 flex items-center gap-3 text-xs font-black text-slate-500">
+            <span className="flex items-center gap-1">
+              <Clock className="h-4 w-4 text-primary" />
+              {recipe.cooking_time || recipe.prepTime || 20}m
+            </span>
+            <span className="flex items-center gap-1">
+              <Flame className="h-4 w-4 text-rose-500" />
+              {recipe.difficulty || 'Easy'}
+            </span>
+          </div>
+        </div>
+      </button>
+      <div className="flex items-center gap-2 border-t border-slate-100 p-3">
+        <button
+          onClick={onOpen}
+          className="flex h-10 flex-1 items-center justify-center rounded-xl bg-cyan-50 text-xs font-black text-primary hover:bg-primary hover:text-white"
+        >
+          Detail
+        </button>
+        <button
+          onClick={onAdd}
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-primary hover:text-white"
+          title="Tambah ke daftar belanja"
+        >
+          <ShoppingCart className="h-4 w-4" />
+        </button>
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white"
+            title="Hapus resep"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </article>
+  )
+}
+
+function cleanText(value: string) {
+  return value
+    .replace(/ðŸŒ§ï¸|â˜€ï¸|âœ¨/g, '')
+    .replace(/Â°F/g, '°F')
+    .trim()
 }

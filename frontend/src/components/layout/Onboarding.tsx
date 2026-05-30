@@ -75,7 +75,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             onComplete={onComplete}
             onSelect={setCurrentIndex}
             onNext={nextSlide}
-            shouldReduceMotion={shouldReduceMotion}
           />
         ) : (
           <AndroidOnboarding
@@ -98,20 +97,34 @@ function DesktopOnboarding({
   onComplete,
   onSelect,
   onNext,
-  shouldReduceMotion,
 }: {
   activeSlide: Slide
   currentIndex: number
   onComplete: () => void
   onSelect: (index: number) => void
   onNext: () => void
-  shouldReduceMotion: boolean
 }) {
   const progress = useMemo(() => Math.round(((currentIndex + 1) / slides.length) * 100), [currentIndex])
 
   return (
-    <div className="mx-auto grid h-full max-w-7xl grid-cols-[380px_1fr] gap-8 px-8 py-8">
-      <aside className="flex min-h-0 flex-col rounded-3xl border border-white/80 bg-white/[0.88] p-6 shadow-xl">
+    <div className="relative mx-auto grid h-full max-w-7xl grid-cols-[360px_1fr] gap-8 px-8 py-8">
+      <div className="absolute right-8 top-8 z-20 flex items-center gap-3">
+        <button
+          onClick={onComplete}
+          className="h-11 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-600 shadow-sm transition hover:border-cyan-200 hover:text-cyan-700"
+        >
+          Lewati
+        </button>
+        <button
+          onClick={onNext}
+          className="flex h-11 items-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-sm transition hover:bg-cyan-700"
+        >
+          {currentIndex === slides.length - 1 ? 'Selesai' : 'Lanjut'}
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      <aside className="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-white/80 bg-white/[0.88] p-6 shadow-xl">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-600 text-white">
             <Monitor className="h-6 w-6" />
@@ -122,7 +135,7 @@ function DesktopOnboarding({
           </div>
         </div>
 
-        <div className="mt-8 space-y-3">
+        <div className="mt-8 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
           {slides.map((slide, index) => {
             const isActive = currentIndex === index
             return (
@@ -151,25 +164,13 @@ function DesktopOnboarding({
           })}
         </div>
 
-        <div className="mt-auto pt-6">
+        <div className="shrink-0 pt-6">
           <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100">
             <div className="h-full rounded-full bg-cyan-600 transition-all" style={{ width: `${progress}%` }} />
           </div>
-          <div className="grid grid-cols-[1fr_auto] gap-3">
-            <button
-              onClick={onComplete}
-              className="h-12 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-600 transition hover:border-cyan-200 hover:text-cyan-700"
-            >
-              Lewati
-            </button>
-            <button
-              onClick={onNext}
-              className="flex h-12 items-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg transition hover:bg-cyan-700"
-            >
-              {currentIndex === slides.length - 1 ? 'Mulai' : 'Lanjut'}
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+            {progress}% siap
+          </p>
         </div>
       </aside>
 
@@ -181,22 +182,14 @@ function DesktopOnboarding({
                 <Sparkles className="h-4 w-4" />
                 Stabil untuk layar besar
               </div>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeSlide.title}
-                  initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={shouldReduceMotion ? undefined : { opacity: 0, y: -12 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <h2 className="max-w-xl text-5xl font-black leading-tight tracking-tight text-slate-950">
-                    {activeSlide.title}
-                  </h2>
-                  <p className="mt-5 max-w-xl text-lg font-semibold leading-8 text-slate-600">
-                    {activeSlide.caption}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
+              <div>
+                <h2 className="max-w-xl text-5xl font-black leading-tight tracking-tight text-slate-950">
+                  {activeSlide.title}
+                </h2>
+                <p className="mt-5 max-w-xl text-lg font-semibold leading-8 text-slate-600">
+                  {activeSlide.caption}
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
@@ -210,18 +203,12 @@ function DesktopOnboarding({
           </div>
 
           <div className="relative min-h-0 bg-cyan-900">
-            <AnimatePresence mode="wait">
-              <motion.img
-                key={activeSlide.image}
-                src={activeSlide.image}
-                alt=""
-                initial={shouldReduceMotion ? false : { opacity: 0, scale: 1.03 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.22 }}
-                className="h-full w-full object-cover"
-              />
-            </AnimatePresence>
+            <img
+              key={activeSlide.image}
+              src={activeSlide.image}
+              alt=""
+              className="h-full w-full object-cover"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
           </div>
         </div>
