@@ -4,6 +4,7 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import AiAssistant from '../chat/AiAssistant'
 import TopNav from './TopNav'
 import BottomNav from './BottomNav'
+import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 
 // Immersive premium deep ocean assets
 import bgOcean from '../../assets/background/MyStyle25.jpg'
@@ -11,6 +12,7 @@ import bgSunlight from '../../assets/background/Random but Beautiful.jpg'
 import bgBatik from '../../assets/background/Bold Batik Patterns to Transform Your Home Decor Today!.jpg'
 
 export default function UserLayout() {
+  const { isMobile, shouldReduceMotion } = useDeviceProfile()
   // Spring-smoothed mouse coordinate trackers
   const mouseX = useSpring(useMotionValue(0), { stiffness: 45, damping: 18 })
   const mouseY = useSpring(useMotionValue(0), { stiffness: 45, damping: 18 })
@@ -21,6 +23,12 @@ export default function UserLayout() {
   const bgBatikY = useTransform(mouseY, (y) => y * 0.4)
 
   useEffect(() => {
+    if (isMobile || shouldReduceMotion) {
+      mouseX.set(0)
+      mouseY.set(0)
+      return
+    }
+
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window
       const normX = e.clientX / innerWidth - 0.5
@@ -30,10 +38,12 @@ export default function UserLayout() {
     }
     window.addEventListener('mousemove', handleMouseMove)
     return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [mouseX, mouseY])
+  }, [isMobile, mouseX, mouseY, shouldReduceMotion])
 
   const particles = useMemo(() => {
-    return Array.from({ length: 16 }, (_, i) => ({
+    if (isMobile || shouldReduceMotion) return []
+
+    return Array.from({ length: 8 }, (_, i) => ({
       id: i,
       size: Math.random() * 8 + 4,
       left: Math.random() * 100,
@@ -43,30 +53,34 @@ export default function UserLayout() {
       floatRange: Math.random() * 50 + 20,
       glow: Math.random() > 0.4 ? 'from-cyan-400 to-teal-300' : 'from-blue-300 to-teal-400'
     }))
-  }, [])
+  }, [isMobile, shouldReduceMotion])
 
   return (
     <div className="min-h-screen transition-colors duration-500 overflow-x-hidden font-sans relative text-slate-100 bg-[#020b18]">
       <AiAssistant />
 
-      {/* BACKGROUND PARALLAX (TIDAK DISENTUH) */}
+      {/* BACKGROUND PARALLAX - lighter on mobile and reduced-motion devices */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div 
-          style={{ x: mouseX, y: mouseY, backgroundImage: `url(${bgOcean})` }}
-          className="absolute inset-[-50px] bg-cover bg-center opacity-40 lg:opacity-30 scale-[1.05]" 
+          style={isMobile || shouldReduceMotion ? { backgroundImage: `url(${bgOcean})` } : { x: mouseX, y: mouseY, backgroundImage: `url(${bgOcean})` }}
+          className="absolute inset-[-24px] bg-cover bg-center opacity-[0.35] lg:opacity-30 scale-[1.03]"
         />
         <motion.div 
-          style={{ x: bgSunlightX, y: bgSunlightY, backgroundImage: `url(${bgSunlight})` }}
-          animate={{ opacity: [0.10, 0.25, 0.10] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute inset-[-50px] bg-cover bg-center mix-blend-overlay"
+          style={isMobile || shouldReduceMotion ? { backgroundImage: `url(${bgSunlight})` } : { x: bgSunlightX, y: bgSunlightY, backgroundImage: `url(${bgSunlight})` }}
+          animate={shouldReduceMotion ? { opacity: 0.12 } : { opacity: [0.08, 0.18, 0.08] }}
+          transition={{ duration: 9, repeat: shouldReduceMotion ? 0 : Infinity, ease: "easeInOut" }}
+          className="absolute inset-[-24px] bg-cover bg-center mix-blend-overlay"
         />
         <motion.div 
-          style={{ x: bgBatikX, y: bgBatikY, backgroundImage: `url(${bgBatik})`, backgroundSize: '360px' }}
-          className="absolute inset-[-50px] bg-repeat opacity-[0.02] mix-blend-overlay"
+          style={isMobile || shouldReduceMotion ? { backgroundImage: `url(${bgBatik})`, backgroundSize: '360px' } : { x: bgBatikX, y: bgBatikY, backgroundImage: `url(${bgBatik})`, backgroundSize: '360px' }}
+          className="absolute inset-[-24px] bg-repeat opacity-[0.015] mix-blend-overlay"
         />
-        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-950/20 blur-[130px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[550px] h-[550px] bg-teal-950/20 blur-[120px] rounded-full" />
+        {!isMobile && !shouldReduceMotion && (
+          <>
+            <div className="absolute top-[-10%] right-[-10%] w-[520px] h-[520px] bg-cyan-950/[0.16] blur-[100px] rounded-full" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[480px] h-[480px] bg-teal-950/[0.16] blur-[96px] rounded-full" />
+          </>
+        )}
         
         {particles.map((p) => (
           <motion.div

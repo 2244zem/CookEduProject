@@ -76,7 +76,15 @@ export const authApi = {
   register: (data: any) => api.post('/register', data),
   login: (data: { email: string; password: string }) => api.post('/login', data),
   profile: () => api.get('/profile'),
-  updateProfile: (data: any) => api.put('/profile', data),
+  updateProfile: (data: any) => {
+    if (data instanceof FormData) {
+      if (!data.has('_method')) data.append('_method', 'PUT');
+      return api.post('/profile', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put('/profile', data);
+  },
   sendOTP: (email: string) => api.post('/password/otp', { email }),
   resetPassword: (data: any) => api.post('/password/reset', data),
   addXp: (amount: number) => api.post('/user/add-xp', { amount }),

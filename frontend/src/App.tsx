@@ -24,6 +24,7 @@ import DaftarBelanja from './pages/user/DaftarBelanja'
 import AiAssistant from './pages/user/AiAssistant'
 import SmartWeatherDashboard from './pages/SmartWeatherDashboard'
 import CookShare from './pages/user/CookShare'
+import { useDeviceProfile } from './hooks/useDeviceProfile'
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { isAuthenticated, isAdmin } = useAuthStore()
@@ -35,6 +36,7 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
 export default function App() {
   const { isAuthenticated, isAdmin } = useAuthStore()
   const { isDarkMode } = useThemeStore()
+  const { shouldReduceMotion } = useDeviceProfile()
   const [showSplash, setShowSplash] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return localStorage.getItem('hasSeenOnboarding') !== 'true'
@@ -43,9 +45,10 @@ export default function App() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 3000)
+    const splashDuration = shouldReduceMotion ? 900 : 1700
+    const timer = setTimeout(() => setShowSplash(false), splashDuration)
     return () => clearTimeout(timer)
-  }, [])
+  }, [shouldReduceMotion])
 
   useEffect(() => {
     if (isAuthenticated && isAdmin && location.pathname === '/') {
@@ -71,9 +74,9 @@ export default function App() {
   if (showOnboarding) return <Onboarding onComplete={handleCompleteOnboarding} />
 
   const pageVariants = {
-    initial: { opacity: 0, y: 8 },
+    initial: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 },
     animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -8 }
+    exit: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }
   }
 
   return (
@@ -84,7 +87,7 @@ export default function App() {
         animate="animate"
         exit="exit"
         variants={pageVariants}
-        transition={{ duration: 0.2, ease: "easeOut" }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: "easeOut" }}
         className="min-h-screen"
       >
         <Routes location={location}>

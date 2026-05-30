@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react'
-import { motion, AnimatePresence, useDragControls } from 'framer-motion'
-import { ArrowRight, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowRight, CheckCircle2, Monitor, Smartphone, Sparkles } from 'lucide-react'
 
+import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 import imgBg from '../../assets/background.png'
 import imgBgDrop from '../../assets/backgrounddrop.jpg'
 import img1 from '../../assets/download (1).jpg'
@@ -10,212 +11,295 @@ import img3 from '../../assets/download (3).jpg'
 import imgFood from '../../assets/food_drawing.jpg'
 
 interface OnboardingProps {
-  onComplete: () => void;
+  onComplete: () => void
 }
+
+type Slide = {
+  title: string
+  caption: string
+  image: string
+}
+
+const slides: Slide[] = [
+  {
+    title: 'Dapur virtual siap dipakai.',
+    caption: 'Cari resep, simpan bahan, dan lanjut masak tanpa halaman yang terasa berat.',
+    image: img1,
+  },
+  {
+    title: 'Resep cocok untuk dapur harian.',
+    caption: 'Mulai dari menu Nusantara sampai ide cepat saat bahan di rumah terbatas.',
+    image: img2,
+  },
+  {
+    title: 'Belajar teknik dengan alur jelas.',
+    caption: 'Panduan langkah, catatan ibu, dan mode masak dibuat lebih mudah dibaca.',
+    image: img3,
+  },
+  {
+    title: 'Chef AI tetap ringan saat dibuka.',
+    caption: 'Tanya bahan pengganti, rekomendasi cuaca, atau langkah memasak dari satu tempat.',
+    image: imgFood,
+  },
+  {
+    title: 'Ayo mulai memasak.',
+    caption: 'CookEdu sudah menyesuaikan tampilan untuk Android dan desktop.',
+    image: imgBgDrop,
+  },
+]
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const dragControls = useDragControls()
-
-  const slides = [
-    {
-      title: "Dapur Virtual Anda Dimulai Di Sini.",
-      icon: <img src={img1} alt="Welcome" className="w-full h-full object-contain mix-blend-multiply p-4" />,
-      bg: "bg-gradient-to-br from-[#E0F7FA] to-[#B2EBF2]"
-    },
-    {
-      title: "Dari Masakan Nusantara hingga Hidangan Global.",
-      icon: <img src={img2} alt="Global" className="w-full h-full object-contain mix-blend-multiply p-4" />,
-      bg: "bg-gradient-to-br from-[#E0F7FA] to-[#B2EBF2]"
-    },
-    {
-      title: "Kuasai Teknik dengan Video Tutorial & Panduan Teks.",
-      icon: <img src={img3} alt="Tutorials" className="w-full h-full object-contain mix-blend-multiply p-4" />,
-      bg: "bg-gradient-to-br from-[#E0F7FA] to-[#B2EBF2]"
-    },
-    {
-      title: "Tanyakan pada Chef AI Assistant: Bantuan Cerdas Selalu Siap.",
-      icon: <img src={imgFood} alt="AI" className="w-full h-full object-cover mix-blend-overlay opacity-80 rounded-full" />,
-      bg: "bg-gradient-to-br from-[#E0F7FA] to-[#B2EBF2]"
-    },
-    {
-      title: "Jadilah Koki yang Andal: Mulai Perjalanan Masak Anda.",
-      icon: <img src={imgBgDrop} alt="Chef" className="w-full h-full object-cover mix-blend-overlay opacity-80 rounded-full" />,
-      bg: "bg-gradient-to-br from-[#E0F7FA] to-[#B2EBF2]"
-    },
-    {
-      title: "Dapur Kami Sudah Siap. Ayo Mulai!",
-      icon: <img src={img1} alt="Start" className="w-full h-full object-contain mix-blend-multiply p-4 scale-110" />,
-      bg: "bg-gradient-to-br from-[#E0F7FA] to-[#B2EBF2]"
-    }
-  ]
+  const { isDesktop, isAndroid, shouldReduceMotion } = useDeviceProfile()
+  const activeSlide = slides[currentIndex]
 
   const nextSlide = () => {
-    if (currentIndex < slides.length - 1) setCurrentIndex(prev => prev + 1)
-  }
-
-  const handleDragEnd = (event: any, info: any) => {
-    const offset = info.offset.x;
-    const velocity = info.velocity.x;
-
-    if (offset < -50 || velocity < -500) {
-      if (currentIndex < slides.length - 1) {
-        setCurrentIndex(prev => prev + 1)
-      }
-    } else if (offset > 50 || velocity > 500) {
-      if (currentIndex > 0) {
-        setCurrentIndex(prev => prev - 1)
-      }
+    if (currentIndex < slides.length - 1) {
+      setCurrentIndex((prev) => prev + 1)
+    } else {
+      onComplete()
     }
   }
 
   return (
-    <div 
-      className="fixed inset-0 z-[100] flex flex-col overflow-hidden font-sans bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${imgBg})` }}
+    <div
+      className="fixed inset-0 z-[100] overflow-hidden bg-slate-950 text-slate-900"
+      style={{ backgroundImage: `url(${imgBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
-      {/* Fallback overlay to ensure text readability - optimized for mobile performance */}
-      <div className={`absolute inset-0 bg-gradient-to-b ${window.innerWidth <= 768 ? 'from-white/60 via-white/40 to-[#0077B6]/30' : 'from-white/30 via-white/10 to-[#0077B6]/20 backdrop-blur-[2px]'}`} />
-      
-      {/* Floating Ocean Theme Ambience (Sun and Clouds) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Animated Sun */}
-        <motion.div 
-          animate={window.innerWidth <= 768 ? {
-            opacity: [0.6, 0.8, 0.6]
-          } : { 
-            scale: [1, 1.1, 1], 
-            rotate: [0, 10, 0] 
-          }} 
-          transition={window.innerWidth <= 768 ? {
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          } : { 
-            repeat: Infinity, 
-            duration: 8, 
-            ease: "easeInOut" 
-          }} 
-          className={`absolute top-12 left-12 rounded-full opacity-80 ${window.innerWidth <= 768 ? 'w-24 h-24 bg-yellow-100 blur-sm' : 'w-32 h-32 bg-gradient-to-tr from-yellow-300 to-orange-200 blur-xl mix-blend-screen'}`}
-        />
-        
-        {/* Hide extra heavy sun and clouds entirely on mobile screen sizes to keep FPS at 60 */}
-        {window.innerWidth > 768 && (
-          <>
-            <motion.div 
-              animate={{ scale: [1, 1.05, 1] }} 
-              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }} 
-              className="absolute top-16 left-16 w-24 h-24 bg-white rounded-full blur-md opacity-90"
-            />
-            
-            {/* Animated Clouds */}
-            <motion.div 
-              animate={{ x: [0, 50, 0] }} 
-              transition={{ repeat: Infinity, duration: 20, ease: "linear" }} 
-              className="absolute top-24 right-10 w-48 h-16 bg-white/40 rounded-full blur-2xl"
-            />
-            <motion.div 
-              animate={{ x: [0, -40, 0] }} 
-              transition={{ repeat: Infinity, duration: 25, ease: "linear" }} 
-              className="absolute top-40 left-1/4 w-64 h-20 bg-white/30 rounded-full blur-3xl"
-            />
-          </>
-        )}
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col justify-center px-6 relative z-10">
-        
-        {/* Title positioned above the card */}
-        <div className="h-28 mb-8 flex items-end justify-center">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="text-center"
-            >
-              <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-snug max-w-sm mx-auto">
-                {slides[currentIndex].title}
-              </h1>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Glassmorphism Card Slider */}
-        <div className="relative w-full max-w-md mx-auto aspect-[3/4] md:aspect-square">
-          <AnimatePresence initial={false} custom={currentIndex}>
-            <motion.div
-              key={currentIndex}
-              custom={currentIndex}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.8}
-              onDragEnd={handleDragEnd}
-              initial={{ opacity: 0, scale: 0.9, x: 100 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.9, x: -100 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="absolute inset-0 w-full h-full bg-white/70 backdrop-blur-md rounded-[40px] shadow-[0_20px_40px_-15px_rgba(0,119,182,0.15)] border border-white flex flex-col items-center justify-center p-8 cursor-grab active:cursor-grabbing overflow-hidden"
-            >
-              {/* Card Internal Glow */}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
-              
-              {/* Illustration from assets */}
-              <motion.div 
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2, type: "spring" }}
-                className="relative z-10 w-64 h-64 md:w-72 md:h-72 rounded-3xl flex items-center justify-center shadow-sm overflow-hidden bg-transparent"
-              >
-                {slides[currentIndex].icon}
-              </motion.div>
-              
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Navigation Dots */}
-        <div className="flex justify-center gap-2 mt-10">
-          {slides.map((_, i) => (
-            <div 
-              key={i} 
-              className={`h-2 rounded-full transition-all duration-500 ease-out ${i === currentIndex ? 'w-8 bg-[#0077B6]' : 'w-2 bg-[#0077B6]/20'}`} 
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Footer Controls */}
-      <div className="p-8 pb-12 w-full max-w-md mx-auto relative z-10 flex flex-col items-center gap-4">
-        {currentIndex === slides.length - 1 ? (
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            onClick={onComplete}
-            className="w-full py-4 bg-[#0077B6] text-white rounded-3xl font-black text-lg shadow-[0_10px_20px_rgba(0,119,182,0.3)] hover:scale-105 active:scale-95 transition-all"
-          >
-            Lanjut
-          </motion.button>
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.92] via-cyan-50/[0.88] to-sky-100/[0.94]" />
+      <div className="relative z-10 h-full">
+        {isDesktop ? (
+          <DesktopOnboarding
+            activeSlide={activeSlide}
+            currentIndex={currentIndex}
+            onComplete={onComplete}
+            onSelect={setCurrentIndex}
+            onNext={nextSlide}
+            shouldReduceMotion={shouldReduceMotion}
+          />
         ) : (
-          <button
-            onClick={nextSlide}
-            className="w-16 h-16 rounded-full bg-white text-[#0077B6] flex items-center justify-center shadow-[0_10px_20px_rgba(0,119,182,0.1)] hover:scale-110 active:scale-95 transition-all border border-blue-50"
-          >
-            <ArrowRight className="w-8 h-8" />
-          </button>
+          <AndroidOnboarding
+            activeSlide={activeSlide}
+            currentIndex={currentIndex}
+            isAndroid={isAndroid}
+            onComplete={onComplete}
+            onNext={nextSlide}
+            shouldReduceMotion={shouldReduceMotion}
+          />
         )}
-        
-        <button 
+      </div>
+    </div>
+  )
+}
+
+function DesktopOnboarding({
+  activeSlide,
+  currentIndex,
+  onComplete,
+  onSelect,
+  onNext,
+  shouldReduceMotion,
+}: {
+  activeSlide: Slide
+  currentIndex: number
+  onComplete: () => void
+  onSelect: (index: number) => void
+  onNext: () => void
+  shouldReduceMotion: boolean
+}) {
+  const progress = useMemo(() => Math.round(((currentIndex + 1) / slides.length) * 100), [currentIndex])
+
+  return (
+    <div className="mx-auto grid h-full max-w-7xl grid-cols-[380px_1fr] gap-8 px-8 py-8">
+      <aside className="flex min-h-0 flex-col rounded-3xl border border-white/80 bg-white/[0.88] p-6 shadow-xl">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-600 text-white">
+            <Monitor className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-700">Desktop view</p>
+            <h1 className="text-2xl font-black tracking-tight text-slate-950">CookEdu</h1>
+          </div>
+        </div>
+
+        <div className="mt-8 space-y-3">
+          {slides.map((slide, index) => {
+            const isActive = currentIndex === index
+            return (
+              <button
+                key={slide.title}
+                onClick={() => onSelect(index)}
+                className={`w-full rounded-2xl border p-4 text-left transition ${
+                  isActive
+                    ? 'border-cyan-300 bg-cyan-50 text-slate-950 shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:bg-cyan-50/60'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black ${
+                    isActive ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="text-sm font-black">{slide.title}</p>
+                    <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-500">{slide.caption}</p>
+                  </div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="mt-auto pt-6">
+          <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-cyan-600 transition-all" style={{ width: `${progress}%` }} />
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <button
+              onClick={onComplete}
+              className="h-12 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-600 transition hover:border-cyan-200 hover:text-cyan-700"
+            >
+              Lewati
+            </button>
+            <button
+              onClick={onNext}
+              className="flex h-12 items-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg transition hover:bg-cyan-700"
+            >
+              {currentIndex === slides.length - 1 ? 'Mulai' : 'Lanjut'}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <main className="flex min-h-0 items-center">
+        <div className="relative grid h-full max-h-[760px] w-full grid-cols-[1.05fr_0.95fr] overflow-hidden rounded-[32px] border border-white/70 bg-white/[0.76] shadow-2xl">
+          <div className="flex flex-col justify-between p-10">
+            <div>
+              <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-700">
+                <Sparkles className="h-4 w-4" />
+                Stabil untuk layar besar
+              </div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSlide.title}
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, y: -12 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <h2 className="max-w-xl text-5xl font-black leading-tight tracking-tight text-slate-950">
+                    {activeSlide.title}
+                  </h2>
+                  <p className="mt-5 max-w-xl text-lg font-semibold leading-8 text-slate-600">
+                    {activeSlide.caption}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {['Navigasi jelas', 'Efek ringan', 'Klik aman'].map((item) => (
+                <div key={item} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <CheckCircle2 className="mb-3 h-5 w-5 text-cyan-600" />
+                  <p className="text-sm font-black text-slate-800">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative min-h-0 bg-cyan-900">
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeSlide.image}
+                src={activeSlide.image}
+                alt=""
+                initial={shouldReduceMotion ? false : { opacity: 0, scale: 1.03 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.22 }}
+                className="h-full w-full object-cover"
+              />
+            </AnimatePresence>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function AndroidOnboarding({
+  activeSlide,
+  currentIndex,
+  isAndroid,
+  onComplete,
+  onNext,
+  shouldReduceMotion,
+}: {
+  activeSlide: Slide
+  currentIndex: number
+  isAndroid: boolean
+  onComplete: () => void
+  onNext: () => void
+  shouldReduceMotion: boolean
+}) {
+  return (
+    <div className="flex h-full flex-col px-5 pb-8 pt-7">
+      <div className="flex items-center justify-between">
+        <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.86] px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-700 shadow-sm">
+          <Smartphone className="h-4 w-4" />
+          {isAndroid ? 'Android view' : 'Mobile view'}
+        </div>
+        <button
           onClick={onComplete}
-          className="text-sm font-bold text-slate-400 hover:text-[#0077B6] transition-colors mt-2"
+          className="rounded-full bg-white/[0.86] px-4 py-2 text-xs font-black text-slate-500 shadow-sm active:scale-95"
         >
           Lewati
         </button>
       </div>
 
+      <div className="flex flex-1 flex-col justify-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSlide.title}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={shouldReduceMotion ? undefined : { opacity: 0, y: -14 }}
+            transition={{ duration: 0.18 }}
+            className="mx-auto w-full max-w-md"
+          >
+            <div className="aspect-[4/5] overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-xl">
+              <img src={activeSlide.image} alt="" className="h-full w-full object-cover" />
+            </div>
+            <h1 className="mt-7 text-3xl font-black leading-tight tracking-tight text-slate-950">
+              {activeSlide.title}
+            </h1>
+            <p className="mt-3 text-base font-semibold leading-7 text-slate-600">
+              {activeSlide.caption}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div className="mx-auto w-full max-w-md">
+        <div className="mb-5 flex justify-center gap-2">
+          {slides.map((slide, index) => (
+            <div
+              key={slide.title}
+              className={`h-2 rounded-full transition-all ${index === currentIndex ? 'w-8 bg-cyan-600' : 'w-2 bg-cyan-600/20'}`}
+            />
+          ))}
+        </div>
+        <button
+          onClick={onNext}
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 text-base font-black text-white shadow-xl active:scale-[0.98]"
+        >
+          {currentIndex === slides.length - 1 ? 'Mulai Masak' : 'Lanjut'}
+          <ArrowRight className="h-5 w-5" />
+        </button>
+      </div>
     </div>
   )
 }

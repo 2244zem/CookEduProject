@@ -1,14 +1,29 @@
 import { motion } from 'framer-motion'
-import { ChefHat } from 'lucide-react'
 import bgSplash from '../../assets/background/MyStyle25.jpg'
 import bgBatik from '../../assets/background/Bold Batik Patterns to Transform Your Home Decor Today!.jpg'
+import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 
 export default function SplashScreen() {
+  const { isMobile, shouldReduceMotion } = useDeviceProfile()
+  const auraAnimation = shouldReduceMotion
+    ? { opacity: 0.42 }
+    : isMobile
+      ? { opacity: [0.3, 0.55, 0.3] }
+      : {
+          scale: [1, 1.12, 1],
+          rotate: [0, 120, 240, 360],
+          borderRadius: [
+            "40% 60% 70% 30% / 40% 50% 60% 50%",
+            "60% 40% 30% 70% / 50% 60% 40% 60%",
+            "40% 60% 70% 30% / 40% 50% 60% 50%"
+          ]
+        }
+
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#030B17] overflow-hidden">
       {/* Background with images */}
       <div className="absolute inset-0 z-0">
-         <img src={bgSplash} alt="" className="w-full h-full object-cover opacity-65 scale-110 animate-pulse" style={{ animationDuration: '7s' }} />
+         <img src={bgSplash} alt="" className={`w-full h-full object-cover opacity-[0.65] scale-105 ${shouldReduceMotion ? '' : 'animate-pulse'}`} style={{ animationDuration: '7s' }} />
          <img src={bgBatik} alt="" className="absolute inset-0 w-full h-full object-cover opacity-[0.04] mix-blend-overlay" />
          <div className="absolute inset-0 bg-gradient-to-t from-[#030B17] via-[#030B17]/40 to-transparent" />
       </div>
@@ -16,23 +31,9 @@ export default function SplashScreen() {
       <div className="relative z-10 flex flex-col items-center">
         {/* Soft Egg-like Glow Aura - optimized for mobile performance */}
         <motion.div 
-          animate={window.innerWidth <= 768 ? {
-            opacity: [0.3, 0.6, 0.3]
-          } : { 
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 180, 270, 360],
-            borderRadius: ["40% 60% 70% 30% / 40% 50% 60% 50%", "60% 40% 30% 70% / 50% 60% 40% 60%", "40% 60% 70% 30% / 40% 50% 60% 50%"]
-          }}
-          transition={window.innerWidth <= 768 ? {
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut"
-          } : {
-            duration: 10,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          className={`absolute w-64 h-64 bg-white/10 z-[-1] ${window.innerWidth <= 768 ? 'blur-md' : 'blur-3xl'}`}
+          animate={auraAnimation}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: isMobile ? 4 : 10, repeat: Infinity, ease: isMobile ? "easeInOut" : "linear" }}
+          className={`absolute w-64 h-64 bg-white/10 z-[-1] ${isMobile ? 'blur-md' : 'blur-3xl'}`}
         />
 
         <div className="flex mb-4">
@@ -40,10 +41,10 @@ export default function SplashScreen() {
              <motion.span
                key={i}
                initial={{ y: 0 }}
-               animate={{ y: [0, -20, 0] }}
+               animate={shouldReduceMotion ? { y: 0 } : { y: [0, -20, 0] }}
                transition={{
                  duration: 2,
-                 repeat: Infinity,
+                 repeat: shouldReduceMotion ? 0 : Infinity,
                  delay: i * 0.1,
                  ease: "easeInOut"
                }}
@@ -70,8 +71,8 @@ export default function SplashScreen() {
           className="h-1 bg-white/20 rounded-full mt-12 overflow-hidden"
         >
            <motion.div 
-             animate={{ x: [-200, 200] }}
-             transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+             animate={shouldReduceMotion ? { x: 0 } : { x: [-200, 200] }}
+             transition={{ repeat: shouldReduceMotion ? 0 : Infinity, duration: 1, ease: 'linear' }}
              className="w-1/2 h-full bg-white shadow-glow"
            />
         </motion.div>
