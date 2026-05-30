@@ -1,0 +1,6 @@
+name = "cook-edu"
+compatibility_date = "2026-05-30"
+pages_build_output_dir = "dist"
+
+[vars]
+COOKEDU_DEPLOY_TARGET = "cloudflare-pages"

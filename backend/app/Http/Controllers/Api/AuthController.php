@@ -112,13 +112,7 @@ class AuthController extends Controller
         ]);
 
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if exists
-            if ($user->avatar) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-            
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $validated['avatar'] = $path;
+            $validated['avatar'] = $this->storeAvatar($request, $user);
         }
 
         $user->update($validated);
@@ -127,6 +121,36 @@ class AuthController extends Controller
             'message' => 'Profil berhasil diperbarui.',
             'user' => new UserResource($user->fresh()),
         ]);
+    }
+
+    /**
+     * Upload avatar using the shared web/native endpoint.
+     */
+    public function updateAvatar(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $user->update([
+            'avatar' => $this->storeAvatar($request, $user),
+        ]);
+
+        return response()->json([
+            'message' => 'Foto profil berhasil diperbarui.',
+            'user' => new UserResource($user->fresh()),
+        ]);
+    }
+
+    private function storeAvatar(Request $request, User $user): string
+    {
+        if ($user->avatar) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
+        return $request->file('avatar')->store('avatars', 'public');
     }
 
     /**

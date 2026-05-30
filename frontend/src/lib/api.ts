@@ -85,6 +85,13 @@ export const authApi = {
     }
     return api.put('/profile', data);
   },
+  uploadAvatar: (avatar: File | Blob) => {
+    const data = new FormData();
+    data.append('avatar', avatar);
+    return api.post('/profile/avatar', data, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
   sendOTP: (email: string) => api.post('/password/otp', { email }),
   resetPassword: (data: any) => api.post('/password/reset', data),
   addXp: (amount: number) => api.post('/user/add-xp', { amount }),

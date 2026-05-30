@@ -29,13 +29,15 @@ export default function ChefAiChat() {
 
   // Countdown timer untuk rate limit
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (rateLimitCountdown > 0) {
       timer = setTimeout(() => setRateLimitCountdown(rateLimitCountdown - 1), 1000);
     } else if (rateLimitCountdown === 0 && isRateLimited) {
       setIsRateLimited(false);
     }
-    return () => clearTimeout(timer);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [rateLimitCountdown, isRateLimited]);
 
   const scrollToBottom = () => {

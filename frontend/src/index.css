@@ -38,6 +38,21 @@
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-surface text-text-primary transition-colors duration-500 selection:bg-cyan-100 selection:text-cyan-900;
   }

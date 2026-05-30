@@ -122,7 +122,8 @@ export const useShoppingStore = create<ShoppingState>()(
         
         allItems.forEach(item => {
           const nameLower = item.name.toLowerCase();
-          const key = `${nameLower}-${item.unit.toLowerCase()}`;
+          const unit = item.unit || '';
+          const key = `${nameLower}-${unit.toLowerCase()}`;
           if (!merged[key]) {
             // Find price based on name match
             const priceKey = Object.keys(ingredientPrices).find(k => nameLower.includes(k)) || '';

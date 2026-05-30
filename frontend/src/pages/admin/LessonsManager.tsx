@@ -6,7 +6,7 @@ import {
   Plus, Pencil, Trash2, X, Loader2, BookOpen, 
   Video, Target, Layers, Search, Filter, 
   ChevronRight, Sparkles, PlayCircle, Clock,
-  Eye, GraduationCap
+  Eye, GraduationCap, AlertCircle
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore, useThemeStore } from '../../store'
 import { useNavigate, useLocation } from 'react-router-dom'
-import api, { authApi } from '../../lib/api'
+import { authApi } from '../../lib/api'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -62,9 +62,9 @@ export default function Profile() {
         formData.append('avatar', form.avatar)
       }
 
-      const response = await api.post('/profile', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      const response = form.avatar
+        ? await authApi.updateProfile(formData)
+        : await authApi.updateProfile({ name: form.name, phone: form.phone })
       
       const updatedUser = response.data.user
       if (updatedUser) {

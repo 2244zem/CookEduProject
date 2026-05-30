@@ -14,12 +14,16 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+        navigateFallback: '/index.html',
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
       },
       manifest: {
         name: 'CookEdu Platform',
         short_name: 'CookEdu',
         description: 'Learn to Cook Like a Pro',
-        theme_color: '#FF8C00',
+        theme_color: '#10367D',
+        background_color: '#EBEBEB',
+        display: 'standalone',
         icons: [
           {
             src: 'pwa-192x192.png',

@@ -63,7 +63,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] overflow-hidden bg-slate-950 text-slate-900"
+      className="fixed inset-0 z-[100] w-screen overflow-hidden bg-slate-950 text-slate-900"
       style={{ backgroundImage: `url(${imgBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-white/[0.92] via-cyan-50/[0.88] to-sky-100/[0.94]" />
@@ -233,21 +233,21 @@ function AndroidOnboarding({
   shouldReduceMotion: boolean
 }) {
   return (
-    <div className="flex h-full flex-col px-5 pb-8 pt-7">
-      <div className="flex items-center justify-between">
-        <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.86] px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-700 shadow-sm">
+    <div className="flex h-full w-full max-w-full flex-col overflow-hidden px-5 pb-8 pt-7">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <div className="inline-flex min-w-0 max-w-[calc(100vw-7rem)] items-center gap-2 truncate rounded-full bg-white/[0.86] px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-700 shadow-sm">
           <Smartphone className="h-4 w-4" />
           {isAndroid ? 'Android view' : 'Mobile view'}
         </div>
         <button
           onClick={onComplete}
-          className="rounded-full bg-white/[0.86] px-4 py-2 text-xs font-black text-slate-500 shadow-sm active:scale-95"
+          className="shrink-0 rounded-full bg-white/[0.86] px-4 py-2 text-xs font-black text-slate-500 shadow-sm active:scale-95"
         >
           Lewati
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center">
+      <div className="flex min-h-0 flex-1 flex-col justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeSlide.title}
@@ -255,15 +255,15 @@ function AndroidOnboarding({
             animate={{ opacity: 1, y: 0 }}
             exit={shouldReduceMotion ? undefined : { opacity: 0, y: -14 }}
             transition={{ duration: 0.18 }}
-            className="mx-auto w-full max-w-md"
+            className="mx-auto w-full min-w-0 max-w-md"
           >
             <div className="aspect-[4/5] overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-xl">
               <img src={activeSlide.image} alt="" className="h-full w-full object-cover" />
             </div>
-            <h1 className="mt-7 text-3xl font-black leading-tight tracking-tight text-slate-950">
+            <h1 className="mt-7 break-words text-3xl font-black leading-tight tracking-tight text-slate-950">
               {activeSlide.title}
             </h1>
-            <p className="mt-3 text-base font-semibold leading-7 text-slate-600">
+            <p className="mt-3 break-words text-base font-semibold leading-7 text-slate-600">
               {activeSlide.caption}
             </p>
           </motion.div>

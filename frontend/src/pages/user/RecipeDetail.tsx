@@ -28,7 +28,7 @@ export default function RecipeDetail() {
       if (isCookingMode && 'wakeLock' in navigator) {
         try {
           wakeLock = await (navigator as any).wakeLock.request('screen');
-        } catch (err) {
+        } catch (err: any) {
           console.error(`${err.name}, ${err.message}`);
         }
       } else if (wakeLock) {
