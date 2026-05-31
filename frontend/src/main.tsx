@@ -6,6 +6,11 @@ import App from './App'
 import './index.css'
 
 import ErrorBoundary from './components/debug/ErrorBoundary'
+import { rescueStaleServiceWorker } from './lib/cacheRescue'
+
+rescueStaleServiceWorker().catch((error) => {
+  console.warn('CookEdu cache rescue skipped:', error)
+})
 
 const queryClient = new QueryClient({
   defaultOptions: {
