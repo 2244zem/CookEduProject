@@ -1,10 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { recipeApi, categoryApi } from '../../lib/api'
+import { isSupabaseConfigured } from '../../lib/supabaseClient'
+import {
+  listSupabaseAdminRecipes,
+  listSupabaseCategories,
+  saveSupabaseAdminRecipe,
+  setSupabaseRecipePublished,
+} from '../../lib/supabaseData'
+import { resolveMediaUrl } from '../../lib/media'
 import { TableSkeleton } from '../../components/ui/Skeleton'
 import { 
   Plus, Pencil, Trash2, RotateCcw, X, 
-  ChefHat, Search, Filter, Clock, 
+  ChefHat, Search, Clock,
   ChevronRight, LayoutGrid, List, Sparkles,
   Camera, UtensilsCrossed, AlertCircle
 } from 'lucide-react'
@@ -19,75 +27,170 @@ const emptyStep: Step = { instruction: '', duration: 0, tip: '' }
 export default function RecipesCRUD() {
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
-  const [editId, setEditId] = useState<number | null>(null)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'suspended'>('all')
+  const [imagePreview, setImagePreview] = useState('')
   const [form, setForm] = useState({
     title: '', description: '', difficulty: 'beginner', cooking_time: 15, prep_time: 5, servings: 2, category_id: '',
     ingredients: [{ ...emptyIngredient }] as Ingredient[],
     steps: [{ ...emptyStep }] as Step[],
     image: null as File | null,
+    imageUrl: '',
+    is_published: true,
   })
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    if (!form.image) {
+      setImagePreview('')
+      return
+    }
+
+    const nextPreview = URL.createObjectURL(form.image)
+    setImagePreview(nextPreview)
+    return () => URL.revokeObjectURL(nextPreview)
+  }, [form.image])
+
   const { data: recipesData, isLoading } = useQuery({
     queryKey: ['admin-recipes'],
-    queryFn: () => recipeApi.adminList(),
+    queryFn: () => isSupabaseConfigured ? listSupabaseAdminRecipes() : recipeApi.adminList(),
   })
 
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => categoryApi.list(),
+    queryFn: () => isSupabaseConfigured ? listSupabaseCategories() : categoryApi.list(),
   })
 
-  const recipes = recipesData?.data?.data || []
-  const categories = categoriesData?.data?.data || []
+  const allRecipes = recipesData?.data?.data || []
+  const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.data?.data || []
+  const recipes = allRecipes.filter((recipe: any) => {
+    const keyword = search.trim().toLowerCase()
+    const matchesSearch = !keyword || [
+      recipe.title,
+      recipe.description,
+      recipe.category?.name,
+      recipe.category,
+    ].some((value) => String(value || '').toLowerCase().includes(keyword))
+    const matchesStatus =
+      statusFilter === 'all'
+      || (statusFilter === 'live' && !recipe.deleted_at)
+      || (statusFilter === 'suspended' && recipe.deleted_at)
+
+    return matchesSearch && matchesStatus
+  })
 
   const saveMutation = useMutation({
-    mutationFn: (data: any) => editId ? recipeApi.update(editId, data) : recipeApi.create(data),
+    mutationFn: (data: any) => {
+      if (isSupabaseConfigured) return saveSupabaseAdminRecipe({ ...data, id: editId })
+      return editId ? recipeApi.update(Number(editId), data) : recipeApi.create(data)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-recipes'] })
+      queryClient.invalidateQueries({ queryKey: ['recipes'] })
       resetForm()
     },
-    onError: (err: any) => setError(err.response?.data?.message || 'Gagal menyimpan resep.'),
+    onError: (err: any) => setError(err.message || err.response?.data?.message || 'Gagal menyimpan resep.'),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => recipeApi.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-recipes'] }),
+    mutationFn: (id: string) => isSupabaseConfigured ? setSupabaseRecipePublished(id, false) : recipeApi.delete(Number(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-recipes'] })
+      queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    },
+    onError: (err: any) => setError(err.message || err.response?.data?.message || 'Gagal menonaktifkan resep.'),
   })
 
   const restoreMutation = useMutation({
-    mutationFn: (id: number) => recipeApi.restore(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-recipes'] }),
+    mutationFn: (id: string) => isSupabaseConfigured ? setSupabaseRecipePublished(id, true) : recipeApi.restore(Number(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-recipes'] })
+      queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    },
+    onError: (err: any) => setError(err.message || err.response?.data?.message || 'Gagal memulihkan resep.'),
   })
 
   const resetForm = () => {
     setShowForm(false)
     setEditId(null)
     setError('')
-    setForm({ title: '', description: '', difficulty: 'beginner', cooking_time: 15, prep_time: 5, servings: 2, category_id: '', ingredients: [{ ...emptyIngredient }], steps: [{ ...emptyStep }], image: null })
+    setForm({ title: '', description: '', difficulty: 'beginner', cooking_time: 15, prep_time: 5, servings: 2, category_id: '', ingredients: [{ ...emptyIngredient }], steps: [{ ...emptyStep }], image: null, imageUrl: '', is_published: true })
+  }
+
+  const openCreateForm = () => {
+    resetForm()
+    setShowForm(true)
   }
 
   const editRecipe = (r: any) => {
-    setEditId(r.id)
-    setForm({ title: r.title, description: r.description, difficulty: r.difficulty, cooking_time: r.cooking_time, prep_time: r.prep_time || 0, servings: r.servings || 1, category_id: r.category?.id || '', ingredients: r.ingredients || [{ ...emptyIngredient }], steps: r.steps || [{ ...emptyStep }], image: null })
+    setEditId(String(r.id))
+    setForm({
+      title: r.title || '',
+      description: r.description || '',
+      difficulty: r.difficulty || 'beginner',
+      cooking_time: r.cooking_time || 15,
+      prep_time: r.prep_time || 0,
+      servings: r.servings || 1,
+      category_id: r.category_id || r.category?.id || '',
+      ingredients: r.ingredients?.length ? r.ingredients : [{ ...emptyIngredient }],
+      steps: r.steps?.length ? r.steps : [{ ...emptyStep }],
+      image: null,
+      imageUrl: resolveMediaUrl(r.image_url || r.imageUrl) || '',
+      is_published: r.is_published !== false && !r.deleted_at,
+    })
     setShowForm(true)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    const cleanIngredients = form.ingredients.filter((ing) => ing.item.trim())
+    const cleanSteps = form.steps.filter((step) => step.instruction.trim())
+    if (!cleanIngredients.length || !cleanSteps.length) {
+      setError('Minimal isi satu bahan dan satu instruksi.')
+      return
+    }
+
+    if (form.image && !form.image.type.startsWith('image/')) {
+      setError('File gambar harus berformat image.')
+      return
+    }
+
+    if (form.image && form.image.size > 5 * 1024 * 1024) {
+      setError('Ukuran gambar maksimal 5MB.')
+      return
+    }
+
+    if (isSupabaseConfigured) {
+      saveMutation.mutate({
+        title: form.title,
+        description: form.description,
+        difficulty: form.difficulty,
+        cooking_time: form.cooking_time,
+        prep_time: form.prep_time,
+        servings: form.servings,
+        category_id: form.category_id || null,
+        ingredients: cleanIngredients,
+        steps: cleanSteps,
+        image: form.image,
+        existingImageUrl: form.imageUrl,
+        is_published: form.is_published,
+      })
+      return
+    }
     
     const formData = new FormData()
     Object.keys(form).forEach(key => {
       if (key === 'ingredients' || key === 'steps') {
-        formData.append(key, JSON.stringify((form as any)[key]))
-      } else if (key === 'image' && !(form as any)[key]) {
+        formData.append(key, JSON.stringify(key === 'ingredients' ? cleanIngredients : cleanSteps))
+      } else if ((key === 'image' && !(form as any)[key]) || key === 'imageUrl' || key === 'is_published') {
         // Skip
       } else {
         formData.append(key, (form as any)[key])
       }
     })
-    if (form.category_id) formData.append('category_id', form.category_id)
 
     saveMutation.mutate(formData)
   }
@@ -126,7 +229,7 @@ export default function RecipesCRUD() {
         </div>
 
         <button 
-          onClick={() => { setEditId(null); setShowForm(true); }}
+          onClick={openCreateForm}
           className="bg-slate-900 text-white px-8 py-5 rounded-[28px] font-black text-sm uppercase tracking-widest shadow-2xl shadow-slate-900/30 flex items-center gap-4 hover:scale-[1.03] active:scale-95 transition-all"
         >
           <Plus className="w-5 h-5 text-cyan-400" /> 
@@ -138,10 +241,25 @@ export default function RecipesCRUD() {
       <div className="bg-white p-4 rounded-[35px] border border-slate-100 shadow-xl shadow-slate-200/20 flex flex-col md:flex-row items-center gap-4">
          <div className="relative flex-1 group w-full">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-cyan-600 transition-colors" />
-            <input type="text" placeholder="Search database resep..." className="w-full bg-slate-50 border-none rounded-[22px] py-4 pl-16 pr-8 text-sm font-bold focus:ring-4 focus:ring-cyan-500/10 transition-all" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search database resep..."
+              className="w-full bg-slate-50 border-none rounded-[22px] py-4 pl-16 pr-8 text-sm font-bold focus:ring-4 focus:ring-cyan-500/10 transition-all"
+            />
          </div>
          <div className="flex items-center gap-3 w-full md:w-auto">
-            <button className="flex-1 md:flex-none px-6 py-4 bg-slate-50 text-slate-500 rounded-[22px] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-transparent hover:border-slate-200 transition-all"><Filter className="w-4 h-4" /> Filter</button>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="flex-1 md:flex-none px-6 py-4 bg-slate-50 text-slate-500 rounded-[22px] font-black text-[10px] uppercase tracking-widest border border-transparent hover:border-slate-200 transition-all"
+              aria-label="Filter status resep"
+            >
+              <option value="all">All Status</option>
+              <option value="live">Live</option>
+              <option value="suspended">Suspended</option>
+            </select>
             <div className="h-10 w-[2px] bg-slate-100 hidden md:block" />
             <div className="flex bg-slate-50 p-1.5 rounded-[22px]">
                <button className="p-2.5 bg-white text-cyan-600 rounded-xl shadow-sm"><LayoutGrid className="w-5 h-5" /></button>
@@ -171,7 +289,7 @@ export default function RecipesCRUD() {
                       <div className="flex items-center gap-6">
                         <div className="w-16 h-16 rounded-[22px] bg-slate-100 overflow-hidden shadow-inner border border-slate-50">
                           {r.image_url ? (
-                            <img src={r.image_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                            <img src={resolveMediaUrl(r.image_url)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50"><UtensilsCrossed className="w-6 h-6" /></div>
                           )}
@@ -291,25 +409,39 @@ export default function RecipesCRUD() {
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hero Image</label>
                         <div className="relative h-[236px] bg-slate-50 rounded-[30px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 group hover:border-cyan-500/30 transition-all overflow-hidden cursor-pointer">
                            {form.image ? (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                 <p className="text-xs font-black text-cyan-600">Image selected: {form.image.name}</p>
-                              </div>
+                              <>
+                                 <img src={imagePreview} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                                 <div className="absolute inset-x-0 bottom-0 bg-slate-950/70 px-5 py-3 text-white">
+                                   <p className="truncate text-xs font-black">{form.image.name}</p>
+                                 </div>
+                              </>
+                           ) : form.imageUrl ? (
+                              <>
+                                 <img src={resolveMediaUrl(form.imageUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                                 <div className="absolute inset-0 bg-slate-950/0 transition-colors group-hover:bg-slate-950/30" />
+                                 <p className="relative z-10 rounded-2xl bg-white/90 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">Replace image</p>
+                              </>
                            ) : (
                               <>
                                  <Camera className="w-10 h-10 mb-3 text-slate-300" />
                                  <p className="text-[10px] font-black uppercase tracking-widest">Click to upload visual</p>
                               </>
                            )}
-                           <input type="file" accept="image/*" onChange={(e) => setForm({ ...form, image: e.target.files?.[0] as any })}
+                           <input type="file" accept="image/*" onChange={(e) => setForm({ ...form, image: e.target.files?.[0] || null })}
                              className="absolute inset-0 opacity-0 cursor-pointer" />
                         </div>
                      </div>
 
-                     <div className="grid grid-cols-2 gap-6">
+                     <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cooking Time (m)</label>
                            <input type="number" value={form.cooking_time} onChange={(e) => setForm({ ...form, cooking_time: +e.target.value })}
                              className="w-full bg-slate-50 border-none rounded-[22px] py-4 px-6 text-sm font-bold focus:ring-4 focus:ring-cyan-500/10 transition-all" min={1} />
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prep (m)</label>
+                           <input type="number" value={form.prep_time} onChange={(e) => setForm({ ...form, prep_time: +e.target.value })}
+                             className="w-full bg-slate-50 border-none rounded-[22px] py-4 px-6 text-sm font-bold focus:ring-4 focus:ring-cyan-500/10 transition-all" min={0} />
                         </div>
                         <div className="space-y-2">
                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Servings</label>
@@ -317,6 +449,16 @@ export default function RecipesCRUD() {
                              className="w-full bg-slate-50 border-none rounded-[22px] py-4 px-6 text-sm font-bold focus:ring-4 focus:ring-cyan-500/10 transition-all" min={1} />
                         </div>
                      </div>
+
+                     <label className="flex items-center justify-between rounded-[24px] bg-slate-50 px-5 py-4">
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Published</span>
+                       <input
+                         type="checkbox"
+                         checked={form.is_published}
+                         onChange={(e) => setForm({ ...form, is_published: e.target.checked })}
+                         className="h-5 w-5 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                       />
+                     </label>
                   </div>
                 </div>
 

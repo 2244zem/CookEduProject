@@ -6,6 +6,7 @@ export type SupabaseRecipeRow = {
   user_id: string | null
   title: string
   category: string
+  category_id?: string | null
   description: string | null
   image_url: string | null
   difficulty: 'beginner' | 'intermediate' | 'advanced' | null
@@ -21,6 +22,16 @@ export type SupabaseRecipeRow = {
   is_official: boolean
   is_published: boolean | null
   created_at: string
+  updated_at?: string | null
+  categories?: SupabaseCategoryRow | null
+}
+
+export type SupabaseCategoryRow = {
+  id: string
+  name: string
+  slug?: string | null
+  description?: string | null
+  created_at?: string | null
 }
 
 export type SupabaseCommunityPostRow = {
@@ -63,6 +74,197 @@ function assertSupabase() {
 function isMissingColumnError(error: unknown) {
   const err = error as { code?: string; message?: string } | null
   return err?.code === 'PGRST204' || /column .* does not exist|Could not find .* column/i.test(err?.message || '')
+}
+
+function getDifficultyLabel(difficulty?: string | null) {
+  if (difficulty === 'advanced') return 'Advanced'
+  if (difficulty === 'intermediate') return 'Intermediate'
+  return 'Beginner'
+}
+
+function normalizeAdminRecipe(row: Partial<SupabaseRecipeRow>) {
+  const categoryName = row.categories?.name || row.category || 'Community'
+  const imageUrl = resolveMediaUrl(row.image_url || row.video_url) || ''
+  const cookingTime = row.cooking_time || 25
+  const prepTime = row.prep_time || 0
+
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    title: row.title || '',
+    description: row.description || '',
+    category: row.categories || { id: row.category_id || '', name: categoryName },
+    category_id: row.category_id || row.categories?.id || '',
+    image_url: imageUrl,
+    imageUrl,
+    difficulty: row.difficulty || 'beginner',
+    difficulty_label: getDifficultyLabel(row.difficulty),
+    cooking_time: cookingTime,
+    prep_time: prepTime,
+    total_time: cookingTime + prepTime,
+    servings: row.servings || 1,
+    ingredients: Array.isArray(row.ingredients) ? row.ingredients : [],
+    steps: Array.isArray(row.steps) ? row.steps : [],
+    nutritional_info: row.nutritional_info || null,
+    min_temp_celsius: row.min_temp_celsius,
+    max_temp_celsius: row.max_temp_celsius,
+    is_official: Boolean(row.is_official),
+    is_published: row.is_published !== false,
+    deleted_at: row.is_published === false ? row.updated_at || row.created_at || new Date().toISOString() : null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    isSupabase: true,
+  }
+}
+
+export async function listSupabaseCategories() {
+  const client = assertSupabase()
+  const { data, error } = await client
+    .from('categories')
+    .select('*')
+    .order('name', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function listSupabaseAdminRecipes() {
+  const client = assertSupabase()
+  const { data, error } = await client
+    .from('recipes')
+    .select('*, categories(*)')
+    .order('created_at', { ascending: false })
+
+  if (error && isMissingColumnError(error)) {
+    const { data: legacyData, error: legacyError } = await client
+      .from('recipes')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (legacyError) throw legacyError
+    return {
+      data: {
+        data: (legacyData || []).map((row: Partial<SupabaseRecipeRow>) => normalizeAdminRecipe(row)),
+      },
+    }
+  }
+
+  if (error) throw error
+
+  return {
+    data: {
+      data: (data || []).map((row: Partial<SupabaseRecipeRow>) => normalizeAdminRecipe(row)),
+    },
+  }
+}
+
+async function resolveCategoryName(categoryId?: string | null, fallback?: string) {
+  if (!categoryId) return fallback || 'Community'
+
+  const client = assertSupabase()
+  const { data, error } = await client
+    .from('categories')
+    .select('name')
+    .eq('id', categoryId)
+    .maybeSingle()
+
+  if (error) {
+    console.warn('CookEdu category lookup failed:', error.message)
+    return fallback || 'Community'
+  }
+
+  return data?.name || fallback || 'Community'
+}
+
+export async function saveSupabaseAdminRecipe(input: {
+  id?: string | null
+  title: string
+  description: string
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  cooking_time: number
+  prep_time: number
+  servings: number
+  category_id?: string | null
+  category?: string | null
+  ingredients: unknown[]
+  steps: unknown[]
+  image?: File | null
+  existingImageUrl?: string | null
+  is_published?: boolean
+}) {
+  const client = assertSupabase()
+  const { data: authData, error: authError } = await client.auth.getUser()
+  if (authError) throw authError
+  if (!authData.user) throw new Error('Login diperlukan untuk menyimpan resep')
+
+  let imageUrl = input.existingImageUrl || null
+  if (input.image) {
+    imageUrl = await uploadPublicMedia('recipe-media', input.image, authData.user.id)
+  }
+
+  const categoryName = await resolveCategoryName(input.category_id, input.category || null)
+  const payload = {
+    user_id: authData.user.id,
+    title: input.title,
+    category: categoryName,
+    category_id: input.category_id || null,
+    description: input.description || null,
+    image_url: imageUrl,
+    difficulty: input.difficulty || 'beginner',
+    ingredients: input.ingredients || [],
+    steps: input.steps || [],
+    cooking_time: Number(input.cooking_time) || 25,
+    prep_time: Number(input.prep_time) || 0,
+    servings: Number(input.servings) || 1,
+    nutritional_info: null,
+    is_official: true,
+    is_published: input.is_published ?? true,
+  }
+
+  const query = input.id
+    ? client.from('recipes').update(payload).eq('id', input.id)
+    : client.from('recipes').insert(payload)
+
+  const { data, error } = await query.select('*, categories(*)').single()
+
+  if (error && isMissingColumnError(error)) {
+    const legacyPayload = {
+      user_id: authData.user.id,
+      title: input.title,
+      category: categoryName,
+      description: input.description || null,
+      steps: input.steps || [],
+      video_url: imageUrl,
+      is_official: true,
+    }
+
+    const legacyQuery = input.id
+      ? client.from('recipes').update(legacyPayload).eq('id', input.id)
+      : client.from('recipes').insert(legacyPayload)
+
+    const { data: legacyData, error: legacyError } = await legacyQuery.select('*').single()
+    if (legacyError) throw legacyError
+    return normalizeAdminRecipe(legacyData as SupabaseRecipeRow)
+  }
+
+  if (error) throw error
+  return normalizeAdminRecipe(data as SupabaseRecipeRow)
+}
+
+export async function setSupabaseRecipePublished(id: string, isPublished: boolean) {
+  const client = assertSupabase()
+  const { error } = await client
+    .from('recipes')
+    .update({ is_published: isPublished })
+    .eq('id', id)
+
+  if (error && isMissingColumnError(error) && !isPublished) {
+    const { error: deleteError } = await client.from('recipes').delete().eq('id', id)
+    if (deleteError) throw deleteError
+    return
+  }
+
+  if (error) throw error
 }
 
 export async function listSupabaseRecipes() {
