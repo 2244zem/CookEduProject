@@ -41,6 +41,11 @@ export function getSupabaseUserName(user?: SupabaseUser | null, profile?: Partia
   )
 }
 
+function getSafeProfileUsername(user: SupabaseUser, profile?: Partial<CookEduProfile> | null) {
+  const candidate = getSupabaseUserName(user, profile).trim()
+  return candidate.length >= 2 ? candidate : `koki-${user.id.slice(0, 8)}`
+}
+
 export async function getProfileForSession(session?: Session | null) {
   if (!supabase || !session?.user) return null
 
@@ -66,13 +71,12 @@ function isMissingColumnError(error: unknown) {
 export async function upsertProfileForUser(user: SupabaseUser, values: Partial<CookEduProfile> = {}) {
   if (!supabase) return null
 
-  const username = getSupabaseUserName(user, values)
+  const username = getSafeProfileUsername(user, values)
   const payload = {
     id: user.id,
     username,
     phone: values.phone ?? null,
     avatar_url: values.avatar_url ?? user.user_metadata?.avatar_url ?? null,
-    role: values.role || 'user',
     xp: values.xp ?? 0,
     preferences: values.preferences ?? null,
     updated_at: new Date().toISOString(),
@@ -91,7 +95,6 @@ export async function upsertProfileForUser(user: SupabaseUser, values: Partial<C
         id: user.id,
         username,
         avatar_url: values.avatar_url ?? user.user_metadata?.avatar_url ?? null,
-        role: values.role || 'user',
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' })
       .select('*')

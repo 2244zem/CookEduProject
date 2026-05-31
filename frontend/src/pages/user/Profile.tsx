@@ -76,7 +76,6 @@ export default function Profile() {
           username: form.name,
           phone: form.phone,
           avatar_url: avatarUrl,
-          role: user?.role || 'user',
         })
 
         const updatedUser = {

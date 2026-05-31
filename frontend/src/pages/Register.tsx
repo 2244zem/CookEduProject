@@ -36,7 +36,6 @@ export default function Register() {
               username: form.name,
               name: form.name,
               phone: form.phone || null,
-              role: 'user',
             },
           },
         })
@@ -52,7 +51,6 @@ export default function Register() {
         const profile = await upsertProfileForUser(data.user, {
           username: form.name,
           phone: form.phone || null,
-          role: 'user',
         })
         const user = {
           id: data.user.id,
