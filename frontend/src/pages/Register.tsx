@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { authApi } from '../lib/api'
-import { getSupabaseUserName, isSupabaseConfigured, supabase, upsertProfileForUser } from '../lib/supabaseClient'
+import { getSupabaseAuthMessage, getSupabaseUserName, isSupabaseConfigured, supabase, upsertProfileForUser } from '../lib/supabaseClient'
 import { ChefHat, Mail, Lock, User, Phone, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import bgHero from '../assets/background.png'
@@ -32,6 +32,7 @@ export default function Register() {
           email: form.email,
           password: form.password,
           options: {
+            emailRedirectTo: `${window.location.origin}/login`,
             data: {
               username: form.name,
               name: form.name,
@@ -44,7 +45,8 @@ export default function Register() {
         if (!data.user) throw new Error('Supabase belum membuat user. Coba beberapa saat lagi.')
 
         if (!data.session) {
-          setError('Akun dibuat. Jika konfirmasi email aktif, cek inbox lalu login kembali.')
+          sessionStorage.setItem('cookedu_auth_notice', 'Akun dibuat. Cek inbox/spam untuk konfirmasi email, lalu login kembali.')
+          navigate('/login', { replace: true })
           return
         }
 
@@ -78,7 +80,13 @@ export default function Register() {
     } catch (err: any) {
       console.error('Registration error:', err)
       const msgs = err.response?.data?.errors
-      setError(msgs ? Object.values(msgs).flat().join(' ') : err.message || err.response?.data?.message || 'Oops, sepertinya ada yang terlewat. Mari periksa lagi data kamu.')
+      setError(
+        msgs
+          ? Object.values(msgs).flat().join(' ')
+          : isSupabaseConfigured
+            ? getSupabaseAuthMessage(err, 'Oops, sepertinya ada yang terlewat. Mari periksa lagi data kamu.')
+            : err.message || err.response?.data?.message || 'Oops, sepertinya ada yang terlewat. Mari periksa lagi data kamu.'
+      )
     } finally {
       setLoading(false)
     }

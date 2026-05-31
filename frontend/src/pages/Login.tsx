@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { authApi } from '../lib/api'
-import { getSupabaseUserName, isSupabaseConfigured, supabase, upsertProfileForUser } from '../lib/supabaseClient'
+import { getSupabaseAuthMessage, getSupabaseUserName, isSupabaseConfigured, supabase, upsertProfileForUser } from '../lib/supabaseClient'
 import { Mail, Eye, EyeOff, Loader2, ChefHat } from 'lucide-react'
 import { motion } from 'framer-motion'
 import bgHero from '../assets/background.png'
@@ -57,7 +57,11 @@ export default function Login() {
       setAuth(data.user, data.token)
       navigate(data.user.role === 'admin' ? '/admin' : '/')
     } catch (err: any) {
-      setError(err.message || err.response?.data?.message || 'Oops, sepertinya email atau kata sandi kurang tepat. Mari coba lagi.')
+      setError(
+        isSupabaseConfigured
+          ? getSupabaseAuthMessage(err, 'Oops, sepertinya email atau kata sandi kurang tepat. Mari coba lagi.')
+          : err.message || err.response?.data?.message || 'Oops, sepertinya email atau kata sandi kurang tepat. Mari coba lagi.'
+      )
     } finally {
       setLoading(false)
     }

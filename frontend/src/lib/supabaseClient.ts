@@ -29,6 +29,30 @@ export type CookEduProfile = {
   updated_at?: string | null
 }
 
+export function getSupabaseAuthMessage(error: unknown, fallback: string) {
+  const err = error as { message?: string; status?: number; code?: string } | null
+  const message = err?.message || ''
+  const normalized = message.toLowerCase()
+
+  if (err?.status === 429 || normalized.includes('rate limit')) {
+    return 'Terlalu banyak percobaan. Supabase sedang membatasi email konfirmasi. Tunggu sekitar 1 jam, atau matikan Confirm email sementara di Supabase Auth untuk testing.'
+  }
+
+  if (normalized.includes('invalid login credentials')) {
+    return 'Email atau kata sandi belum cocok. Jika baru daftar, cek email konfirmasi dulu atau buat akun baru di Supabase.'
+  }
+
+  if (normalized.includes('email not confirmed') || normalized.includes('email_not_confirmed')) {
+    return 'Email belum dikonfirmasi. Cek inbox/spam, klik link konfirmasi, lalu login lagi.'
+  }
+
+  if (normalized.includes('user already registered') || normalized.includes('already registered')) {
+    return 'Email ini sudah terdaftar. Silakan login, atau reset kata sandi jika lupa.'
+  }
+
+  return message || fallback
+}
+
 export function getSupabaseUserName(user?: SupabaseUser | null, profile?: Partial<CookEduProfile> | null) {
   const metadata = user?.user_metadata || {}
   return (
