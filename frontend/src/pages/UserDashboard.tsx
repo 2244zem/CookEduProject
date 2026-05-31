@@ -534,7 +534,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                           placeholder="Bandung, ID"
                         />
                       </div>
-                      <div className="text-4xl font-black tracking-tighter mt-2">{temperature}°F</div>
+                      <div className="text-4xl font-black tracking-tighter mt-2">{temperature}°C</div>
                       <p className="text-xs font-bold text-teal-50 uppercase tracking-widest">{weatherCondition}</p>
                     </div>
 
@@ -553,7 +553,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                     <div className="bg-white/10 border border-white/10 rounded-2xl p-1.5 text-center backdrop-blur-md flex flex-col justify-between h-18">
                       <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center mx-auto text-[8px]">🌡️</div>
                       <div>
-                        <span className="block text-[10px] font-black">{temperature}°F</span>
+                        <span className="block text-[10px] font-black">{temperature}°C</span>
                         <span className="text-[7px] text-sky-200 block uppercase font-medium">Feels like</span>
                       </div>
                     </div>
@@ -629,7 +629,7 @@ export default function UserDashboard({ onSwitchView }: UserDashboardProps = {})
                     <div className="bg-white/60 dark:bg-slate-800/60 rounded-3xl p-10 text-center text-slate-400 border border-sky-100/40">
                       <AlertCircle className="w-8 h-8 text-sky-400/40 mx-auto mb-2 animate-bounce" />
                       <p className="text-xs font-bold text-slate-700 dark:text-white">Tidak ada menu untuk suhu saat ini</p>
-                      <p className="text-[10px] text-slate-400 mt-1 max-w-[280px] mx-auto">Suhu {temperature}°F tidak mencakup catalog resep. Coba ganti suhu ideal kota Anda!</p>
+                      <p className="text-[10px] text-slate-400 mt-1 max-w-[280px] mx-auto">Suhu {temperature}°C tidak mencakup katalog resep. Coba ganti suhu ideal kota Anda!</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-4">

@@ -443,7 +443,7 @@ export default function RecipeList() {
                     placeholder="Bandung, ID"
                   />
                 </div>
-                <div className="text-3xl font-black tracking-tighter mt-1">{weather.temp}Â°C</div>
+                <div className="text-3xl font-black tracking-tighter mt-1">{weather.temp}°C</div>
                 <p className="text-[10px] font-black text-teal-50 uppercase tracking-widest leading-none mt-0.5">{weather.condition}</p>
               </div>
 
@@ -464,7 +464,7 @@ export default function RecipeList() {
                   <Thermometer className="w-2.5 h-2.5" />
                 </div>
                 <div>
-                  <span className="block text-[9px] font-black">{weather.feelsLike}Â°C</span>
+                  <span className="block text-[9px] font-black">{weather.feelsLike}°C</span>
                   <span className="text-[6px] text-sky-200 block uppercase font-medium">Feels like</span>
                 </div>
               </div>
@@ -994,7 +994,7 @@ function DesktopRecipeHome({
               <div className="mt-6 grid grid-cols-3 gap-3">
                 <DesktopMetric icon={BookOpen} label="Resep siap" value={filteredRecipes.length || 0} />
                 <DesktopMetric icon={ShoppingCart} label="Daftar belanja" value={cartCount} />
-                <DesktopMetric icon={CloudSun} label="Suhu" value={`${weather.temp}Â°F`} />
+                <DesktopMetric icon={CloudSun} label="Suhu" value={`${weather.temp}°C`} />
               </div>
             </div>
 
@@ -1002,7 +1002,7 @@ function DesktopRecipeHome({
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-white/75">Cuaca dapur</p>
-                  <div className="mt-3 text-5xl font-black tracking-tight">{weather.temp}Â°F</div>
+                  <div className="mt-3 text-5xl font-black tracking-tight">{weather.temp}°C</div>
                   <p className="mt-1 text-sm font-black uppercase tracking-wider">{weather.condition}</p>
                 </div>
                 <button

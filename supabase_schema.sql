@@ -1,6 +1,8 @@
--- CookEdu Supabase bootstrap
--- Run this in Supabase SQL Editor for project lhjdwmkceagdtnexiuek.
--- This file is idempotent and can be re-run after frontend updates.
+-- CookEdu Supabase schema reset/upgrade
+-- Project: lhjdwmkceagdtnexiuek
+-- Run the whole file in Supabase SQL Editor.
+-- Safe to re-run: it creates missing tables, adds missing columns, refreshes RLS,
+-- enables public storage buckets, and reloads the PostgREST schema cache.
 
 create extension if not exists "pgcrypto";
 
@@ -413,3 +415,7 @@ create policy "users can update own comment attachments"
   to authenticated
   using (bucket_id = 'comment-attachments' and (select auth.uid())::text = (storage.foldername(name))[1])
   with check (bucket_id = 'comment-attachments' and (select auth.uid())::text = (storage.foldername(name))[1]);
+
+-- Force Supabase/PostgREST to see newly added columns immediately.
+select pg_notification_queue_usage();
+notify pgrst, 'reload schema';

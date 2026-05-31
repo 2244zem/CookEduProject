@@ -60,17 +60,21 @@ function assertSupabase() {
   return supabase
 }
 
+function isMissingColumnError(error: unknown) {
+  const err = error as { code?: string; message?: string } | null
+  return err?.code === 'PGRST204' || /column .* does not exist|Could not find .* column/i.test(err?.message || '')
+}
+
 export async function listSupabaseRecipes() {
   const client = assertSupabase()
   const { data, error } = await client
     .from('recipes')
-    .select('id, user_id, title, category, description, image_url, difficulty, ingredients, steps, cooking_time, prep_time, servings, nutritional_info, min_temp_celsius, max_temp_celsius, video_url, is_official, is_published, created_at')
-    .eq('is_published', true)
+    .select('*')
     .order('created_at', { ascending: false })
 
   if (error) throw error
 
-  return (data || []).map((row: SupabaseRecipeRow) => ({
+  return (data || []).filter((row: Partial<SupabaseRecipeRow>) => row.is_published !== false).map((row: Partial<SupabaseRecipeRow>) => ({
     id: row.id,
     title: row.title,
     description: row.description || '',
@@ -96,14 +100,14 @@ export async function getSupabaseRecipe(id: string) {
   const client = assertSupabase()
   const { data, error } = await client
     .from('recipes')
-    .select('id, user_id, title, category, description, image_url, difficulty, ingredients, steps, cooking_time, prep_time, servings, nutritional_info, min_temp_celsius, max_temp_celsius, video_url, is_official, is_published, created_at')
+    .select('*')
     .eq('id', id)
     .maybeSingle()
 
   if (error) throw error
   if (!data) return null
 
-  const row = data as SupabaseRecipeRow
+  const row = data as Partial<SupabaseRecipeRow>
   const steps = Array.isArray(row.steps)
     ? row.steps.map((step: any) => typeof step === 'string' ? step : step?.instruction || step?.text).filter(Boolean)
     : []
@@ -171,6 +175,27 @@ export async function createSupabaseRecipe(input: {
     })
     .select()
     .single()
+
+  if (error && isMissingColumnError(error)) {
+    const { data: legacyData, error: legacyError } = await client
+      .from('recipes')
+      .insert({
+        user_id: authData.user.id,
+        title: input.title,
+        category: input.category,
+        description: input.description || null,
+        steps: input.steps || [],
+        min_temp_celsius: input.minTempCelsius ?? 18,
+        max_temp_celsius: input.maxTempCelsius ?? 32,
+        video_url: mediaUrl || input.imageUrl || null,
+        is_official: false,
+      })
+      .select()
+      .single()
+
+    if (legacyError) throw legacyError
+    return legacyData as SupabaseRecipeRow
+  }
 
   if (error) throw error
   return data as SupabaseRecipeRow

@@ -256,11 +256,11 @@ Di tengah kondisi cuaca ${weather.temp}°C saat ini, mengontrol suhu masakan ada
           <div className="rounded-[28px] border border-sky-100 bg-sky-50/70 p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-sky-600 shadow-sm">
-                {weather.temp <= 66 ? <CloudRain className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                {weather.temp <= 18 ? <CloudRain className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
               </div>
               <div>
                 <p className="text-xs font-black uppercase text-slate-900">{weather.city}</p>
-                <p className="text-2xl font-black text-sky-600">{weather.temp}F</p>
+                <p className="text-2xl font-black text-sky-600">{weather.temp}°C</p>
               </div>
             </div>
           </div>

@@ -169,7 +169,7 @@ export default function SmartWeatherDashboard() {
               </div>
               <div className="flex justify-between border-b border-sky-100/50 pb-1.5">
                 <span className="text-slate-400">Suhu Sync:</span>
-                <span className="text-sky-600 font-black">{weatherCache.temp}°F</span>
+                <span className="text-sky-600 font-black">{weatherCache.temp}°C</span>
               </div>
               <div className="flex justify-between border-b border-sky-100/50 pb-1.5">
                 <span className="text-slate-400">Status Cuaca:</span>

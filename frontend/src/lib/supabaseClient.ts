@@ -46,7 +46,7 @@ export async function getProfileForSession(session?: Session | null) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, phone, avatar_url, role, xp, preferences, updated_at')
+    .select('*')
     .eq('id', session.user.id)
     .maybeSingle()
 
@@ -56,6 +56,11 @@ export async function getProfileForSession(session?: Session | null) {
   }
 
   return data as CookEduProfile | null
+}
+
+function isMissingColumnError(error: unknown) {
+  const err = error as { code?: string; message?: string } | null
+  return err?.code === 'PGRST204' || /column .* does not exist|Could not find .* column/i.test(err?.message || '')
 }
 
 export async function upsertProfileForUser(user: SupabaseUser, values: Partial<CookEduProfile> = {}) {
@@ -76,8 +81,25 @@ export async function upsertProfileForUser(user: SupabaseUser, values: Partial<C
   const { data, error } = await supabase
     .from('profiles')
     .upsert(payload, { onConflict: 'id' })
-    .select('id, username, phone, avatar_url, role, xp, preferences, updated_at')
+    .select('*')
     .single()
+
+  if (error && isMissingColumnError(error)) {
+    const { data: legacyData, error: legacyError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        username,
+        avatar_url: values.avatar_url ?? user.user_metadata?.avatar_url ?? null,
+        role: values.role || 'user',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' })
+      .select('*')
+      .single()
+
+    if (legacyError) throw legacyError
+    return legacyData as CookEduProfile
+  }
 
   if (error) throw error
   return data as CookEduProfile

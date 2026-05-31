@@ -251,11 +251,11 @@ export default function AdminDashboard({ onSwitchView }: AdminDashboardProps) {
                         </div>
                       </td>
 
-                      {/* Fahrenheit suitableTemp Calibration range */}
+                      {/* Celsius suitableTemp calibration range */}
                       <td className="py-4 px-6 font-mono text-slate-600 font-semibold">
                         <div className="flex items-center gap-1.5">
                           <Thermometer className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>{recipe.suitableTemp.min}°F - {recipe.suitableTemp.max}°F</span>
+                          <span>{recipe.suitableTemp.min}°C - {recipe.suitableTemp.max}°C</span>
                         </div>
                       </td>
 
@@ -404,13 +404,13 @@ export default function AdminDashboard({ onSwitchView }: AdminDashboardProps) {
                 <div className="flex items-center gap-1.5">
                   <Thermometer className="w-4 h-4 text-emerald-500" />
                   <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                    Rekalibrasi Suhu Ideal (Fahrenheit)
+                    Rekalibrasi Suhu Ideal (Celsius)
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400">Minimal (°F)</label>
+                    <label className="text-[9px] font-bold text-slate-400">Minimal (°C)</label>
                     <input
                       type="number"
                       required
@@ -420,7 +420,7 @@ export default function AdminDashboard({ onSwitchView }: AdminDashboardProps) {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400">Maksimal (°F)</label>
+                    <label className="text-[9px] font-bold text-slate-400">Maksimal (°C)</label>
                     <input
                       type="number"
                       required
