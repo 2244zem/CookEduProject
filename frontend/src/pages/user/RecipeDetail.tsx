@@ -5,10 +5,13 @@ import {
   ArrowLeft, Clock, Award, Star, UtensilsCrossed, 
   ChefHat, Heart, Share2, Check, Timer, 
   Flame, Sparkles, ShoppingCart, Plus, X,
-  ChevronLeft, ChevronRight, Maximize2
+  ChevronLeft, ChevronRight, Send, Image as ImageIcon
 } from 'lucide-react'
 import { recipes } from '../../data/recipes'
 import { useShoppingStore } from '../../store/shoppingStore'
+import { isSupabaseConfigured } from '../../lib/supabaseClient'
+import { createRecipeComment, getSupabaseRecipe, listRecipeComments, subscribeToCookEduRealtime, type SupabaseCommentRow } from '../../lib/supabaseData'
+import { avatarFallbackUrl, resolveMediaUrl, withImageFallback } from '../../lib/media'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -19,6 +22,13 @@ export default function RecipeDetail() {
   const [checkedIngredients, setCheckedIngredients] = useState<string[]>([])
   const [isCookingMode, setIsCookingMode] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
+  const [remoteRecipe, setRemoteRecipe] = useState<any | null>(null)
+  const [loadingRemoteRecipe, setLoadingRemoteRecipe] = useState(false)
+  const [comments, setComments] = useState<SupabaseCommentRow[]>([])
+  const [commentText, setCommentText] = useState('')
+  const [commentPhoto, setCommentPhoto] = useState<File | null>(null)
+  const [commentError, setCommentError] = useState('')
+  const [isSendingComment, setIsSendingComment] = useState(false)
   const { addGroup } = useShoppingStore()
   
   // Wake Lock API to keep screen on
@@ -40,7 +50,83 @@ export default function RecipeDetail() {
     return () => { if (wakeLock) wakeLock.release(); };
   }, [isCookingMode]);
 
-  const recipe = recipes.find(r => r.id === Number(id))
+  const staticRecipe = recipes.find(r => r.id === Number(id))
+  const recipe = staticRecipe || remoteRecipe
+  const isSupabaseRecipe = Boolean(!staticRecipe && id && isSupabaseConfigured)
+
+  useEffect(() => {
+    let active = true
+
+    const loadRemoteRecipe = async () => {
+      if (!isSupabaseRecipe || !id) return
+      setLoadingRemoteRecipe(true)
+      try {
+        const data = await getSupabaseRecipe(id)
+        if (active) setRemoteRecipe(data)
+      } catch (error) {
+        console.warn('Recipe detail Supabase fallback:', error)
+      } finally {
+        if (active) setLoadingRemoteRecipe(false)
+      }
+    }
+
+    loadRemoteRecipe()
+    return () => {
+      active = false
+    }
+  }, [id, isSupabaseRecipe])
+
+  useEffect(() => {
+    if (!isSupabaseRecipe || !id) return
+
+    let active = true
+    const loadComments = async () => {
+      try {
+        const rows = await listRecipeComments(id)
+        if (active) setComments(rows)
+      } catch (error) {
+        console.warn('Comment sync failed:', error)
+      }
+    }
+
+    loadComments()
+    const unsubscribe = subscribeToCookEduRealtime(loadComments)
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [id, isSupabaseRecipe])
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!id || !commentText.trim()) return
+
+    setIsSendingComment(true)
+    setCommentError('')
+    try {
+      const row = await createRecipeComment({
+        recipeId: id,
+        content: commentText.trim(),
+        photoFile: commentPhoto,
+      })
+      setComments((prev) => [...prev, row])
+      setCommentText('')
+      setCommentPhoto(null)
+    } catch (error) {
+      setCommentError(error instanceof Error ? error.message : 'Gagal mengirim komentar')
+    } finally {
+      setIsSendingComment(false)
+    }
+  }
+
+  if (loadingRemoteRecipe) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-sky-50">
+        <ChefHat className="w-16 h-16 text-cyan-200 mb-4 animate-pulse" />
+        <h2 className="text-2xl font-black text-slate-800 mb-2">Memuat Resep</h2>
+      </div>
+    )
+  }
 
   if (!recipe) {
     return (
@@ -61,7 +147,10 @@ export default function RecipeDetail() {
   }
 
   const handleStartCooking = () => {
-    addGroup(`Belanja ${recipe.title}`, recipe.ingredients.map(i => `${i.name} (${i.quantity})`))
+    const items = recipe.ingredients?.length
+      ? recipe.ingredients.map((i: any) => `${i.name} (${i.quantity})`)
+      : ['Bahan utama', 'Bumbu dasar', 'Pelengkap']
+    addGroup(`Belanja ${recipe.title}`, items)
     navigate('/daftar-belanja')
   }
 
@@ -161,7 +250,8 @@ export default function RecipeDetail() {
         <motion.img 
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
-          src={recipe.imageUrl} 
+          src={resolveMediaUrl(recipe.imageUrl) || withImageFallback(recipe.title)}
+          onError={(e) => { e.currentTarget.src = withImageFallback(recipe.title) }}
           alt={recipe.title} 
           className="w-full h-full object-cover"
         />
@@ -297,7 +387,7 @@ export default function RecipeDetail() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {recipe.ingredients.map((ing, idx) => (
+                {recipe.ingredients.length ? recipe.ingredients.map((ing: any, idx: number) => (
                   <motion.div 
                     key={idx}
                     whileTap={{ scale: 0.98 }}
@@ -322,7 +412,11 @@ export default function RecipeDetail() {
                     </div>
                     <span className="text-cyan-600 font-black text-xs bg-white px-3 py-1 rounded-full border border-cyan-50">{ing.quantity}</span>
                   </motion.div>
-                ))}
+                )) : (
+                  <div className="md:col-span-2 p-5 rounded-2xl bg-white/50 border border-white text-sm font-bold text-slate-500">
+                    Bahan detail belum tersedia untuk resep komunitas ini.
+                  </div>
+                )}
               </div>
             </section>
 
@@ -370,6 +464,81 @@ export default function RecipeDetail() {
               </div>
             </section>
           </div>
+
+          {isSupabaseRecipe && (
+            <section className="mt-16 border-t border-cyan-50 pt-12">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 bg-cyan-500 rounded-2xl shadow-lg shadow-cyan-500/20">
+                  <Share2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Komentar Komunitas</h2>
+                  <p className="text-xs font-bold text-slate-400 mt-1">Realtime dengan dukungan foto lampiran</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                {comments.length === 0 ? (
+                  <div className="p-6 rounded-3xl bg-white/50 border border-white text-sm font-bold text-slate-500 text-center">
+                    Belum ada komentar. Jadilah yang pertama memberi feedback.
+                  </div>
+                ) : comments.map((comment) => (
+                  <div key={comment.id} className="bg-white/60 border border-white rounded-3xl p-5 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={resolveMediaUrl(comment.profiles?.avatar_url) || avatarFallbackUrl(comment.profiles?.username)}
+                        alt=""
+                        className="w-10 h-10 rounded-2xl object-cover bg-cyan-50"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-black text-slate-800">{comment.profiles?.username || 'Koki CookEdu'}</h4>
+                          <span className="text-[10px] font-bold text-slate-400">{new Date(comment.created_at).toLocaleDateString('id-ID')}</span>
+                        </div>
+                        <p className="mt-2 text-sm font-medium text-slate-600 leading-relaxed">{comment.content}</p>
+                        {comment.comment_photo_url && (
+                          <img
+                            src={resolveMediaUrl(comment.comment_photo_url)}
+                            alt=""
+                            className="mt-4 w-full max-h-64 object-cover rounded-2xl border border-cyan-50"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <form onSubmit={handleSubmitComment} className="bg-white/70 border border-white rounded-[2rem] p-5 space-y-4">
+                {commentError && (
+                  <div className="bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold rounded-2xl px-4 py-3">
+                    {commentError}
+                  </div>
+                )}
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Tulis pengalaman atau foto hasil masakanmu..."
+                  className="w-full min-h-24 bg-white/70 border border-cyan-50 rounded-2xl p-4 text-sm font-bold text-slate-700 focus:outline-none focus:border-cyan-300 resize-none"
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <label className="flex items-center gap-2 text-xs font-black text-cyan-600 cursor-pointer">
+                    <ImageIcon className="w-4 h-4" />
+                    <span>{commentPhoto ? commentPhoto.name : 'Tambah foto'}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => setCommentPhoto(e.target.files?.[0] || null)} />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={isSendingComment || !commentText.trim()}
+                    className="px-5 py-3 bg-cyan-600 text-white rounded-2xl text-xs font-black flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Send className="w-4 h-4" />
+                    Kirim
+                  </button>
+                </div>
+              </form>
+            </section>
+          )}
 
           {/* Master Cooking CTA */}
           <div className="mt-20 flex flex-col gap-4 lg:flex-row">

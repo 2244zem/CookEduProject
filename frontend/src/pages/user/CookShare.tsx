@@ -6,6 +6,9 @@ import {
   ArrowLeft, Send, Star, X, Sparkles, Image, Compass, UserCheck
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media';
+import { isSupabaseConfigured } from '../../lib/supabaseClient';
+import { createCommunityPost, listCommunityPosts, subscribeToCookEduRealtime, type SupabaseCommunityPostRow } from '../../lib/supabaseData';
 
 // Premium background & photographic assets
 import bgImage from '../../assets/background/MyStyle25.jpg';
@@ -46,8 +49,8 @@ export default function CookShare() {
   const navigate = useNavigate();
   const { user: realUser } = useAuthStore();
   
-  const activeUserAvatar = realUser?.avatar_url || realUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${realUser?.name || 'zem'}&backgroundColor=b6e3f4`;
-  const activeUserName = realUser?.name || 'zem';
+  const activeUserAvatar = resolveMediaUrl(realUser?.avatar_url || realUser?.avatar) || avatarFallbackUrl(realUser?.name);
+  const activeUserName = realUser?.name || 'Koki CookEdu';
   const activeUserRole = realUser?.role === 'admin' ? 'Super Administrator' : 'Apprentice Chef';
 
   const [activeCategory, setActiveCategory] = useState("Semua");
@@ -64,6 +67,7 @@ export default function CookShare() {
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostCategory, setNewPostCategory] = useState("Dessert");
   const [newPostImageIndex, setNewPostImageIndex] = useState<number>(0);
+  const [newPostFile, setNewPostFile] = useState<File | null>(null);
   const [newPostVideo, setNewPostVideo] = useState("");
   const [newPostDesc, setNewPostDesc] = useState("");
   
@@ -72,9 +76,7 @@ export default function CookShare() {
   // Preset images map utilizing user's three photographic assets
   const PRESET_IMAGES = [img1, img2, img3];
 
-  // Initialize with travelingg reference-inspired gastronomic data
-  useEffect(() => {
-    setPosts([
+  const fallbackPosts: CookPost[] = [
       {
         id: "post_1",
         user: "Julie Echeverri",
@@ -133,7 +135,55 @@ export default function CookShare() {
         bookmarked: false,
         description: "Tanpa heavy cream! Menggunakan emulsi keju Pecorino Romano asli, kuning telur segar, dan lemak gurih Guanciale panggang yang renyah."
       }
-    ]);
+    ];
+
+  const mapCommunityPost = (post: SupabaseCommunityPostRow): CookPost => {
+    const profile = post.profiles
+    return {
+      id: post.id,
+      user: profile?.username || activeUserName,
+      avatar: resolveMediaUrl(profile?.avatar_url) || avatarFallbackUrl(profile?.username || activeUserName),
+      role: profile?.role === 'admin' ? 'Super Administrator' : 'Apprentice Chef',
+      time: new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+      title: post.title,
+      category: post.post_type === 'tips_trick' ? 'Tips' : 'Sharing',
+      image: resolveMediaUrl(post.media_url) || PRESET_IMAGES[Math.abs(post.id.charCodeAt(0)) % PRESET_IMAGES.length],
+      likes: post.upvotes,
+      liked: false,
+      comments: [],
+      shares: 0,
+      rating: 5,
+      bookmarked: false,
+      description: post.content,
+    }
+  }
+
+  // Initialize with Supabase data, fallback to local showcase if backend is empty/unavailable.
+  useEffect(() => {
+    let active = true
+
+    const loadPosts = async () => {
+      if (!isSupabaseConfigured) {
+        setPosts(fallbackPosts)
+        return
+      }
+
+      try {
+        const rows = await listCommunityPosts()
+        if (active) setPosts(rows.length ? rows.map(mapCommunityPost) : fallbackPosts)
+      } catch (error) {
+        console.warn('CookShare Supabase fallback:', error)
+        if (active) setPosts(fallbackPosts)
+      }
+    }
+
+    loadPosts()
+
+    const unsubscribe = subscribeToCookEduRealtime(loadPosts)
+    return () => {
+      active = false
+      unsubscribe()
+    }
   }, []);
 
   // Likes toggle handler with pulsing animation
@@ -188,9 +238,30 @@ export default function CookShare() {
   };
 
   // Create and publish new custom post
-  const handlePublishPost = (e: React.FormEvent) => {
+  const handlePublishPost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPostTitle.trim()) return;
+
+    if (isSupabaseConfigured) {
+      try {
+        const row = await createCommunityPost({
+          title: newPostTitle,
+          content: newPostDesc || `Formula hidangan lezat dikreasikan oleh ${activeUserName}.`,
+          postType: newPostCategory === 'Tips' ? 'tips_trick' : 'sharing',
+          mediaFile: newPostFile,
+        })
+
+        setPosts([mapCommunityPost(row), ...posts])
+        setIsCreateModalOpen(false)
+        setNewPostTitle("")
+        setNewPostDesc("")
+        setNewPostVideo("")
+        setNewPostFile(null)
+        return
+      } catch (error) {
+        console.error('Publish CookShare failed:', error)
+      }
+    }
 
     const newPost: CookPost = {
       id: `post_${Date.now()}`,
@@ -218,6 +289,7 @@ export default function CookShare() {
     setNewPostTitle("");
     setNewPostDesc("");
     setNewPostVideo("");
+    setNewPostFile(null);
   };
 
   // Format big numbers like travelingg reference
@@ -344,7 +416,7 @@ export default function CookShare() {
                     <div className="text-left leading-tight">
                       <h4 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1">
                         {post.user}
-                        {post.user === "zem" && <UserCheck className="w-3 h-3 text-sky-500 dark:text-sky-400" />}
+                        {post.user === activeUserName && <UserCheck className="w-3 h-3 text-sky-500 dark:text-sky-400" />}
                       </h4>
                       <span className="text-[9px] font-bold text-slate-400 dark:text-sky-200/50 uppercase tracking-wide block mt-0.5">
                         {post.role} • {post.time}
@@ -528,7 +600,7 @@ export default function CookShare() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar">
                 {selectedPostForComments.comments.length === 0 ? (
                   <div className="py-10 text-center text-sky-200/40 text-xs">
-                    Belum ada diskusi. Jadilah orang pertama yang mengapresiasi karya zem!
+                    Belum ada diskusi. Jadilah orang pertama yang mengapresiasi karya ini!
                   </div>
                 ) : (
                   selectedPostForComments.comments.map(c => (
@@ -624,7 +696,7 @@ export default function CookShare() {
                     required
                     value={newPostTitle}
                     onChange={(e) => setNewPostTitle(e.target.value)}
-                    placeholder="Contoh: Soto Betawi Susu zem123"
+                    placeholder="Contoh: Soto Betawi Susu"
                     className="w-full bg-white/5 border border-sky-350/15 rounded-xl p-3 text-xs font-semibold text-white focus:outline-none focus:border-sky-400 h-11"
                   />
                 </div>
@@ -654,6 +726,16 @@ export default function CookShare() {
                       className="w-full bg-white/5 border border-sky-350/15 rounded-xl p-3 text-xs font-semibold text-white focus:outline-none focus:border-sky-400 h-11"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase text-sky-200/50 tracking-wider">Upload Foto / Video</label>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={(e) => setNewPostFile(e.target.files?.[0] || null)}
+                    className="w-full bg-white/5 border border-sky-350/15 rounded-xl p-3 text-xs font-semibold text-white file:mr-3 file:border-0 file:bg-sky-500 file:text-white file:rounded-lg file:px-3 file:py-1.5"
+                  />
                 </div>
 
                 {/* Select Preset Photographic Asset (Strictly No slop, utilizing user pictures!) */}

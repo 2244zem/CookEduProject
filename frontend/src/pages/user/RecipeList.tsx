@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -15,6 +15,9 @@ import { recipes as initialRecipes, type Recipe } from '../../data/recipes'
 import { useShoppingStore } from '../../store/shoppingStore'
 import { useAuthStore, useThemeStore } from '../../store'
 import { useDeviceProfile } from '../../hooks/useDeviceProfile'
+import { avatarFallbackUrl, resolveMediaUrl, withImageFallback } from '../../lib/media'
+import { isSupabaseConfigured } from '../../lib/supabaseClient'
+import { createSupabaseRecipe, listSupabaseRecipes, subscribeToCookEduRealtime } from '../../lib/supabaseData'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -35,11 +38,11 @@ export default function RecipeList() {
 
   // Weather & Geolocation State
   const [weather, setWeather] = useState({ 
-    temp: 74, 
+    temp: 24, 
     condition: 'Partly Cloudy', 
     city: 'Bandung, ID', 
     visibility: 110, 
-    feelsLike: 74, 
+    feelsLike: 24, 
     precipitation: 68, 
     humidity: 68 
   })
@@ -62,16 +65,38 @@ export default function RecipeList() {
   // API FETCHING
   const { data: apiRecipesData, isLoading: isLoadingRecipes } = useQuery({
     queryKey: ['recipes'],
-    queryFn: () => recipeApi.list(),
+    queryFn: async () => {
+      if (isSupabaseConfigured) {
+        const data = await listSupabaseRecipes()
+        return { data: { data } }
+      }
+
+      return recipeApi.list()
+    },
   })
 
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => categoryApi.list(),
+    queryFn: async () => {
+      if (isSupabaseConfigured) return { data: { data: [] } }
+      return categoryApi.list()
+    },
   })
 
   const apiRecipes = (apiRecipesData?.data?.data || []).filter(Boolean)
   const categories = (categoriesData?.data?.data || []).filter((c: any) => c && c.name)
+  const mergedCategories = [
+    ...categories,
+    ...[...apiRecipes, ...initialRecipes]
+      .map((recipe: any) => recipe?.category?.name || recipe?.category)
+      .filter(Boolean)
+      .map((name: string, index: number) => ({ id: `local-${index}-${name}`, name })),
+  ].reduce((acc: any[], category) => {
+    if (!acc.some((item) => item.name.toLowerCase() === category.name.toLowerCase())) {
+      acc.push(category)
+    }
+    return acc
+  }, [])
 
   // ADVANCED SYNC: Merge Database + Static Data to ensure "Complete" look
   const recipes = [...apiRecipes, ...initialRecipes].reduce((acc: any[], curr) => {
@@ -97,7 +122,21 @@ export default function RecipeList() {
   }, []).filter(Boolean);
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => recipeApi.create(data),
+    mutationFn: async (data: any) => {
+      if (isSupabaseConfigured) {
+        const category = mergedCategories.find((c: any) => String(c.id) === String(newRecipeForm.category_id))?.name || 'Community'
+        return createSupabaseRecipe({
+          title: newRecipeForm.title,
+          category,
+          description: newRecipeForm.description || 'Resep baru dari komunitas CookEdu',
+          steps: [{ instruction: 'Siapkan bahan dan masak sesuai selera.', duration: newRecipeForm.cooking_time }],
+          minTempCelsius: 18,
+          maxTempCelsius: 32,
+        })
+      }
+
+      return recipeApi.create(data)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
       setIsModalOpen(false)
@@ -115,6 +154,13 @@ export default function RecipeList() {
 
   const cartCount = groups.length
 
+  useEffect(() => {
+    return subscribeToCookEduRealtime(() => {
+      queryClient.invalidateQueries({ queryKey: ['recipes'] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    })
+  }, [queryClient])
+
   // Weather Geocoder Fetch Logic
   const handleFetchWeather = async (city: string) => {
     if (!city.trim()) return;
@@ -128,7 +174,7 @@ export default function RecipeList() {
       
       if (geoData && geoData.length > 0) {
         const { lat, lon, name, country } = geoData[0];
-        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`;
+        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
         const weatherRes = await fetch(weatherUrl);
         const wData = await weatherRes.json();
         
@@ -155,12 +201,12 @@ export default function RecipeList() {
           if (cond.toLowerCase().includes('rain') || cond.toLowerCase().includes('storm')) {
             setWeatherAlert({
               title: "Cuaca Hujan Terdeteksi",
-              msg: `Suhu ${temp}F di ${name} terasa dingin. Chef merekomendasikan memasak hidangan berkuah hangat seperti Soto Ayam hari ini!`
+              msg: `Suhu ${temp}°C di ${name} terasa dingin. Chef merekomendasikan hidangan berkuah hangat seperti Soto Ayam hari ini!`
             });
-          } else if (temp > 80) {
+          } else if (temp > 27) {
             setWeatherAlert({
               title: "Suhu Panas Terdeteksi",
-              msg: `Udara ${temp}F cukup terik di ${name}. Waktunya menyegarkan diri dengan hidangan penutup dingin seperti Es Cendol!`
+              msg: `Udara ${temp}°C cukup terik di ${name}. Waktunya menyegarkan diri dengan hidangan penutup dingin seperti Es Cendol!`
             });
           }
         }
@@ -182,8 +228,8 @@ export default function RecipeList() {
     const isRainy = cond.includes('rain') || cond.includes('storm') || cond.includes('drizzle');
     
     if (isRainy) return { label: "Rainy Day Warmth", color: "bg-indigo-650/90", priority: 'soup' }
-    if (weather.temp < 65) return { label: "Cold Day Comfort", color: "bg-sky-550/90", priority: 'warm' }
-    if (weather.temp >= 65 && weather.temp <= 80) return { label: "Home Cooking Comfort", color: "bg-teal-550/90", priority: 'standard' }
+    if (weather.temp < 18) return { label: "Cold Day Comfort", color: "bg-sky-550/90", priority: 'warm' }
+    if (weather.temp >= 18 && weather.temp <= 27) return { label: "Home Cooking Comfort", color: "bg-teal-550/90", priority: 'standard' }
     return { label: "Sunny Refreshments", color: "bg-amber-550/90", priority: 'refreshing' }
   }, [weather]);
 
@@ -200,8 +246,8 @@ export default function RecipeList() {
     // Smart Weather Sorting
     if (searchQuery === "" && activeCategory === "SEMUA") {
       const isRainy = weather.condition.toLowerCase().includes('rain');
-      const isCold = weather.temp < 65;
-      const isHot = weather.temp > 80;
+      const isCold = weather.temp < 18;
+      const isHot = weather.temp > 27;
 
       result = [...result].sort((a, b) => {
         const catA = (a.category?.name || a.category || "").toUpperCase();
@@ -318,7 +364,7 @@ export default function RecipeList() {
             className="flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-full border-2 border-white shadow-xl overflow-hidden bg-white/80 backdrop-blur-md p-0.5 relative shrink-0">
-              <img src={user?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || 'Zem'}&backgroundColor=b6e3f4`} alt="User" className="w-full h-full rounded-full object-cover" />
+              <img src={resolveMediaUrl(user?.avatar_url || user?.avatar) || avatarFallbackUrl(user?.name)} alt="User" className="w-full h-full rounded-full object-cover" />
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full animate-pulse" />
             </div>
             <div className="text-left">
@@ -326,7 +372,7 @@ export default function RecipeList() {
                  <ChefHat className="w-2.5 h-2.5 text-sky-600 dark:text-cyan-400" />
                  <span className="text-[9px] font-black text-sky-650 dark:text-cyan-300 uppercase tracking-widest block">Halo,</span>
               </div>
-              <h2 className="text-sm font-black tracking-tight leading-none text-slate-850 dark:text-white mt-0.5">{user?.name?.toLowerCase() || 'zem'}</h2>
+              <h2 className="text-sm font-black tracking-tight leading-none text-slate-850 dark:text-white mt-0.5">{user?.name?.toLowerCase() || 'koki cookedu'}</h2>
             </div>
           </motion.div>
 
@@ -389,7 +435,7 @@ export default function RecipeList() {
                     placeholder="Bandung, ID"
                   />
                 </div>
-                <div className="text-3xl font-black tracking-tighter mt-1">{weather.temp}°F</div>
+                <div className="text-3xl font-black tracking-tighter mt-1">{weather.temp}Â°C</div>
                 <p className="text-[10px] font-black text-teal-50 uppercase tracking-widest leading-none mt-0.5">{weather.condition}</p>
               </div>
 
@@ -410,7 +456,7 @@ export default function RecipeList() {
                   <Thermometer className="w-2.5 h-2.5" />
                 </div>
                 <div>
-                  <span className="block text-[9px] font-black">{weather.feelsLike}°F</span>
+                  <span className="block text-[9px] font-black">{weather.feelsLike}Â°C</span>
                   <span className="text-[6px] text-sky-200 block uppercase font-medium">Feels like</span>
                 </div>
               </div>
@@ -496,7 +542,8 @@ export default function RecipeList() {
                 >
                    {/* Background Image */}
                    <img 
-                    src={r.imageUrl || r.image_url} 
+                    src={resolveMediaUrl(r.imageUrl || r.image_url) || withImageFallback(r.title)}
+                    onError={(e) => { e.currentTarget.src = withImageFallback(r.title) }}
                     alt="" 
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-[8000ms] ease-out" 
                    />
@@ -572,7 +619,7 @@ export default function RecipeList() {
             >
               {recTag.label}
             </motion.div>
-            {["SEMUA", ...categories.map((c: any) => c.name.toUpperCase())].map((cat) => {
+            {["SEMUA", ...mergedCategories.map((c: any) => c.name.toUpperCase())].map((cat) => {
               const isActive = activeCategory === cat
               return (
                 <motion.button
@@ -610,7 +657,7 @@ export default function RecipeList() {
                </div>
             ) : filteredRecipes.map((recipe, idx) => {
               if (!recipe) return null;
-              const img = recipe.imageUrl || recipe.image_url || '';
+              const img = resolveMediaUrl(recipe.imageUrl || recipe.image_url) || withImageFallback(recipe.title);
               const recipeId = recipe.id || `temp-${idx}`;
               const uniqueKey = recipe.imageUrl?.includes('unsplash') ? `static-${recipeId}` : `api-${recipeId}`;
               
@@ -631,7 +678,8 @@ export default function RecipeList() {
                   >
                     <div className="w-24 h-24 rounded-[20px] overflow-hidden shrink-0 bg-slate-900 shadow border-2 border-white dark:border-sky-400/20">
                       <img
-                        src={img || `https://api.dicebear.com/7.x/shapes/svg?seed=${recipe.title || idx}`}
+                        src={img}
+                        onError={(e) => { e.currentTarget.src = withImageFallback(recipe.title || String(idx)) }}
                         alt={recipe.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
@@ -764,7 +812,7 @@ export default function RecipeList() {
                       className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-transparent p-3.5 rounded-2xl focus:outline-none focus:border-sky-500 text-xs font-bold text-slate-800 dark:text-white"
                     >
                       <option value="">Select...</option>
-                      {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      {mergedCategories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -938,7 +986,7 @@ function DesktopRecipeHome({
               <div className="mt-6 grid grid-cols-3 gap-3">
                 <DesktopMetric icon={BookOpen} label="Resep siap" value={filteredRecipes.length || 0} />
                 <DesktopMetric icon={ShoppingCart} label="Daftar belanja" value={cartCount} />
-                <DesktopMetric icon={CloudSun} label="Suhu" value={`${weather.temp}°F`} />
+                <DesktopMetric icon={CloudSun} label="Suhu" value={`${weather.temp}Â°F`} />
               </div>
             </div>
 
@@ -946,7 +994,7 @@ function DesktopRecipeHome({
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-white/75">Cuaca dapur</p>
-                  <div className="mt-3 text-5xl font-black tracking-tight">{weather.temp}°F</div>
+                  <div className="mt-3 text-5xl font-black tracking-tight">{weather.temp}Â°F</div>
                   <p className="mt-1 text-sm font-black uppercase tracking-wider">{weather.condition}</p>
                 </div>
                 <button
@@ -1164,3 +1212,4 @@ function cleanText(value: string) {
     .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '')
     .trim()
 }
+

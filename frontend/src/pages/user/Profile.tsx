@@ -8,7 +8,9 @@ import {
 } from 'lucide-react'
 import { useAuthStore, useThemeStore } from '../../store'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { authApi } from '../../lib/api'
+import api, { authApi } from '../../lib/api'
+import { isSupabaseConfigured, supabase, uploadPublicMedia, upsertProfileForUser } from '../../lib/supabaseClient'
+import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -42,7 +44,7 @@ export default function Profile() {
         phone: user.phone || '',
         avatar: null
       })
-      setPreview(user.avatar_url || null)
+      setPreview(resolveMediaUrl(user.avatar_url || user.avatar) || avatarFallbackUrl(user.name))
     }
   }, [user])
 
@@ -53,7 +55,41 @@ export default function Profile() {
 
   const handleUpdate = async () => {
     setLoading(true)
+    setError(null)
     try {
+      if (isSupabaseConfigured && supabase) {
+        const { data: sessionData } = await supabase.auth.getSession()
+        const sessionUser = sessionData.session?.user
+        if (!sessionUser) throw new Error('Sesi Supabase tidak ditemukan. Silakan login ulang.')
+
+        let avatarUrl = user?.avatar_url || user?.avatar || null
+        if (form.avatar) {
+          avatarUrl = await uploadPublicMedia('avatars', form.avatar, sessionUser.id)
+        }
+
+        const profile = await upsertProfileForUser(sessionUser, {
+          username: form.name,
+          avatar_url: avatarUrl,
+          role: user?.role || 'user',
+        })
+
+        const updatedUser = {
+          ...user,
+          id: sessionUser.id,
+          name: profile?.username || form.name,
+          username: profile?.username || form.name,
+          email: sessionUser.email || user?.email || '',
+          phone: form.phone,
+          avatar_url: profile?.avatar_url || avatarUrl || undefined,
+          role: profile?.role || user?.role || 'user',
+        }
+
+        setAuth(updatedUser as any, sessionData.session?.access_token || localStorage.getItem('cookedu_token') || '')
+        setPreview(resolveMediaUrl(updatedUser.avatar_url) || avatarFallbackUrl(updatedUser.name))
+        setIsEditing(false)
+        return
+      }
+
       const formData = new FormData()
       formData.append('_method', 'PUT')
       formData.append('name', form.name)
@@ -74,6 +110,7 @@ export default function Profile() {
       setIsEditing(false)
     } catch (err) {
       console.error('Update profile failed:', err)
+      setError(err instanceof Error ? err.message : 'Gagal memperbarui profil.')
     } finally {
       setLoading(false)
     }
@@ -133,6 +170,11 @@ export default function Profile() {
           </div>
 
           <div className="text-center w-full px-6">
+            {error && (
+              <div className="mb-4 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold rounded-2xl px-4 py-3">
+                {error}
+              </div>
+            )}
             {isEditing ? (
               <div className="space-y-4">
                 <input 

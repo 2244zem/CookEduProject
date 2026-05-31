@@ -30,19 +30,19 @@ export default function AiAssistant() {
     const saved = localStorage.getItem('chefAiHistory')
     if (saved) return JSON.parse(saved)
 
-    let storedWeatherText = "74°F (Partly Cloudy) di Bandung";
+    let storedWeatherText = "24°C (Partly Cloudy) di Bandung";
     try {
       const stored = localStorage.getItem('cookedu_last_weather');
       if (stored) {
         const parsed = JSON.parse(stored);
-        storedWeatherText = `${Math.round(parsed.temp)}°F (${parsed.condition || 'Sunny'}) di ${parsed.city || 'Bandung'}`;
+        storedWeatherText = `${Math.round(parsed.temp)}°C (${parsed.condition || 'Sunny'}) di ${parsed.city || 'Bandung'}`;
       }
     } catch (e) {}
 
     return [{ 
       id: '1', 
       role: 'model', 
-      content: `Halo ${user?.name || 'Zem'}! 👨‍🍳 Cuaca saat ini terpantau ${storedWeatherText}. CookEdu siap merekomendasikan resep masakan yang paling cocok untuk cuaca hari ini! Ada yang bisa Chef bantu? 🍲` 
+      content: `Halo ${user?.name || 'Koki CookEdu'}! 👨‍🍳 Cuaca saat ini terpantau ${storedWeatherText}. CookEdu siap merekomendasikan resep masakan yang paling cocok untuk cuaca hari ini! Ada yang bisa Chef bantu? 🍲` 
     }]
   })
   
@@ -237,7 +237,7 @@ export default function AiAssistant() {
                </div>
                <div className="flex items-center gap-2 relative z-10">
                   <button onClick={() => {
-                    setMessages([{ id: '1', role: 'model', content: `Halo${user?.name ? ' ' + user.name : ' Zem'}, ini progress belajar Kamu. Aku sudah perbarui modul dari palet biru! Kot rank Kot#1 dan Leaderboard sekarang sudah AKTIF dan BERFUNGSI SEMPURNA! 🍳` }])
+                    setMessages([{ id: '1', role: 'model', content: `Halo${user?.name ? ' ' + user.name : ' Koki CookEdu'}, ini progress belajar Kamu. Aku sudah perbarui modul dari palet biru! Kot rank Kot#1 dan Leaderboard sekarang sudah AKTIF dan BERFUNGSI SEMPURNA! 🍳` }])
                     localStorage.removeItem('chefAiHistory')
                   }} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center text-white transition-all backdrop-blur-md" title="Hapus Obrolan">
                     <Trash className="w-5 h-5" />

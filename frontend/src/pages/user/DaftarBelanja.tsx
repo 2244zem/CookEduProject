@@ -10,6 +10,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useShoppingStore } from '../../store/shoppingStore'
 import { useAuthStore, useThemeStore } from '../../store'
+import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -46,11 +47,11 @@ export default function DaftarBelanja() {
             className="flex items-center gap-3"
           >
             <div className="w-12 h-12 rounded-2xl border-2 border-white shadow-xl overflow-hidden bg-white/80 backdrop-blur-md p-0.5">
-              <img src={user?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || 'Zem'}&backgroundColor=b6e3f4`} alt="User" className="w-full h-full rounded-xl object-cover" />
+              <img src={resolveMediaUrl(user?.avatar_url || user?.avatar) || avatarFallbackUrl(user?.name)} alt="User" className="w-full h-full rounded-xl object-cover" />
             </div>
             <div>
               <span className="text-[10px] font-black text-cyan-600 uppercase tracking-widest block opacity-70">Halo,</span>
-              <h2 className="text-xl font-black tracking-tight leading-none text-slate-800">{user?.name?.toLowerCase() || 'zem'}</h2>
+              <h2 className="text-xl font-black tracking-tight leading-none text-slate-800">{user?.name?.toLowerCase() || 'koki cookedu'}</h2>
             </div>
           </motion.div>
 

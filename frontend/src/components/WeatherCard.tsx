@@ -36,18 +36,18 @@ export default function WeatherCard({
           const isCold = targetAddress.toLowerCase().includes("london") || targetAddress.toLowerCase().includes("tokyo");
           const isHot = targetAddress.toLowerCase().includes("jakarta") || targetAddress.toLowerCase().includes("surabaya") || targetAddress.toLowerCase().includes("bali");
           
-          let temp = 74; // default
+          let temp = 24; // default Celsius
           let cond = "Partly Cloudy";
           
           if (isCold) {
-            temp = 48;
+            temp = 9;
             cond = "Chilly Mist";
           } else if (isHot) {
-            temp = 89;
+            temp = 32;
             cond = "Sunny Refreshing";
           } else {
             // Pseudo-random based on address length
-            temp = 55 + (targetAddress.length % 40);
+            temp = 18 + (targetAddress.length % 12);
             const conditions = ["Partly Cloudy", "Light Rain", "Clear Sky", "Overcast", "Windy Rain"];
             cond = conditions[targetAddress.length % conditions.length];
           }
@@ -73,8 +73,8 @@ export default function WeatherCard({
       const { lat, lon, name, country } = geoData[0];
       const displayName = country ? `${name}, ${country}` : name;
 
-      // 2. Weather API: Get Weather in Imperial unit (Fahrenheit)
-      const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`;
+      // 2. Weather API: Get Weather in metric unit (Celsius)
+      const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
       const weatherRes = await fetch(weatherUrl);
       if (!weatherRes.ok) throw new Error("Gagal mengambil data cuaca.");
 
@@ -88,7 +88,7 @@ export default function WeatherCard({
       setErrorMsg("Koneksi gagal / API Key salah. Menjalankan simulasi pintar.");
       
       // Smart fallback simulation
-      const temp = 72;
+      const temp = 22;
       const cond = "Cloudy Fallback";
       onWeatherUpdate(temp, cond, targetAddress);
     } finally {
@@ -108,12 +108,12 @@ export default function WeatherCard({
     }
   };
 
-  // Appetite gradient based on Fahrenheit temperature
+  // Appetite gradient based on Celsius temperature
   const getAppetiteGradient = (temp: number) => {
-    if (temp <= 65) {
+    if (temp <= 18) {
       return "from-slate-800 via-indigo-900 to-teal-800";
     }
-    if (temp >= 85) {
+    if (temp >= 29) {
       return "from-sky-500 via-teal-400 to-emerald-600";
     }
     return "from-sky-600 via-sky-700 to-teal-650";
@@ -163,7 +163,7 @@ export default function WeatherCard({
 
             <div className="flex items-baseline gap-2">
               <span className="text-5xl font-black tracking-tight">{temperature}</span>
-              <span className="text-2xl font-semibold">°F</span>
+              <span className="text-2xl font-semibold">°C</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -189,11 +189,11 @@ export default function WeatherCard({
             </div>
             <div className="text-left space-y-1">
               <p className="text-xs font-bold text-white leading-tight max-w-[200px]">
-                Suhu ideal untuk hidangan dengan kecocokan Fahrenheit!
+                Suhu ideal untuk hidangan dengan kecocokan Celsius.
               </p>
               <div className="flex gap-3 text-[10px] text-white/80 font-medium">
                 <span className="flex items-center gap-1"><Wind className="w-3 h-3" /> Live Sync</span>
-                <span className="flex items-center gap-1"><Droplets className="w-3 h-3" /> Fahrenheit</span>
+                <span className="flex items-center gap-1"><Droplets className="w-3 h-3" /> Celsius</span>
               </div>
             </div>
           </div>

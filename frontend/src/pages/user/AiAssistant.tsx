@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Bot, Sparkles, Utensils, Zap, Moon, Sun, CloudRain, ArrowLeft
@@ -26,7 +26,7 @@ export default function AiAssistant() {
   
   // Stored weather retrieval
   const [weather, setWeather] = useState({
-    temp: 74,
+    temp: 24,
     condition: 'Partly Cloudy',
     city: 'Bandung'
   });
@@ -57,19 +57,19 @@ export default function AiAssistant() {
 
   // Initialize Chef AI Welcome Greeting based on weather
   useEffect(() => {
-    const username = user?.name || 'Zem';
+    const username = user?.name || 'Koki CookEdu';
     const temp = weather.temp;
     let greetingText = '';
 
-    if (temp >= 80) {
+    if (temp >= 29) {
       // Hot day greeting
-      greetingText = `Halo Kak ${username}! Hari ini cuaca di ${weather.city} terpantau cukup hangat (${temp}F, ${weather.condition}). Biar masak makin asyik dan segar di tenggorokan, Chef Bot menyarankan resep yang sejuk dan menyegarkan seperti Salad Buah Tropis Madu atau Es Kelapa Muda Jeruk. Apakah kakak ingin Chef pandu cara membuatnya?`;
-    } else if (temp <= 66) {
+      greetingText = `Halo Kak ${username}! Hari ini cuaca di ${weather.city} terpantau cukup hangat (${temp}°C, ${weather.condition}). Biar masak makin asyik dan segar di tenggorokan, Chef Bot menyarankan resep yang sejuk dan menyegarkan seperti Salad Buah Tropis Madu atau Es Kelapa Muda Jeruk. Apakah kakak ingin Chef pandu cara membuatnya?`;
+    } else if (temp <= 18) {
       // Cold day greeting
-      greetingText = `Halo Kak ${username}! Wih, udara di ${weather.city} sedang cukup dingin menusuk nih (${temp}F, ${weather.condition}). Paling pas dan mantap kalau kita memasak hidangan berkuah hangat yang kaya rempah seperti Soto Ayam Lamongan hangat atau Sup Ramen Pedas! Ingin Chef pandu langkah memasaknya untuk menghangatkan hari ini?`;
+      greetingText = `Halo Kak ${username}! Wih, udara di ${weather.city} sedang cukup dingin menusuk nih (${temp}°C, ${weather.condition}). Paling pas dan mantap kalau kita memasak hidangan berkuah hangat yang kaya rempah seperti Soto Ayam Lamongan hangat atau Sup Ramen Pedas! Ingin Chef pandu langkah memasaknya untuk menghangatkan hari ini?`;
     } else {
       // Cool/Nice day greeting
-      greetingText = `Halo Kak ${username}! Cuaca di ${weather.city} saat ini terpantau sangat sejuk dan bersahabat (${temp}F, ${weather.condition}). Suasana syahdu begini paling cocok untuk menikmati santapan lezat seperti Spaghetti Carbonara Creamy atau Pisang Goreng Keju Crispy hangat ditemani secangkir teh. Resep apa yang ingin kita ulik hari ini?`;
+      greetingText = `Halo Kak ${username}! Cuaca di ${weather.city} saat ini terpantau sangat sejuk dan bersahabat (${temp}°C, ${weather.condition}). Suasana syahdu begini paling cocok untuk menikmati santapan lezat seperti Spaghetti Carbonara Creamy atau Pisang Goreng Keju Crispy hangat ditemani secangkir teh. Resep apa yang ingin kita ulik hari ini?`;
     }
 
     setMessages([
@@ -98,38 +98,35 @@ export default function AiAssistant() {
 
     // 1. Weather Recommendation Trigger
     if (query.includes('resep') || query.includes('cuaca') || query.includes('rekomendasi') || query.includes('makan') || query.includes('menu')) {
-      if (weather.temp >= 80) {
+      if (weather.temp >= 29) {
         return {
-          text: `### Rekomendasi Menu Hari Hangat (${weather.temp}F)
-
+          text: `### Rekomendasi Menu Hari Hangat (${weather.temp}°C)
 **Menu Pilihan: Salad Buah Tropis Madu Mint**
-* 🕒 **Waktu Pembuatan**: 15 Menit | 🟢 **Tingkat**: Sangat Mudah
-* 🍎 **Bahan Utama**: Potongan mangga arumanis, melon, kiwi, strawberry, yogurt yunani, madu murni, daun mint segar.
-* 💡 **Kenapa Cocok?**: Kandungan air yang tinggi dari buah-buahan segar membantu menjaga hidrasi tubuh Kakak di cuaca panas, ditambah kesegaran yogurt dingin yang memanjakan lidah!
+* ðŸ•’ **Waktu Pembuatan**: 15 Menit | ðŸŸ¢ **Tingkat**: Sangat Mudah
+* ðŸŽ **Bahan Utama**: Potongan mangga arumanis, melon, kiwi, strawberry, yogurt yunani, madu murni, daun mint segar.
+* ðŸ’¡ **Kenapa Cocok?**: Kandungan air yang tinggi dari buah-buahan segar membantu menjaga hidrasi tubuh Kakak di cuaca panas, ditambah kesegaran yogurt dingin yang memanjakan lidah!
 
 Mau Chef pandu langkah-langkah detail pembuatannya sekarang?`,
           richType: 'recipe'
         };
-      } else if (weather.temp <= 66) {
+      } else if (weather.temp <= 18) {
         return {
-          text: `### Rekomendasi Menu Udara Dingin (${weather.temp}F)
-
+          text: `### Rekomendasi Menu Udara Dingin (${weather.temp}°C)
 **Menu Pilihan: Sup Ramen Pedas Kaldu Creamy**
-* 🕒 **Waktu Pembuatan**: 30 Menit | 🔴 **Tingkat**: Sedang
-* 🍜 **Bahan Utama**: Mi ramen basah, irisan daging sapi tipis (slice beef), telur rebus setengah matang (ajitsuke tamago), daun bawang, kuah kaldu miso pedas, minyak cabai (chili oil).
-* 💡 **Kenapa Cocok?**: Kuah kaldu miso pedas berempah sangat efektif untuk menghangatkan suhu tubuh dan melegakan tenggorokan di udara yang dingin!
+* ðŸ•’ **Waktu Pembuatan**: 30 Menit | ðŸ”´ **Tingkat**: Sedang
+* ðŸœ **Bahan Utama**: Mi ramen basah, irisan daging sapi tipis (slice beef), telur rebus setengah matang (ajitsuke tamago), daun bawang, kuah kaldu miso pedas, minyak cabai (chili oil).
+* ðŸ’¡ **Kenapa Cocok?**: Kuah kaldu miso pedas berempah sangat efektif untuk menghangatkan suhu tubuh dan melegakan tenggorokan di udara yang dingin!
 
 Tulis **"langkah"** jika Kakak ingin memulai proses memasak sup ramen pedas ini bersama Chef!`,
           richType: 'recipe'
         };
       } else {
         return {
-          text: `### Rekomendasi Menu Cuaca Sejuk (${weather.temp}F)
-
+          text: `### Rekomendasi Menu Cuaca Sejuk (${weather.temp}°C)
 **Menu Pilihan: Creamy Spaghetti Carbonara Masterpiece**
-* 🕒 **Waktu Pembuatan**: 20 Menit | 🟡 **Tingkat**: Mudah
+* ðŸ•’ **Waktu Pembuatan**: 20 Menit | ðŸŸ¡ **Tingkat**: Mudah
 * **Bahan Utama**: Pasta spaghetti, smoked beef slice, keju parmesan parut, kuning telur segar, cooking cream, bawang putih cincang halus, mentega.
-* 💡 **Kenapa Cocok?**: Cita rasa saus keju gurih creamy berpadu dengan kehangatan pasta segar sangat menyatu dengan angin sepoi sejuk hari ini!
+* ðŸ’¡ **Kenapa Cocok?**: Cita rasa saus keju gurih creamy berpadu dengan kehangatan pasta segar sangat menyatu dengan angin sepoi sejuk hari ini!
 
 Ketik **"langkah"** untuk langsung membuka panduan masak langkah demi langkah!`,
           richType: 'recipe'
@@ -139,10 +136,10 @@ Ketik **"langkah"** untuk langsung membuka panduan masak langkah demi langkah!`,
 
     // 2. Cooking Steps Trigger
     if (query.includes('langkah') || query.includes('pandu') || query.includes('cara') || query.includes('mulai') || query.includes('tahap')) {
-      const selectedDish = weather.temp >= 80 ? 'Salad Buah Tropis' : weather.temp <= 66 ? 'Sup Ramen Pedas' : 'Spaghetti Carbonara';
+      const selectedDish = weather.temp >= 29 ? 'Salad Buah Tropis' : weather.temp <= 18 ? 'Sup Ramen Pedas' : 'Spaghetti Carbonara';
       
       return {
-        text: `### 🔪 Panduan Langkah Memasak: ${selectedDish}
+        text: `### ðŸ”ª Panduan Langkah Memasak: ${selectedDish}
 
 Mari kita mulai masak bersama, Chef! Silakan ikuti instruksi berikut:
 
@@ -164,7 +161,7 @@ Mari kita mulai masak bersama, Chef! Silakan ikuti instruksi berikut:
     // 3. Substitutions Trigger
     if (query.includes('bahan') || query.includes('ganti') || query.includes('substitusi') || query.includes('alternatif')) {
       return {
-        text: `### 🧪 Substitusi Bahan Kreatif Pintar
+        text: `### ðŸ§ª Substitusi Bahan Kreatif Pintar
 
 Kehabisan bahan di dapur? Tenang Chef, ini alternatif cerdas yang tetap menghasilkan cita rasa lezat:
 
@@ -182,7 +179,7 @@ Adakah bahan lain yang ingin Kakak tanyakan penggantinya? Tulis di bawah!`,
     return {
       text: `Pertanyaan yang bagus Kak!
 
-Di tengah kondisi cuaca ${weather.temp}F saat ini, mengontrol suhu masakan adalah kunci utama. Jika Kakak ingin mengetahui lebih jauh, silakan gunakan menu cepat di atas atau tanyakan resep, langkah masak, maupun bahan pengganti yang sedang Kakak butuhkan di dapur. Chef selalu siap memandu!`,
+Di tengah kondisi cuaca ${weather.temp}°C saat ini, mengontrol suhu masakan adalah kunci utama. Jika Kakak ingin mengetahui lebih jauh, silakan gunakan menu cepat di atas atau tanyakan resep, langkah masak, maupun bahan pengganti yang sedang Kakak butuhkan di dapur. Chef selalu siap memandu!`,
       richType: 'standard'
     };
   };
@@ -306,13 +303,13 @@ Di tengah kondisi cuaca ${weather.temp}F saat ini, mengontrol suhu masakan adala
               <div className="text-left">
                 <h2 className="text-sm font-black text-slate-800 tracking-tight leading-none">Chef AI Sous-Chef</h2>
                 <div className="flex items-center gap-1 mt-1">
-                  {weather.temp <= 66 ? (
+                  {weather.temp <= 18 ? (
                     <CloudRain className="w-3 h-3 text-sky-500" />
                   ) : (
                     <Sun className="w-3 h-3 text-amber-500" />
                   )}
-                  <span className="text-[0px] font-extrabold text-emerald-600 uppercase tracking-wider">
-                    <span className="text-[9px]">{weather.city}: {weather.temp}F</span>
+                  <span className="text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider">
+                    {weather.city}: {weather.temp}°C
                   </span>
                 </div>
               </div>
@@ -488,3 +485,4 @@ Di tengah kondisi cuaca ${weather.temp}F saat ini, mengontrol suhu masakan adala
     </div>
   );
 }
+

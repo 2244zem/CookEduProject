@@ -41,7 +41,10 @@ export default function RecipeCard({
     return () => clearInterval(interval);
   }, []);
 
-  const tempFits = currentTemp !== null && currentTemp >= recipe.suitableTemp.min && currentTemp <= recipe.suitableTemp.max;
+  const toCelsius = (value: number) => value > 45 ? Math.round((value - 32) * 5 / 9) : value;
+  const minTempC = toCelsius(recipe.suitableTemp.min);
+  const maxTempC = toCelsius(recipe.suitableTemp.max);
+  const tempFits = currentTemp !== null && currentTemp >= minTempC && currentTemp <= maxTempC;
 
   // 2. High-end visual category accents with custom matching micro-dots
   const getCategoryTheme = (cat: string) => {
@@ -97,7 +100,7 @@ export default function RecipeCard({
           {tempFits ? (
             <div className="absolute top-3 left-3 bg-teal-500/90 backdrop-blur-md text-white text-[8px] font-black px-2.5 py-1.2 rounded-full flex items-center gap-1.5 shadow-md shadow-teal-500/20 border border-white/20 animate-pulse">
               <Sparkles className="w-2.5 h-2.5 text-white" />
-              <span>SUHU COCOK ({currentTemp}°F)</span>
+              <span>SUHU COCOK ({currentTemp}°C)</span>
             </div>
           ) : recipe.isOfficial ? (
             <div className="absolute top-3 left-3 bg-gradient-to-r from-sky-500 to-teal-500 text-white text-[8px] font-black px-2.5 py-1.2 rounded-full flex items-center gap-1 shadow-md">
@@ -109,7 +112,7 @@ export default function RecipeCard({
           {/* Temperature Threshold Range pill */}
           <div className="absolute bottom-3 left-3 bg-slate-900/75 backdrop-blur-md text-white text-[9px] font-extrabold px-2.5 py-1 rounded-xl flex items-center gap-1 border border-white/10 shadow-sm">
             <Thermometer className="w-3 h-3 text-sky-400" />
-            <span>{recipe.suitableTemp.min}°F - {recipe.suitableTemp.max}°F</span>
+            <span>{minTempC}°C - {maxTempC}°C</span>
           </div>
         </div>
 
