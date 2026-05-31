@@ -25,6 +25,11 @@ interface AuthState {
   hydrateSupabaseSession: () => Promise<void>;
 }
 
+function hasStoredSupabaseSession() {
+  if (!isSupabaseConfigured) return false;
+  return Object.keys(localStorage).some((key) => key.startsWith('sb-') && key.endsWith('-auth-token'));
+}
+
 function normalizeUser(user: Partial<User>): User {
   const displayName = user.name || user.username || user.email?.split('@')[0] || 'Koki CookEdu';
 
@@ -43,10 +48,14 @@ function normalizeUser(user: Partial<User>): User {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: JSON.parse(localStorage.getItem('cookedu_user') || 'null'),
-  token: localStorage.getItem('cookedu_token'),
-  isAuthenticated: !!localStorage.getItem('cookedu_token'),
-  isAdmin: JSON.parse(localStorage.getItem('cookedu_user') || '{}')?.role === 'admin',
+  user: isSupabaseConfigured && !hasStoredSupabaseSession() ? null : JSON.parse(localStorage.getItem('cookedu_user') || 'null'),
+  token: isSupabaseConfigured && !hasStoredSupabaseSession() ? null : localStorage.getItem('cookedu_token'),
+  isAuthenticated: isSupabaseConfigured
+    ? Boolean(localStorage.getItem('cookedu_token') && hasStoredSupabaseSession())
+    : !!localStorage.getItem('cookedu_token'),
+  isAdmin: isSupabaseConfigured && !hasStoredSupabaseSession()
+    ? false
+    : JSON.parse(localStorage.getItem('cookedu_user') || '{}')?.role === 'admin',
 
   setAuth: (user, token) => {
     const normalized = normalizeUser(user);
@@ -88,7 +97,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const { data } = await supabase.auth.getSession();
     const session = data.session;
-    if (!session?.user) return;
+    if (!session?.user) {
+      localStorage.removeItem('cookedu_token');
+      localStorage.removeItem('cookedu_user');
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isAdmin: false,
+      });
+      return;
+    }
 
     const profile = await getProfileForSession(session);
     const normalized = normalizeUser({

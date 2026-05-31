@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { authApi } from '../lib/api'
+import { getSupabaseUserName, isSupabaseConfigured, supabase, upsertProfileForUser } from '../lib/supabaseClient'
 import { Mail, Eye, EyeOff, Loader2, ChefHat } from 'lucide-react'
 import { motion } from 'framer-motion'
 import bgHero from '../assets/background.png'
@@ -16,16 +17,47 @@ export default function Login() {
   const { setAuth } = useAuthStore()
   const navigate = useNavigate()
 
+  useEffect(() => {
+    const notice = sessionStorage.getItem('cookedu_auth_notice')
+    if (notice) {
+      setError(notice)
+      sessionStorage.removeItem('cookedu_auth_notice')
+    }
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
+      if (isSupabaseConfigured && supabase) {
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+        if (signInError) throw signInError
+        if (!data.session?.user) throw new Error('Supabase belum mengembalikan sesi. Coba login ulang.')
+
+        const profile = await upsertProfileForUser(data.session.user)
+        const user = {
+          id: data.session.user.id,
+          name: getSupabaseUserName(data.session.user, profile),
+          username: profile?.username,
+          email: data.session.user.email || email,
+          role: profile?.role || 'user',
+          phone: profile?.phone || undefined,
+          avatar_url: profile?.avatar_url || undefined,
+          xp: profile?.xp || 0,
+          preferences: profile?.preferences || undefined,
+        }
+
+        setAuth(user as any, data.session.access_token)
+        navigate(user.role === 'admin' ? '/admin' : '/')
+        return
+      }
+
       const { data } = await authApi.login({ email, password })
       setAuth(data.user, data.token)
       navigate(data.user.role === 'admin' ? '/admin' : '/')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Oops, sepertinya email atau kata sandi kurang tepat. Mari coba lagi.')
+      setError(err.message || err.response?.data?.message || 'Oops, sepertinya email atau kata sandi kurang tepat. Mari coba lagi.')
     } finally {
       setLoading(false)
     }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { authApi } from '../lib/api'
+import { getSupabaseUserName, isSupabaseConfigured, supabase, upsertProfileForUser } from '../lib/supabaseClient'
 import { ChefHat, Mail, Lock, User, Phone, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import bgHero from '../assets/background.png'
@@ -22,6 +23,54 @@ export default function Register() {
     setError('')
     setLoading(true)
     try {
+      if (form.password !== form.password_confirmation) {
+        throw new Error('Konfirmasi kata sandi belum sama.')
+      }
+
+      if (isSupabaseConfigured && supabase) {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: form.email,
+          password: form.password,
+          options: {
+            data: {
+              username: form.name,
+              name: form.name,
+              phone: form.phone || null,
+              role: 'user',
+            },
+          },
+        })
+
+        if (signUpError) throw signUpError
+        if (!data.user) throw new Error('Supabase belum membuat user. Coba beberapa saat lagi.')
+
+        if (!data.session) {
+          setError('Akun dibuat. Jika konfirmasi email aktif, cek inbox lalu login kembali.')
+          return
+        }
+
+        const profile = await upsertProfileForUser(data.user, {
+          username: form.name,
+          phone: form.phone || null,
+          role: 'user',
+        })
+        const user = {
+          id: data.user.id,
+          name: getSupabaseUserName(data.user, profile),
+          username: profile?.username,
+          email: data.user.email || form.email,
+          role: profile?.role || 'user',
+          phone: profile?.phone || form.phone || undefined,
+          avatar_url: profile?.avatar_url || undefined,
+          xp: profile?.xp || 0,
+          preferences: profile?.preferences || undefined,
+        }
+
+        setAuth(user as any, data.session.access_token)
+        navigate('/')
+        return
+      }
+
       const payload = { ...form }
       if (!payload.phone) delete (payload as any).phone
 
@@ -31,7 +80,7 @@ export default function Register() {
     } catch (err: any) {
       console.error('Registration error:', err)
       const msgs = err.response?.data?.errors
-      setError(msgs ? Object.values(msgs).flat().join(' ') : err.response?.data?.message || 'Oops, sepertinya ada yang terlewat. Mari periksa lagi data kamu.')
+      setError(msgs ? Object.values(msgs).flat().join(' ') : err.message || err.response?.data?.message || 'Oops, sepertinya ada yang terlewat. Mari periksa lagi data kamu.')
     } finally {
       setLoading(false)
     }

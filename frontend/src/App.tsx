@@ -5,6 +5,7 @@ import { useAuthStore, useThemeStore } from './store'
 import SplashScreen from './components/layout/SplashScreen'
 import Onboarding from './components/layout/Onboarding'
 import { useDeviceProfile } from './hooks/useDeviceProfile'
+import { isSupabaseConfigured, supabase } from './lib/supabaseClient'
 
 const AdminLayout = lazy(() => import('./components/layout/AdminLayout'))
 const UserLayout = lazy(() => import('./components/layout/UserLayout'))
@@ -43,7 +44,7 @@ function RouteFallback() {
 }
 
 export default function App() {
-  const { isAuthenticated, isAdmin } = useAuthStore()
+  const { isAuthenticated, isAdmin, hydrateSupabaseSession, logout } = useAuthStore()
   const { isDarkMode } = useThemeStore()
   const { shouldReduceMotion } = useDeviceProfile()
   const [showSplash, setShowSplash] = useState(true)
@@ -52,6 +53,45 @@ export default function App() {
   })
   const location = useLocation()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return
+
+    let mounted = true
+
+    const syncSession = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (!mounted) return
+
+      if (data.session?.user) {
+        await hydrateSupabaseSession()
+        return
+      }
+
+      if (localStorage.getItem('cookedu_token')) {
+        sessionStorage.setItem('cookedu_auth_notice', 'Sesi lama sudah dipindahkan ke Supabase. Silakan login ulang.')
+        await logout()
+        if (location.pathname !== '/login' && location.pathname !== '/register') {
+          navigate('/login', { replace: true })
+        }
+      }
+    }
+
+    syncSession()
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setTimeout(() => {
+          void hydrateSupabaseSession()
+        }, 0)
+      }
+    })
+
+    return () => {
+      mounted = false
+      listener.subscription.unsubscribe()
+    }
+  }, [hydrateSupabaseSession, location.pathname, logout, navigate])
 
   useEffect(() => {
     const splashDuration = shouldReduceMotion ? 900 : 1700

@@ -60,7 +60,12 @@ export default function Profile() {
       if (isSupabaseConfigured && supabase) {
         const { data: sessionData } = await supabase.auth.getSession()
         const sessionUser = sessionData.session?.user
-        if (!sessionUser) throw new Error('Sesi Supabase tidak ditemukan. Silakan login ulang.')
+        if (!sessionUser) {
+          sessionStorage.setItem('cookedu_auth_notice', 'Sesi Supabase tidak ditemukan. Silakan login ulang.')
+          await logout()
+          navigate('/login', { replace: true })
+          return
+        }
 
         let avatarUrl = user?.avatar_url || user?.avatar || null
         if (form.avatar) {
