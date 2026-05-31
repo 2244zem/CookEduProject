@@ -97,7 +97,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       username: profile?.username || session.user.user_metadata?.username,
       email: session.user.email || '',
       role: profile?.role || 'user',
+      phone: profile?.phone || undefined,
       avatar_url: profile?.avatar_url || session.user.user_metadata?.avatar_url,
+      xp: profile?.xp || 0,
+      preferences: profile?.preferences || undefined,
     });
 
     localStorage.setItem('cookedu_token', session.access_token);

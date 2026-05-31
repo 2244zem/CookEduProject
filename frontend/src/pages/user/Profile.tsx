@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore, useThemeStore } from '../../store'
 import { useNavigate, useLocation } from 'react-router-dom'
-import api, { authApi } from '../../lib/api'
+import { authApi } from '../../lib/api'
 import { isSupabaseConfigured, supabase, uploadPublicMedia, upsertProfileForUser } from '../../lib/supabaseClient'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 
@@ -69,6 +69,7 @@ export default function Profile() {
 
         const profile = await upsertProfileForUser(sessionUser, {
           username: form.name,
+          phone: form.phone,
           avatar_url: avatarUrl,
           role: user?.role || 'user',
         })
@@ -79,7 +80,7 @@ export default function Profile() {
           name: profile?.username || form.name,
           username: profile?.username || form.name,
           email: sessionUser.email || user?.email || '',
-          phone: form.phone,
+          phone: profile?.phone || form.phone,
           avatar_url: profile?.avatar_url || avatarUrl || undefined,
           role: profile?.role || user?.role || 'user',
         }

@@ -7,11 +7,19 @@ export type SupabaseRecipeRow = {
   title: string
   category: string
   description: string | null
+  image_url: string | null
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | null
+  ingredients: unknown
   steps: unknown
+  cooking_time: number | null
+  prep_time: number | null
+  servings: number | null
+  nutritional_info: unknown
   min_temp_celsius: number | null
   max_temp_celsius: number | null
   video_url: string | null
   is_official: boolean
+  is_published: boolean | null
   created_at: string
 }
 
@@ -56,7 +64,8 @@ export async function listSupabaseRecipes() {
   const client = assertSupabase()
   const { data, error } = await client
     .from('recipes')
-    .select('id, user_id, title, category, description, steps, min_temp_celsius, max_temp_celsius, video_url, is_official, created_at')
+    .select('id, user_id, title, category, description, image_url, difficulty, ingredients, steps, cooking_time, prep_time, servings, nutritional_info, min_temp_celsius, max_temp_celsius, video_url, is_official, is_published, created_at')
+    .eq('is_published', true)
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -66,13 +75,16 @@ export async function listSupabaseRecipes() {
     title: row.title,
     description: row.description || '',
     category: row.category,
-    imageUrl: resolveMediaUrl(row.video_url) || '',
-    image_url: resolveMediaUrl(row.video_url) || '',
-    cooking_time: 25,
-    prepTime: '25',
-    difficulty: row.is_official ? 'official' : 'community',
-    ingredients: [],
+    imageUrl: resolveMediaUrl(row.image_url || row.video_url) || '',
+    image_url: resolveMediaUrl(row.image_url || row.video_url) || '',
+    cooking_time: row.cooking_time || 25,
+    prep_time: row.prep_time || 0,
+    prepTime: String(row.cooking_time || 25),
+    difficulty: row.difficulty || (row.is_official ? 'intermediate' : 'beginner'),
+    ingredients: Array.isArray(row.ingredients) ? row.ingredients : [],
     steps: Array.isArray(row.steps) ? row.steps : [],
+    servings: row.servings || 1,
+    nutritional_info: row.nutritional_info || null,
     min_temp_celsius: row.min_temp_celsius,
     max_temp_celsius: row.max_temp_celsius,
     created_at: row.created_at,
@@ -84,7 +96,7 @@ export async function getSupabaseRecipe(id: string) {
   const client = assertSupabase()
   const { data, error } = await client
     .from('recipes')
-    .select('id, user_id, title, category, description, steps, min_temp_celsius, max_temp_celsius, video_url, is_official, created_at')
+    .select('id, user_id, title, category, description, image_url, difficulty, ingredients, steps, cooking_time, prep_time, servings, nutritional_info, min_temp_celsius, max_temp_celsius, video_url, is_official, is_published, created_at')
     .eq('id', id)
     .maybeSingle()
 
@@ -100,13 +112,13 @@ export async function getSupabaseRecipe(id: string) {
     id: row.id,
     title: row.title,
     category: row.category,
-    imageUrl: resolveMediaUrl(row.video_url),
+    imageUrl: resolveMediaUrl(row.image_url || row.video_url),
     description: row.description || 'Resep komunitas CookEdu.',
-    prepTime: '25m',
-    calories: '-',
-    difficulty: row.is_official ? 'Official' : 'Community',
+    prepTime: `${row.cooking_time || 25}m`,
+    calories: (row.nutritional_info as any)?.calories || '-',
+    difficulty: row.difficulty || (row.is_official ? 'Official' : 'Community'),
     rating: '5.0',
-    ingredients: [],
+    ingredients: Array.isArray(row.ingredients) ? row.ingredients : [],
     instructions: steps.length ? steps : ['Siapkan bahan.', 'Masak sesuai instruksi resep.', 'Sajikan selagi hangat.'],
   }
 }
@@ -115,10 +127,16 @@ export async function createSupabaseRecipe(input: {
   title: string
   category: string
   description?: string
+  difficulty?: 'beginner' | 'intermediate' | 'advanced'
+  ingredients?: unknown[]
   steps?: unknown[]
+  cookingTime?: number
+  prepTime?: number
+  servings?: number
   minTempCelsius?: number
   maxTempCelsius?: number
   mediaFile?: File | null
+  imageUrl?: string | null
 }) {
   const client = assertSupabase()
   const { data: authData, error: authError } = await client.auth.getUser()
@@ -137,17 +155,39 @@ export async function createSupabaseRecipe(input: {
       title: input.title,
       category: input.category,
       description: input.description || null,
+      image_url: mediaUrl || input.imageUrl || null,
+      difficulty: input.difficulty || 'beginner',
+      ingredients: input.ingredients || [],
       steps: input.steps || [],
+      cooking_time: input.cookingTime || 25,
+      prep_time: input.prepTime || 0,
+      servings: input.servings || 1,
+      nutritional_info: null,
       min_temp_celsius: input.minTempCelsius ?? 18,
       max_temp_celsius: input.maxTempCelsius ?? 32,
-      video_url: mediaUrl,
+      video_url: null,
       is_official: false,
+      is_published: true,
     })
     .select()
     .single()
 
   if (error) throw error
   return data as SupabaseRecipeRow
+}
+
+export async function deleteSupabaseRecipe(id: string) {
+  const client = assertSupabase()
+  const { data: authData, error: authError } = await client.auth.getUser()
+  if (authError) throw authError
+  if (!authData.user) throw new Error('Login diperlukan untuk menghapus resep')
+
+  const { error } = await client
+    .from('recipes')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
 }
 
 export async function listCommunityPosts() {

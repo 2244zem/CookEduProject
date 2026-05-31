@@ -4,7 +4,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://lhjdwmkceagdtn
 const supabaseAnonKey =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  ''
+  'sb_publishable_op-f5Jm7s_mNst1Axg0m8Q_HvyjuPLy'
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
@@ -21,8 +21,11 @@ export const supabase = isSupabaseConfigured
 export type CookEduProfile = {
   id: string
   username: string
+  phone?: string | null
   avatar_url?: string | null
   role?: 'user' | 'premium' | 'admin'
+  xp?: number | null
+  preferences?: Record<string, unknown> | null
   updated_at?: string | null
 }
 
@@ -43,7 +46,7 @@ export async function getProfileForSession(session?: Session | null) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, avatar_url, role, updated_at')
+    .select('id, username, phone, avatar_url, role, xp, preferences, updated_at')
     .eq('id', session.user.id)
     .maybeSingle()
 
@@ -62,15 +65,18 @@ export async function upsertProfileForUser(user: SupabaseUser, values: Partial<C
   const payload = {
     id: user.id,
     username,
+    phone: values.phone ?? null,
     avatar_url: values.avatar_url ?? user.user_metadata?.avatar_url ?? null,
     role: values.role || 'user',
+    xp: values.xp ?? 0,
+    preferences: values.preferences ?? null,
     updated_at: new Date().toISOString(),
   }
 
   const { data, error } = await supabase
     .from('profiles')
     .upsert(payload, { onConflict: 'id' })
-    .select('id, username, avatar_url, role, updated_at')
+    .select('id, username, phone, avatar_url, role, xp, preferences, updated_at')
     .single()
 
   if (error) throw error

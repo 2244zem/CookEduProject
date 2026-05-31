@@ -17,7 +17,7 @@ import { useAuthStore, useThemeStore } from '../../store'
 import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 import { avatarFallbackUrl, resolveMediaUrl, withImageFallback } from '../../lib/media'
 import { isSupabaseConfigured } from '../../lib/supabaseClient'
-import { createSupabaseRecipe, listSupabaseRecipes, subscribeToCookEduRealtime } from '../../lib/supabaseData'
+import { createSupabaseRecipe, deleteSupabaseRecipe, listSupabaseRecipes, subscribeToCookEduRealtime } from '../../lib/supabaseData'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -129,7 +129,12 @@ export default function RecipeList() {
           title: newRecipeForm.title,
           category,
           description: newRecipeForm.description || 'Resep baru dari komunitas CookEdu',
+          difficulty: newRecipeForm.difficulty as 'beginner' | 'intermediate' | 'advanced',
+          ingredients: newRecipeForm.ingredients.filter((ingredient) => ingredient.item.trim()),
           steps: [{ instruction: 'Siapkan bahan dan masak sesuai selera.', duration: newRecipeForm.cooking_time }],
+          cookingTime: newRecipeForm.cooking_time,
+          prepTime: newRecipeForm.prep_time,
+          servings: 1,
           minTempCelsius: 18,
           maxTempCelsius: 32,
         })
@@ -148,7 +153,10 @@ export default function RecipeList() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => recipeApi.delete(id),
+    mutationFn: (id: number | string) => {
+      if (isSupabaseConfigured) return deleteSupabaseRecipe(String(id))
+      return recipeApi.delete(Number(id))
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recipes'] })
   })
 
