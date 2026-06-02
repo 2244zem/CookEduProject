@@ -97,6 +97,7 @@ function normalizeAdminRecipe(row: Partial<SupabaseRecipeRow>) {
     category_id: row.category_id || row.categories?.id || '',
     image_url: imageUrl,
     imageUrl,
+    video_url: row.video_url || null,
     difficulty: row.difficulty || 'beginner',
     difficulty_label: getDifficultyLabel(row.difficulty),
     cooking_time: cookingTime,
@@ -190,12 +191,22 @@ export async function saveSupabaseAdminRecipe(input: {
   steps: unknown[]
   image?: File | null
   existingImageUrl?: string | null
+  videoUrl?: string | null
   is_published?: boolean
+  isOfficial?: boolean
 }) {
   const client = assertSupabase()
   const { data: authData, error: authError } = await client.auth.getUser()
   if (authError) throw authError
   if (!authData.user) throw new Error('Login diperlukan untuk menyimpan resep')
+
+  const { data: profile } = await client
+    .from('profiles')
+    .select('role')
+    .eq('id', authData.user.id)
+    .maybeSingle()
+  const canCreateOfficial = profile?.role === 'admin'
+  const isOfficial = input.isOfficial ?? canCreateOfficial
 
   let imageUrl = input.existingImageUrl || null
   if (input.image) {
@@ -217,7 +228,8 @@ export async function saveSupabaseAdminRecipe(input: {
     prep_time: Number(input.prep_time) || 0,
     servings: Number(input.servings) || 1,
     nutritional_info: null,
-    is_official: true,
+    video_url: input.videoUrl?.trim() || null,
+    is_official: isOfficial,
     is_published: input.is_published ?? true,
   }
 
@@ -234,8 +246,8 @@ export async function saveSupabaseAdminRecipe(input: {
       category: categoryName,
       description: input.description || null,
       steps: input.steps || [],
-      video_url: imageUrl,
-      is_official: true,
+      video_url: input.videoUrl?.trim() || imageUrl,
+      is_official: isOfficial,
     }
 
     const legacyQuery = input.id

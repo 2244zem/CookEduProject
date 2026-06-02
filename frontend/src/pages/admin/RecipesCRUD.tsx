@@ -37,6 +37,7 @@ export default function RecipesCRUD() {
     steps: [{ ...emptyStep }] as Step[],
     image: null as File | null,
     imageUrl: '',
+    videoUrl: '',
     is_published: true,
   })
   const [error, setError] = useState('')
@@ -115,7 +116,7 @@ export default function RecipesCRUD() {
     setShowForm(false)
     setEditId(null)
     setError('')
-    setForm({ title: '', description: '', difficulty: 'beginner', cooking_time: 15, prep_time: 5, servings: 2, category_id: '', ingredients: [{ ...emptyIngredient }], steps: [{ ...emptyStep }], image: null, imageUrl: '', is_published: true })
+    setForm({ title: '', description: '', difficulty: 'beginner', cooking_time: 15, prep_time: 5, servings: 2, category_id: '', ingredients: [{ ...emptyIngredient }], steps: [{ ...emptyStep }], image: null, imageUrl: '', videoUrl: '', is_published: true })
   }
 
   const openCreateForm = () => {
@@ -137,6 +138,7 @@ export default function RecipesCRUD() {
       steps: r.steps?.length ? r.steps : [{ ...emptyStep }],
       image: null,
       imageUrl: resolveMediaUrl(r.image_url || r.imageUrl) || '',
+      videoUrl: r.video_url || '',
       is_published: r.is_published !== false && !r.deleted_at,
     })
     setShowForm(true)
@@ -176,6 +178,7 @@ export default function RecipesCRUD() {
         steps: cleanSteps,
         image: form.image,
         existingImageUrl: form.imageUrl,
+        videoUrl: form.videoUrl,
         is_published: form.is_published,
       })
       return
@@ -346,12 +349,12 @@ export default function RecipesCRUD() {
       {/* PREMIUM FORM MODAL */}
       <AnimatePresence>
         {showForm && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 overflow-y-auto bg-slate-900/60 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-slate-900/60 p-4 backdrop-blur-md sm:p-6">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative bg-white rounded-[50px] w-full max-w-4xl shadow-2xl p-10 lg:p-14 overflow-hidden"
+              className="relative my-4 max-h-[calc(100vh-2rem)] w-full max-w-5xl overflow-y-auto rounded-[32px] bg-white p-6 shadow-2xl sm:rounded-[40px] sm:p-8 lg:p-10"
             >
               {/* Form Backdrop Glow */}
               <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-100 opacity-20 blur-[100px] -mr-32 -mt-32 rounded-full pointer-events-none" />
@@ -430,6 +433,12 @@ export default function RecipesCRUD() {
                            <input type="file" accept="image/*" onChange={(e) => setForm({ ...form, image: e.target.files?.[0] || null })}
                              className="absolute inset-0 opacity-0 cursor-pointer" />
                         </div>
+                     </div>
+
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Video URL</label>
+                        <input value={form.videoUrl} onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
+                          className="w-full bg-slate-50 border-none rounded-[22px] py-4 px-6 text-sm font-bold focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-300" placeholder="https://youtube.com/watch?v=..." />
                      </div>
 
                      <div className="grid grid-cols-3 gap-4">
