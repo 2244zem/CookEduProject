@@ -1,16 +1,22 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { coinApi } from '../lib/api'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 
 export const COOKEDU_WALLET_REFRESH_EVENT = 'cookedu-wallet-refresh'
 
-export function notifyWalletRefresh() {
-  window.dispatchEvent(new CustomEvent(COOKEDU_WALLET_REFRESH_EVENT))
+export function notifyWalletRefresh(balance?: number) {
+  window.dispatchEvent(new CustomEvent(COOKEDU_WALLET_REFRESH_EVENT, { detail: { balance } }))
 }
 
 export function useRealtimeWallet(userId?: string | number | null) {
   const [balance, setBalance] = useState(0)
   const [loading, setLoading] = useState(false)
   const walletUserId = userId ? String(userId) : ''
+  const channelInstanceId = useRef(
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  )
 
   const refresh = useCallback(async () => {
     if (!walletUserId || !isSupabaseConfigured || !supabase) {
@@ -20,15 +26,8 @@ export function useRealtimeWallet(userId?: string | number | null) {
 
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('user_wallets')
-        .select('coin_balance')
-        .eq('user_id', walletUserId)
-        .maybeSingle()
-
-      if (error) throw error
-
-      const nextBalance = Number(data?.coin_balance || 0)
+      const response = await coinApi.walletBalance()
+      const nextBalance = Number(response.data?.coin_balance || 0)
       setBalance(nextBalance)
       return nextBalance
     } catch (error) {
@@ -46,25 +45,41 @@ export function useRealtimeWallet(userId?: string | number | null) {
   useEffect(() => {
     if (!walletUserId || !isSupabaseConfigured || !supabase) return
 
+    const channelName = `wallet_realtime_${walletUserId}_${channelInstanceId.current}`
     const channel = supabase
-      .channel(`wallet_realtime_${walletUserId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'user_wallets', filter: `user_id=eq.${walletUserId}` },
         (payload) => {
-          const nextBalance = Number((payload.new as { coin_balance?: number } | null)?.coin_balance || 0)
-          setBalance(nextBalance)
+          const nextBalance = (payload.new as { coin_balance?: number } | null)?.coin_balance
+          if (typeof nextBalance === 'number') {
+            setBalance(nextBalance)
+            return
+          }
+
+          void refresh()
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('CookEdu wallet realtime unavailable; falling back to manual refresh.')
+        }
+      })
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [walletUserId])
+  }, [refresh, walletUserId])
 
   useEffect(() => {
-    const handleRefresh = () => {
+    const handleRefresh = (event: Event) => {
+      const detail = (event as CustomEvent<{ balance?: number }>).detail
+      if (typeof detail?.balance === 'number') {
+        setBalance(detail.balance)
+        return
+      }
+
       void refresh()
     }
 

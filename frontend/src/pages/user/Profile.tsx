@@ -145,7 +145,7 @@ export default function Profile() {
       })
 
       const imageUrl = response.data.qris_image_url
-      if (!imageUrl) throw new Error('Laravel belum mengembalikan qris_image_url.')
+      if (!imageUrl) throw new Error('Supabase belum mengembalikan qris_image_url.')
 
       console.log('TESTING_URL:', imageUrl)
       setQrisImageUrl(imageUrl)
@@ -169,7 +169,7 @@ export default function Profile() {
     try {
       const response = await coinApi.bypassSuccess({ order_id: qrisOrderId })
       await refreshWallet()
-      notifyWalletRefresh()
+      notifyWalletRefresh(Number(response.data.coin_balance || 0))
       const coinsAdded = Number(response.data.coins_added || 0)
       setCoinSuccess(coinsAdded > 0
         ? `Sandbox sukses. +${coinsAdded} koin masuk ke wallet.`
@@ -376,7 +376,7 @@ export default function Profile() {
                         className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 text-xs font-black uppercase tracking-wide text-white transition hover:bg-emerald-700 disabled:opacity-60"
                       >
                         {bypassLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                        🧪 Debug: Simulate Success Payment
+                        {'\uD83E\uDDEA Debug: Simulate Success Payment'}
                       </button>
                     </div>
                   ) : (

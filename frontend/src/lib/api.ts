@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useDebugStore } from '../store/debugStore';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 // Auto-correcting Base URL: automatically prepends https:// if omitted by user
 let rawBaseURL = import.meta.env.VITE_API_URL || '/api';
@@ -98,15 +99,75 @@ export const authApi = {
   logout: () => api.post('/logout'),
 };
 
-// ===== Coin / QRIS API =====
+type CoinCheckoutPayload = {
+  package_id?: 'starter' | 'plus' | 'pro';
+  user_id?: string | number;
+  customer_name?: string;
+  customer_email?: string;
+}
+
+async function getFunctionErrorMessage(error: unknown) {
+  const functionError = error as { message?: string; context?: Response } | null;
+  const context = functionError?.context;
+
+  if (context) {
+    try {
+      const payload = await context.clone().json();
+      if (payload?.message) return String(payload.message);
+    } catch {
+      // Keep the original Supabase Functions message below.
+    }
+  }
+
+  return functionError?.message || 'Supabase Function gagal dipanggil.';
+}
+
+async function invokeCoinFunction<T>(action: 'qris-checkout' | 'bypass-success' | 'wallet-balance', payload: Record<string, unknown> = {}) {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase belum dikonfigurasi untuk pembayaran koin.');
+  }
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error('Sesi Supabase tidak ditemukan. Silakan login ulang.');
+  }
+
+  const { data, error } = await supabase.functions.invoke('coins', {
+    body: { action, ...payload },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    throw new Error(await getFunctionErrorMessage(error));
+  }
+
+  return { data: data as T };
+}
+
+// ===== Coin / QRIS API (Supabase Edge Function, not Railway) =====
 export const coinApi = {
-  qrisCheckout: (data: {
-    package_id?: 'starter' | 'plus' | 'pro';
-    user_id?: string | number;
-    customer_name?: string;
-    customer_email?: string;
-  }) => api.post('/v1/coins/qris-checkout', data),
-  bypassSuccess: (data: { order_id: string }) => api.post('/v1/coins/bypass-success', data),
+  qrisCheckout: (data: CoinCheckoutPayload) => invokeCoinFunction<{
+    status: 'success';
+    order_id: string;
+    qris_image_url: string;
+    coin_amount?: number;
+    gross_amount?: number;
+  }>('qris-checkout', data),
+  bypassSuccess: (data: { order_id: string }) => invokeCoinFunction<{
+    status: 'success';
+    order_id: string;
+    purchase_status: string;
+    coins_added: number;
+    coin_balance: number;
+  }>('bypass-success', data),
+  walletBalance: () => invokeCoinFunction<{
+    status: 'success';
+    coin_balance: number;
+  }>('wallet-balance'),
 };
 
 // ===== Recipe API =====
