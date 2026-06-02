@@ -6,10 +6,6 @@ export interface Recipe {
   createdBy: string;
   authorRole: "Admin" | "Premium User" | "Standard User";
   isOfficial: boolean;
-  suitableTemp: {
-    min: number;
-    max: number;
-  };
   status: "Approved" | "Pending";
 }
 
@@ -22,7 +18,6 @@ export const INITIAL_RECIPES: Recipe[] = [
     createdBy: "System",
     authorRole: "Admin",
     isOfficial: true,
-    suitableTemp: { min: -10, max: 65 },
     status: "Approved"
   },
   {
@@ -33,7 +28,6 @@ export const INITIAL_RECIPES: Recipe[] = [
     createdBy: "System",
     authorRole: "Admin",
     isOfficial: true,
-    suitableTemp: { min: 30, max: 70 },
     status: "Approved"
   },
   {
@@ -44,7 +38,6 @@ export const INITIAL_RECIPES: Recipe[] = [
     createdBy: "System",
     authorRole: "Admin",
     isOfficial: true,
-    suitableTemp: { min: 50, max: 80 },
     status: "Approved"
   },
   {
@@ -52,10 +45,9 @@ export const INITIAL_RECIPES: Recipe[] = [
     title: "Crispy Caesar Salad",
     category: "Salad",
     image: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?auto=format&fit=crop&w=600&q=80",
-    createdBy: "user_zem123",
+    createdBy: "community_member",
     authorRole: "Standard User",
     isOfficial: false,
-    suitableTemp: { min: 70, max: 95 },
     status: "Approved"
   },
   {
@@ -63,10 +55,9 @@ export const INITIAL_RECIPES: Recipe[] = [
     title: "Mango Mint Sorbet",
     category: "Dessert",
     image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=600&q=80",
-    createdBy: "user_zem123",
+    createdBy: "community_member",
     authorRole: "Standard User",
     isOfficial: false,
-    suitableTemp: { min: 80, max: 110 },
     status: "Approved"
   },
   {
@@ -77,7 +68,6 @@ export const INITIAL_RECIPES: Recipe[] = [
     createdBy: "System",
     authorRole: "Admin",
     isOfficial: true,
-    suitableTemp: { min: 60, max: 85 },
     status: "Approved"
   },
   {
@@ -88,7 +78,6 @@ export const INITIAL_RECIPES: Recipe[] = [
     createdBy: "premium_budi",
     authorRole: "Premium User",
     isOfficial: false,
-    suitableTemp: { min: 20, max: 60 },
     status: "Pending"
   },
   {
@@ -99,7 +88,6 @@ export const INITIAL_RECIPES: Recipe[] = [
     createdBy: "premium_budi",
     authorRole: "Premium User",
     isOfficial: false,
-    suitableTemp: { min: 75, max: 100 },
     status: "Approved"
   },
   {
@@ -107,15 +95,14 @@ export const INITIAL_RECIPES: Recipe[] = [
     title: "Matcha Lava Cake",
     category: "Dessert",
     image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=600&q=80",
-    createdBy: "user_zem123",
+    createdBy: "community_member",
     authorRole: "Standard User",
     isOfficial: false,
-    suitableTemp: { min: 40, max: 75 },
     status: "Pending"
   }
 ];
 
-const LOCAL_STORAGE_KEY = "cookedu_weather_recipes_pool";
+const LOCAL_STORAGE_KEY = "cookedu_recipes_pool";
 
 export const getStoredRecipes = (): Recipe[] => {
   const stored = localStorage.getItem(LOCAL_STORAGE_KEY);

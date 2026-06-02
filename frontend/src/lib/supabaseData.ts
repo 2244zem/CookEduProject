@@ -1,5 +1,5 @@
-import { isSupabaseConfigured, supabase, uploadPublicMedia } from './supabaseClient'
-import { resolveMediaUrl } from './media'
+import { isSupabaseConfigured, supabase, supabaseAnonKey, supabaseUrl, uploadPublicMedia } from './supabaseClient'
+import { avatarFallbackUrl, resolveMediaUrl } from './media'
 
 export type SupabaseRecipeRow = {
   id: string
@@ -63,12 +63,97 @@ export type SupabaseCommentRow = {
   } | null
 }
 
+export type SocialCategory =
+  | 'Cooking Technique'
+  | 'Plating Art'
+  | 'Baking Science'
+  | 'Kitchen Hacks'
+  | 'Recipe Story'
+  | 'Ingredient Guide'
+
+export type SupabaseSocialPostRow = {
+  id: string
+  user_id: string
+  title: string
+  category: SocialCategory | string
+  description: string
+  media_path: string
+  created_at: string
+  profiles?: {
+    username?: string | null
+    avatar_url?: string | null
+    role?: string | null
+  } | null
+}
+
+export type SupabaseSocialCommentRow = {
+  id: string
+  post_id: string
+  user_id: string
+  parent_id: string | null
+  content: string
+  attachment_path: string | null
+  created_at: string
+  profiles?: {
+    username?: string | null
+    avatar_url?: string | null
+    role?: string | null
+  } | null
+}
+
+export type SocialCommentView = SupabaseSocialCommentRow & {
+  author_name: string
+  author_avatar_url: string
+  attachment_url: string
+}
+
+export type SocialPostView = SupabaseSocialPostRow & {
+  author_name: string
+  author_avatar_url: string
+  author_role: string
+  media_url: string
+  media_type: 'image' | 'video'
+  likes_count: number
+  comments_count: number
+  liked_by_user: boolean
+  favorited_by_user: boolean
+  comments: SocialCommentView[]
+}
+
+export type FavoriteItemView = {
+  favorite_id: string
+  item_id: string
+  item_type: 'recipe' | 'post'
+  title: string
+  description: string
+  category: string
+  image_url: string
+  href: string
+  created_at: string
+}
+
 function assertSupabase() {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error('Supabase belum dikonfigurasi')
   }
 
   return supabase
+}
+
+async function requireSupabaseUser() {
+  const client = assertSupabase()
+  const { data, error } = await client.auth.getUser()
+  if (error) throw error
+  if (!data.user) throw new Error('Login diperlukan untuk melanjutkan')
+  return data.user
+}
+
+function getProfileName(profile?: { username?: string | null } | null, fallback?: string | null) {
+  return profile?.username || fallback || 'Koki CookEdu'
+}
+
+function getProfileAvatar(profile?: { username?: string | null; avatar_url?: string | null } | null, fallback?: string | null) {
+  return resolveMediaUrl(profile?.avatar_url) || avatarFallbackUrl(getProfileName(profile, fallback))
 }
 
 function isMissingColumnError(error: unknown) {
@@ -513,6 +598,355 @@ export async function deleteSupabaseRecipe(id: string) {
   if (error) throw error
 }
 
+const SOCIAL_MEDIA_BUCKET = 'social-media-assets'
+const SOCIAL_FILE_LIMIT = 100 * 1024 * 1024
+
+function getSocialMediaType(pathOrMime: string): 'image' | 'video' {
+  const value = pathOrMime.toLowerCase()
+  return value.includes('video/') || /\.(mp4|mov|webm|m4v|avi)$/i.test(value) ? 'video' : 'image'
+}
+
+function safeStorageFileName(file: File) {
+  const extension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+  return `${Date.now()}-${crypto.randomUUID()}.${extension}`
+}
+
+function getSocialMediaPublicUrl(path?: string | null) {
+  if (!path || !supabase) return ''
+  return supabase.storage.from(SOCIAL_MEDIA_BUCKET).getPublicUrl(path).data.publicUrl
+}
+
+async function uploadWithProgress(path: string, file: File, accessToken: string, onProgress?: (progress: number) => void) {
+  if (typeof XMLHttpRequest === 'undefined') {
+    const client = assertSupabase()
+    const { error } = await client.storage.from(SOCIAL_MEDIA_BUCKET).upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || undefined,
+    })
+    if (error) throw error
+    onProgress?.(100)
+    return
+  }
+
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/')
+  const endpoint = `${supabaseUrl}/storage/v1/object/${SOCIAL_MEDIA_BUCKET}/${encodedPath}`
+
+  await new Promise<void>((resolve, reject) => {
+    const request = new XMLHttpRequest()
+    request.open('POST', endpoint)
+    request.setRequestHeader('Authorization', `Bearer ${accessToken}`)
+    request.setRequestHeader('apikey', supabaseAnonKey)
+    request.setRequestHeader('x-upsert', 'false')
+    if (file.type) request.setRequestHeader('content-type', file.type)
+
+    request.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return
+      onProgress?.(Math.max(8, Math.min(92, Math.round((event.loaded / event.total) * 92))))
+    }
+
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) {
+        onProgress?.(100)
+        resolve()
+        return
+      }
+
+      try {
+        const payload = JSON.parse(request.responseText)
+        reject(new Error(payload.message || payload.error || `Upload gagal (${request.status})`))
+      } catch {
+        reject(new Error(`Upload gagal (${request.status})`))
+      }
+    }
+    request.onerror = () => reject(new Error('Koneksi upload media terputus'))
+    request.send(file)
+  })
+}
+
+export async function uploadSocialMediaAsset(file: File, scope: 'posts' | 'comments', onProgress?: (progress: number) => void) {
+  if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+    throw new Error('File harus berupa foto atau video.')
+  }
+
+  if (file.size > SOCIAL_FILE_LIMIT) {
+    throw new Error('Ukuran file maksimal 100MB.')
+  }
+
+  const client = assertSupabase()
+  const user = await requireSupabaseUser()
+  const { data: sessionData } = await client.auth.getSession()
+  const accessToken = sessionData.session?.access_token
+  if (!accessToken) throw new Error('Sesi Supabase tidak ditemukan. Silakan login ulang.')
+
+  const path = `${user.id}/${scope}/${safeStorageFileName(file)}`
+  onProgress?.(4)
+  await uploadWithProgress(path, file, accessToken, onProgress)
+
+  return {
+    path,
+    publicUrl: getSocialMediaPublicUrl(path),
+    mediaType: getSocialMediaType(file.type || path),
+  }
+}
+
+export async function createSocialPost(input: {
+  title: string
+  category: SocialCategory
+  description: string
+  mediaFile: File
+  onProgress?: (progress: number) => void
+}) {
+  const client = assertSupabase()
+  const user = await requireSupabaseUser()
+  const upload = await uploadSocialMediaAsset(input.mediaFile, 'posts', input.onProgress)
+
+  const { data, error } = await client
+    .from('social_posts')
+    .insert({
+      user_id: user.id,
+      title: input.title.trim(),
+      category: input.category,
+      description: input.description.trim(),
+      media_path: upload.path,
+    })
+    .select('id, user_id, title, category, description, media_path, created_at, profiles(username, avatar_url, role)')
+    .single()
+
+  if (error) throw error
+  return normalizeSocialPost(data as SupabaseSocialPostRow, user.id, [], [], [])
+}
+
+function normalizeSocialComment(row: SupabaseSocialCommentRow): SocialCommentView {
+  return {
+    ...row,
+    author_name: getProfileName(row.profiles),
+    author_avatar_url: getProfileAvatar(row.profiles),
+    attachment_url: getSocialMediaPublicUrl(row.attachment_path),
+  }
+}
+
+function normalizeSocialPost(
+  post: SupabaseSocialPostRow,
+  currentUserId: string | null,
+  likes: Array<{ post_id: string; user_id: string }>,
+  favoriteKeys: Array<{ item_id: string; item_type: string }>,
+  comments: SupabaseSocialCommentRow[]
+): SocialPostView {
+  const postLikes = likes.filter((like) => like.post_id === post.id)
+  const postComments = comments.filter((comment) => comment.post_id === post.id).map(normalizeSocialComment)
+  const mediaUrl = getSocialMediaPublicUrl(post.media_path)
+
+  return {
+    ...post,
+    author_name: getProfileName(post.profiles),
+    author_avatar_url: getProfileAvatar(post.profiles),
+    author_role: post.profiles?.role === 'admin' ? 'Culinary Admin' : 'Home Cook',
+    media_url: mediaUrl,
+    media_type: getSocialMediaType(post.media_path),
+    likes_count: postLikes.length,
+    comments_count: postComments.length,
+    liked_by_user: Boolean(currentUserId && postLikes.some((like) => like.user_id === currentUserId)),
+    favorited_by_user: Boolean(currentUserId && favoriteKeys.some((favorite) => favorite.item_type === 'post' && favorite.item_id === post.id)),
+    comments: postComments,
+  }
+}
+
+export async function listSocialPosts() {
+  const client = assertSupabase()
+  const { data: authData } = await client.auth.getUser()
+  const currentUserId = authData.user?.id || null
+
+  const { data: posts, error } = await client
+    .from('social_posts')
+    .select('id, user_id, title, category, description, media_path, created_at, profiles(username, avatar_url, role)')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  const rows = (posts || []) as SupabaseSocialPostRow[]
+  const postIds = rows.map((post) => post.id)
+  if (!postIds.length) return []
+
+  const [likesResult, commentsResult, favoritesResult] = await Promise.all([
+    client.from('likes').select('post_id, user_id').in('post_id', postIds),
+    client
+      .from('social_comments')
+      .select('id, post_id, user_id, parent_id, content, attachment_path, created_at, profiles(username, avatar_url, role)')
+      .in('post_id', postIds)
+      .order('created_at', { ascending: true }),
+    currentUserId
+      ? client.from('favorites').select('item_id, item_type').eq('user_id', currentUserId).eq('item_type', 'post').in('item_id', postIds)
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  if (likesResult.error) throw likesResult.error
+  if (commentsResult.error) throw commentsResult.error
+  if (favoritesResult.error) throw favoritesResult.error
+
+  return rows.map((post) => normalizeSocialPost(
+    post,
+    currentUserId,
+    likesResult.data || [],
+    favoritesResult.data || [],
+    (commentsResult.data || []) as SupabaseSocialCommentRow[]
+  ))
+}
+
+export async function toggleSocialPostLike(postId: string) {
+  const client = assertSupabase()
+  const user = await requireSupabaseUser()
+  const { data: existing, error: lookupError } = await client
+    .from('likes')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('post_id', postId)
+    .maybeSingle()
+
+  if (lookupError) throw lookupError
+
+  if (existing?.id) {
+    const { error } = await client.from('likes').delete().eq('id', existing.id)
+    if (error) throw error
+    return false
+  }
+
+  const { error } = await client.from('likes').insert({ user_id: user.id, post_id: postId })
+  if (error) throw error
+  return true
+}
+
+export async function createSocialComment(input: {
+  postId: string
+  content: string
+  parentId?: string | null
+  attachmentFile?: File | null
+  onProgress?: (progress: number) => void
+}) {
+  const client = assertSupabase()
+  const user = await requireSupabaseUser()
+  let attachmentPath: string | null = null
+
+  if (input.attachmentFile) {
+    const upload = await uploadSocialMediaAsset(input.attachmentFile, 'comments', input.onProgress)
+    attachmentPath = upload.path
+  }
+
+  const { data, error } = await client
+    .from('social_comments')
+    .insert({
+      post_id: input.postId,
+      user_id: user.id,
+      parent_id: input.parentId || null,
+      content: input.content.trim(),
+      attachment_path: attachmentPath,
+    })
+    .select('id, post_id, user_id, parent_id, content, attachment_path, created_at, profiles(username, avatar_url, role)')
+    .single()
+
+  if (error) throw error
+  return normalizeSocialComment(data as SupabaseSocialCommentRow)
+}
+
+export async function toggleFavoriteItem(itemId: string, itemType: 'recipe' | 'post') {
+  const client = assertSupabase()
+  const user = await requireSupabaseUser()
+  const { data: existing, error: lookupError } = await client
+    .from('favorites')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('item_id', itemId)
+    .eq('item_type', itemType)
+    .maybeSingle()
+
+  if (lookupError) throw lookupError
+
+  if (existing?.id) {
+    const { error } = await client.from('favorites').delete().eq('id', existing.id)
+    if (error) throw error
+    return false
+  }
+
+  const { error } = await client.from('favorites').insert({ user_id: user.id, item_id: itemId, item_type: itemType })
+  if (error) throw error
+  return true
+}
+
+export async function listFavoriteKeys() {
+  const client = assertSupabase()
+  const user = await requireSupabaseUser()
+  const { data, error } = await client
+    .from('favorites')
+    .select('item_id, item_type')
+    .eq('user_id', user.id)
+
+  if (error) throw error
+  return data || []
+}
+
+export async function listFavoriteItems() {
+  const client = assertSupabase()
+  const user = await requireSupabaseUser()
+  const { data: favorites, error } = await client
+    .from('favorites')
+    .select('id, item_id, item_type, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  const favoriteRows = favorites || []
+  const recipeIds = favoriteRows.filter((favorite) => favorite.item_type === 'recipe').map((favorite) => favorite.item_id)
+  const postIds = favoriteRows.filter((favorite) => favorite.item_type === 'post').map((favorite) => favorite.item_id)
+
+  const [recipesResult, postsResult] = await Promise.all([
+    recipeIds.length
+      ? client.from('recipes').select('id, title, category, description, image_url, video_url').in('id', recipeIds)
+      : Promise.resolve({ data: [], error: null }),
+    postIds.length
+      ? client.from('social_posts').select('id, title, category, description, media_path').in('id', postIds)
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  if (recipesResult.error) throw recipesResult.error
+  if (postsResult.error) throw postsResult.error
+
+  const recipeMap = new Map((recipesResult.data || []).map((recipe: any) => [recipe.id, recipe]))
+  const postMap = new Map((postsResult.data || []).map((post: any) => [post.id, post]))
+
+  return favoriteRows
+    .map((favorite): FavoriteItemView | null => {
+      if (favorite.item_type === 'recipe') {
+        const recipe = recipeMap.get(favorite.item_id) as Partial<SupabaseRecipeRow> | undefined
+        if (!recipe) return null
+        return {
+          favorite_id: favorite.id,
+          item_id: favorite.item_id,
+          item_type: 'recipe',
+          title: recipe.title || 'Resep CookEdu',
+          description: recipe.description || 'Resep tersimpan dari dapur CookEdu.',
+          category: recipe.category || 'Recipe',
+          image_url: resolveMediaUrl(recipe.image_url || recipe.video_url) || '',
+          href: `/recipes/${favorite.item_id}`,
+          created_at: favorite.created_at,
+        }
+      }
+
+      const post = postMap.get(favorite.item_id) as SupabaseSocialPostRow | undefined
+      if (!post) return null
+      return {
+        favorite_id: favorite.id,
+        item_id: favorite.item_id,
+        item_type: 'post',
+        title: post.title,
+        description: post.description,
+        category: post.category,
+        image_url: getSocialMediaPublicUrl(post.media_path),
+        href: '/',
+        created_at: favorite.created_at,
+      }
+    })
+    .filter(Boolean) as FavoriteItemView[]
+}
+
 export async function listCommunityPosts() {
   const client = assertSupabase()
   const { data, error } = await client
@@ -606,6 +1040,10 @@ export function subscribeToCookEduRealtime(callback: () => void) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'recipes' }, callback)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, callback)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'community_sharing' }, callback)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'social_posts' }, callback)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'social_comments' }, callback)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, callback)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'favorites' }, callback)
     .subscribe()
 
   return () => {

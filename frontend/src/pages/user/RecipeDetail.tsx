@@ -10,7 +10,7 @@ import {
 import { recipes } from '../../data/recipes'
 import { useShoppingStore } from '../../store/shoppingStore'
 import { isSupabaseConfigured } from '../../lib/supabaseClient'
-import { createRecipeComment, getSupabaseRecipe, listRecipeComments, subscribeToCookEduRealtime, type SupabaseCommentRow } from '../../lib/supabaseData'
+import { createRecipeComment, getSupabaseRecipe, listFavoriteKeys, listRecipeComments, subscribeToCookEduRealtime, toggleFavoriteItem, type SupabaseCommentRow } from '../../lib/supabaseData'
 import { avatarFallbackUrl, resolveMediaUrl, withImageFallback } from '../../lib/media'
 
 // Asset Imports
@@ -29,6 +29,8 @@ export default function RecipeDetail() {
   const [commentPhoto, setCommentPhoto] = useState<File | null>(null)
   const [commentError, setCommentError] = useState('')
   const [isSendingComment, setIsSendingComment] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [favoriteBusy, setFavoriteBusy] = useState(false)
   const { addGroup } = useShoppingStore()
   
   // Wake Lock API to keep screen on
@@ -53,6 +55,7 @@ export default function RecipeDetail() {
   const staticRecipe = recipes.find(r => r.id === Number(id))
   const recipe = staticRecipe || remoteRecipe
   const isSupabaseRecipe = Boolean(!staticRecipe && id && isSupabaseConfigured)
+  const canFavoriteRecipe = Boolean(isSupabaseRecipe && id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))
 
   useEffect(() => {
     let active = true
@@ -75,6 +78,26 @@ export default function RecipeDetail() {
       active = false
     }
   }, [id, isSupabaseRecipe])
+
+  useEffect(() => {
+    let active = true
+    const loadFavorite = async () => {
+      if (!canFavoriteRecipe || !id) {
+        setIsFavorite(false)
+        return
+      }
+      try {
+        const keys = await listFavoriteKeys()
+        if (active) setIsFavorite(keys.some((item: any) => item.item_type === 'recipe' && item.item_id === id))
+      } catch (error) {
+        console.warn('Favorite lookup failed:', error)
+      }
+    }
+    loadFavorite()
+    return () => {
+      active = false
+    }
+  }, [canFavoriteRecipe, id])
 
   useEffect(() => {
     if (!isSupabaseRecipe || !id) return
@@ -152,6 +175,19 @@ export default function RecipeDetail() {
       : ['Bahan utama', 'Bumbu dasar', 'Pelengkap']
     addGroup(`Belanja ${recipe.title}`, items)
     navigate('/daftar-belanja')
+  }
+
+  const handleToggleFavorite = async () => {
+    if (!canFavoriteRecipe || !id || favoriteBusy) return
+    setFavoriteBusy(true)
+    try {
+      const next = await toggleFavoriteItem(id, 'recipe')
+      setIsFavorite(next)
+    } catch (error) {
+      console.warn('Favorite toggle failed:', error)
+    } finally {
+      setFavoriteBusy(false)
+    }
   }
 
   return (
@@ -268,8 +304,14 @@ export default function RecipeDetail() {
           </motion.button>
           
           <div className="flex gap-3">
-            <motion.button whileTap={{ scale: 0.9 }} className="w-12 h-12 bg-white/20 backdrop-blur-2xl rounded-2xl border border-white/40 flex items-center justify-center text-white shadow-2xl">
-              <Heart className="w-6 h-6" />
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={handleToggleFavorite}
+              disabled={!canFavoriteRecipe || favoriteBusy}
+              className="w-12 h-12 bg-white/20 backdrop-blur-2xl rounded-2xl border border-white/40 flex items-center justify-center text-white shadow-2xl disabled:opacity-60"
+              title="Simpan resep favorit"
+            >
+              <Heart className={`w-6 h-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
             </motion.button>
             <motion.button whileTap={{ scale: 0.9 }} className="w-12 h-12 bg-white/20 backdrop-blur-2xl rounded-2xl border border-white/40 flex items-center justify-center text-white shadow-2xl">
               <Share2 className="w-6 h-6" />

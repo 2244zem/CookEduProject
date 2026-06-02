@@ -1,7 +1,7 @@
 import { createClient, type Session, type User as SupabaseUser } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://lhjdwmkceagdtnexiuek.supabase.co'
-const supabaseAnonKey =
+export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://lhjdwmkceagdtnexiuek.supabase.co'
+export const supabaseAnonKey =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   'sb_publishable_op-f5Jm7s_mNst1Axg0m8Q_HvyjuPLy'
@@ -132,7 +132,7 @@ export async function upsertProfileForUser(user: SupabaseUser, values: Partial<C
   return data as CookEduProfile
 }
 
-export async function uploadPublicMedia(bucket: 'avatars' | 'recipe-media' | 'comment-attachments', file: File, userId: string) {
+export async function uploadPublicMedia(bucket: 'avatars' | 'recipe-media' | 'comment-attachments' | 'social-media-assets', file: File, userId: string) {
   if (!supabase) throw new Error('Supabase is not configured')
 
   const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'

@@ -1,4 +1,4 @@
-import { Home, User, Moon, Sun, Wand2, Bookmark, ShoppingBag, BookOpen, CloudSun } from 'lucide-react'
+import { Home, User, Moon, Sun, Wand2, Bookmark, ShoppingBag, BookOpen, ChefHat } from 'lucide-react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useThemeStore, useAuthStore } from '../../store'
 
@@ -9,12 +9,12 @@ const TopNav = () => {
   const { isAuthenticated } = useAuthStore()
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Beranda' },
-    { path: '/catatan-ibu', icon: Bookmark, label: 'Catatan' },
+    { path: '/', icon: Home, label: 'Social' },
+    { path: '/recipes', icon: ChefHat, label: 'Resep' },
+    { path: '/favorites', icon: Bookmark, label: 'Favorit' },
     { path: '/daftar-belanja', icon: ShoppingBag, label: 'Belanja' },
     { path: '/fridge', icon: Wand2, label: 'Scanner' },
     { path: '/learning', icon: BookOpen, label: 'Belajar' },
-    { path: '/smart-weather', icon: CloudSun, label: 'Cuaca' },
   ]
 
   return (

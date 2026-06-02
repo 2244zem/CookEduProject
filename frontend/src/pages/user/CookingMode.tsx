@@ -316,7 +316,7 @@ export default function CookingMode() {
               </p>
               
               <button 
-                onClick={() => navigate('/smart-weather')} 
+                onClick={() => navigate('/recipes')} 
                 className="w-full py-4.5 bg-gradient-to-r from-sky-500 to-teal-600 text-white font-extrabold text-xs uppercase tracking-[0.2em] rounded-[22px] shadow-lg shadow-sky-500/25 active:scale-95 transition-transform"
               >
                 Kembali ke Beranda
@@ -332,7 +332,7 @@ export default function CookingMode() {
         <div className="w-full flex items-center justify-between gap-4 mb-8 pt-4">
           <button 
             onClick={() => navigate(-1)} 
-            className="w-11 h-11 rounded-2xl bg-white border border-sky-100/80 shadow-sm flex items-center justify-center text-slate-450 hover:text-sky-600 active:scale-95 transition-transform shrink-0"
+            className="w-11 h-11 rounded-2xl bg-white border border-sky-100/80 shadow-sm flex items-center justify-center text-slate-400 hover:text-sky-600 active:scale-95 transition-transform shrink-0"
             title="Keluar dari mode memasak"
           >
              <X className="w-4 h-4 text-sky-600" />
@@ -455,7 +455,7 @@ export default function CookingMode() {
            <button 
              onClick={() => setCurrentStep(Math.max(0, currentStep - 1))} 
              disabled={currentStep === 0}
-             className="w-16 h-16 rounded-[22px] bg-white/70 border border-sky-100/70 shadow-md flex items-center justify-center text-slate-450 hover:text-sky-600 disabled:opacity-30 disabled:scale-100 active:scale-95 transition-transform"
+             className="w-16 h-16 rounded-[22px] bg-white/70 border border-sky-100/70 shadow-md flex items-center justify-center text-slate-400 hover:text-sky-600 disabled:opacity-30 disabled:scale-100 active:scale-95 transition-transform"
              title="Langkah sebelumnya"
            >
               <ArrowLeft className="w-5 h-5 text-sky-600" />

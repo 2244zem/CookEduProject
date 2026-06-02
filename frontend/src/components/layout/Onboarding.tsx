@@ -38,7 +38,7 @@ const slides: Slide[] = [
   },
   {
     title: 'Chef AI tetap ringan saat dibuka.',
-    caption: 'Tanya bahan pengganti, rekomendasi cuaca, atau langkah memasak dari satu tempat.',
+    caption: 'Tanya bahan pengganti, teknik memasak, atau langkah resep dari satu tempat.',
     image: imgFood,
   },
   {

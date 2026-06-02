@@ -25,8 +25,8 @@ const FridgeScanner = lazy(() => import('./pages/user/FridgeScanner'))
 const CatatanIbu = lazy(() => import('./pages/user/CatatanIbu'))
 const DaftarBelanja = lazy(() => import('./pages/user/DaftarBelanja'))
 const AiAssistant = lazy(() => import('./pages/user/AiAssistant'))
-const SmartWeatherDashboard = lazy(() => import('./pages/SmartWeatherDashboard'))
-const CookShare = lazy(() => import('./pages/user/CookShare'))
+const SocialHub = lazy(() => import('./pages/user/SocialHub'))
+const Favorites = lazy(() => import('./pages/user/Favorites'))
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { isAuthenticated, isAdmin } = useAuthStore()
@@ -155,20 +155,19 @@ export default function App() {
 
             {/* User Routes - All Protected by requirement */}
             <Route path="/" element={<ProtectedRoute><UserLayout /></ProtectedRoute>}>
-              <Route index element={<RecipeList />} />
+              <Route index element={<SocialHub />} />
+              <Route path="recipes" element={<RecipeList />} />
               <Route path="recipes/:id" element={<RecipeDetail />} />
               <Route path="learning" element={<Learning />} />
               <Route path="stats" element={<Stats />} />
               <Route path="fridge" element={<FridgeScanner />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="favorites" element={<Favorites />} />
               <Route path="catatan-ibu" element={<CatatanIbu />} />
               <Route path="daftar-belanja" element={<DaftarBelanja />} />
               <Route path="ai-assistant" element={<AiAssistant />} />
-              <Route path="cookshare" element={<CookShare />} />
+              <Route path="cookshare" element={<SocialHub />} />
             </Route>
-
-            {/* Smart Weather Recipe App Dual-View Dashboard */}
-            <Route path="/smart-weather" element={<ProtectedRoute><SmartWeatherDashboard /></ProtectedRoute>} />
 
             {/* Cooking Mode (fullscreen, no layout) */}
             <Route path="/cook/:id" element={<ProtectedRoute><CookingMode /></ProtectedRoute>} />
