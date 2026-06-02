@@ -51,12 +51,7 @@ export default function FridgeScanner() {
       const allRecipes = res.data.data
       
       const matched = allRecipes.map((r: any) => {
-        let ingredientsList = [];
-        try {
-           ingredientsList = typeof r.ingredients === 'string' ? JSON.parse(r.ingredients) : (Array.isArray(r.ingredients) ? r.ingredients : []);
-        } catch (e) {
-           ingredientsList = [];
-        }
+        const ingredientsList = Array.isArray(r.ingredients) ? r.ingredients : [];
         
         const recipeIngs = ingredientsList.map((i: any) => {
            if (typeof i === 'string') return i.toLowerCase();

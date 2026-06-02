@@ -171,15 +171,10 @@ function parseRecipeArray(value: unknown) {
   if (Array.isArray(value)) return value
   if (typeof value !== 'string') return []
 
-  try {
-    const parsed = JSON.parse(value)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return value
-      .split(/\r?\n|,/)
-      .map((item) => item.trim())
-      .filter(Boolean)
-  }
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 function formatIngredientQuantity(ingredient: any) {
@@ -493,20 +488,21 @@ export async function getSupabaseRecipe(id: string) {
   if (!data) return null
 
   const row = data as Partial<SupabaseRecipeRow>
-  const steps = parseRecipeArray(row.steps).map(normalizeRecipeInstruction).filter(Boolean)
 
   return {
     id: row.id,
     title: row.title,
     category: row.category,
-    imageUrl: resolveMediaUrl(row.image_url || row.video_url),
+    image_url: resolveMediaUrl(row.image_url) || '',
     description: row.description || 'Resep komunitas CookEdu.',
-    prepTime: `${row.cooking_time || 25}m`,
-    calories: (row.nutritional_info as any)?.calories || '-',
-    difficulty: row.difficulty || (row.is_official ? 'Official' : 'Community'),
-    rating: '5.0',
+    cooking_time: row.cooking_time || 25,
+    prep_time: row.prep_time || 0,
+    servings: row.servings || 1,
+    difficulty: row.difficulty || 'beginner',
+    nutritional_info: row.nutritional_info || null,
+    is_published: row.is_published !== false,
     ingredients: normalizeRecipeIngredients(row.ingredients),
-    instructions: steps.length ? steps : ['Siapkan bahan.', 'Masak sesuai instruksi resep.', 'Sajikan selagi hangat.'],
+    steps: normalizeRecipeSteps(row.steps),
   }
 }
 

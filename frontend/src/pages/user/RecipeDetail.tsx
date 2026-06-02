@@ -1,24 +1,186 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  ArrowLeft, Clock, Award, Star, UtensilsCrossed, 
-  ChefHat, Heart, Share2, Check, Timer, 
-  Flame, Sparkles, ShoppingCart, Plus, X,
-  ChevronLeft, ChevronRight, Send, Image as ImageIcon
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+  ArrowLeft,
+  Award,
+  Check,
+  ChefHat,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Flame,
+  Heart,
+  Image as ImageIcon,
+  Send,
+  Share2,
+  ShoppingCart,
+  Sparkles,
+  Star,
+  Timer,
+  UtensilsCrossed,
+  X,
 } from 'lucide-react'
 import { recipes } from '../../data/recipes'
 import { useShoppingStore } from '../../store/shoppingStore'
+import { useAuthStore } from '../../store/authStore'
 import { isSupabaseConfigured } from '../../lib/supabaseClient'
-import { createRecipeComment, getSupabaseRecipe, listFavoriteKeys, listRecipeComments, subscribeToCookEduRealtime, toggleFavoriteItem, type SupabaseCommentRow } from '../../lib/supabaseData'
+import {
+  createRecipeComment,
+  getSupabaseRecipe,
+  listFavoriteKeys,
+  listRecipeComments,
+  subscribeToCookEduRealtime,
+  toggleFavoriteItem,
+  type SupabaseCommentRow,
+} from '../../lib/supabaseData'
 import { avatarFallbackUrl, resolveMediaUrl, withImageFallback } from '../../lib/media'
-
-// Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
+
+type NativeRecipeIngredient = {
+  name: string
+  quantity: string
+}
+
+type NativeRecipeStep = {
+  instruction: string
+  duration?: number
+  tip?: string
+}
+
+type DetailRecipeView = {
+  id: string | number
+  title: string
+  category: string
+  description: string
+  image_url: string
+  cooking_time: number
+  prep_time: number
+  servings: number
+  difficulty: string
+  calories: string
+  rating: string
+  nutritional_info: Record<string, unknown>
+  ingredients: NativeRecipeIngredient[]
+  steps: NativeRecipeStep[]
+  motherNote?: string
+}
+
+const DEFAULT_STEPS: NativeRecipeStep[] = [
+  { instruction: 'Siapkan bahan sesuai daftar resep.' },
+  { instruction: 'Masak mengikuti urutan instruksi yang tersedia.' },
+  { instruction: 'Sajikan saat rasa dan tekstur sudah sesuai.' },
+]
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
+}
+
+function asNativeArray(value: unknown) {
+  return Array.isArray(value) ? value : []
+}
+
+function textValue(value: unknown, fallback = '') {
+  if (value === null || value === undefined) return fallback
+  return String(value).trim() || fallback
+}
+
+function numberValue(value: unknown, fallback: number) {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? number : fallback
+}
+
+function normalizeDifficulty(value: unknown) {
+  const difficulty = textValue(value, 'beginner')
+  return difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+}
+
+function normalizeIngredient(item: unknown, index: number): NativeRecipeIngredient | null {
+  if (typeof item === 'string') {
+    const name = item.trim()
+    return name ? { name, quantity: '' } : null
+  }
+
+  if (!isRecord(item)) return null
+
+  const name = textValue(
+    item.name ?? item.item ?? item.ingredient ?? item.title,
+    `Bahan ${index + 1}`
+  )
+  const quantity = [
+    textValue(item.quantity ?? item.amount ?? item.qty),
+    textValue(item.unit ?? item.unit_name),
+  ].filter(Boolean).join(' ')
+
+  return { name, quantity }
+}
+
+function normalizeStep(item: unknown): NativeRecipeStep | null {
+  if (typeof item === 'string') {
+    const instruction = item.trim()
+    return instruction ? { instruction } : null
+  }
+
+  if (!isRecord(item)) return null
+
+  const instruction = textValue(
+    item.instruction ?? item.text ?? item.step ?? item.description
+  )
+  if (!instruction) return null
+
+  return {
+    instruction,
+    duration: numberValue(item.duration, 0),
+    tip: textValue(item.tip),
+  }
+}
+
+function normalizeNutrition(value: unknown, staticNutrition?: unknown) {
+  if (isRecord(value)) return value
+  if (isRecord(staticNutrition)) return staticNutrition
+  return {}
+}
+
+function normalizeRecipeForDetail(source: any): DetailRecipeView {
+  const nutritionalInfo = normalizeNutrition(source.nutritional_info, source.nutrition)
+  const schemaIngredients = asNativeArray(source.ingredients)
+  const schemaSteps = asNativeArray(source.steps)
+  const legacySteps = asNativeArray(source.instructions)
+  const ingredients = schemaIngredients
+    .map((item, index) => normalizeIngredient(item, index))
+    .filter(Boolean) as NativeRecipeIngredient[]
+  const steps = (schemaSteps.length ? schemaSteps : legacySteps)
+    .map(normalizeStep)
+    .filter(Boolean) as NativeRecipeStep[]
+
+  return {
+    id: source.id,
+    title: textValue(source.title, 'Resep CookEdu'),
+    category: textValue(source.category, 'Recipe'),
+    description: textValue(source.description, 'Resep komunitas CookEdu.'),
+    image_url: resolveMediaUrl(source.image_url || source.imageUrl) || '',
+    cooking_time: numberValue(source.cooking_time, numberValue(String(source.prepTime).replace(/\D/g, ''), 25)),
+    prep_time: numberValue(source.prep_time, 0),
+    servings: numberValue(source.servings, 1),
+    difficulty: normalizeDifficulty(source.difficulty),
+    calories: textValue(nutritionalInfo.calories, '0'),
+    rating: textValue(source.rating, '-'),
+    nutritional_info: nutritionalInfo,
+    ingredients,
+    steps: steps.length ? steps : DEFAULT_STEPS,
+    motherNote: source.motherNote,
+  }
+}
+
+function formatIngredientLine(ingredient: NativeRecipeIngredient) {
+  return ingredient.quantity ? `${ingredient.name} (${ingredient.quantity})` : ingredient.name
+}
 
 export default function RecipeDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { addGroup } = useShoppingStore()
+  const { user } = useAuthStore()
   const [checkedIngredients, setCheckedIngredients] = useState<string[]>([])
   const [isCookingMode, setIsCookingMode] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
@@ -31,31 +193,39 @@ export default function RecipeDetail() {
   const [isSendingComment, setIsSendingComment] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   const [favoriteBusy, setFavoriteBusy] = useState(false)
-  const { addGroup } = useShoppingStore()
-  
-  // Wake Lock API to keep screen on
+
+  const username = user?.username || user?.name || user?.email?.split('@')[0] || 'Koki CookEdu'
+  const staticRecipe = recipes.find((item) => item.id === Number(id))
+  const rawRecipe = staticRecipe || remoteRecipe
+  const recipe = useMemo(() => rawRecipe ? normalizeRecipeForDetail(rawRecipe) : null, [rawRecipe])
+  const isSupabaseRecipe = Boolean(!staticRecipe && id && isSupabaseConfigured)
+  const canFavoriteRecipe = Boolean(isSupabaseRecipe && id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))
+
   useEffect(() => {
-    let wakeLock: any = null;
+    let wakeLock: any = null
     const requestWakeLock = async () => {
       if (isCookingMode && 'wakeLock' in navigator) {
         try {
-          wakeLock = await (navigator as any).wakeLock.request('screen');
-        } catch (err: any) {
-          console.error(`${err.name}, ${err.message}`);
+          wakeLock = await (navigator as any).wakeLock.request('screen')
+        } catch (error) {
+          console.warn('Wake lock unavailable:', error)
         }
       } else if (wakeLock) {
-        wakeLock.release();
-        wakeLock = null;
+        wakeLock.release()
+        wakeLock = null
       }
-    };
-    requestWakeLock();
-    return () => { if (wakeLock) wakeLock.release(); };
-  }, [isCookingMode]);
+    }
 
-  const staticRecipe = recipes.find(r => r.id === Number(id))
-  const recipe = staticRecipe || remoteRecipe
-  const isSupabaseRecipe = Boolean(!staticRecipe && id && isSupabaseConfigured)
-  const canFavoriteRecipe = Boolean(isSupabaseRecipe && id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))
+    requestWakeLock()
+    return () => {
+      if (wakeLock) wakeLock.release()
+    }
+  }, [isCookingMode])
+
+  useEffect(() => {
+    setCurrentStep(0)
+    setCheckedIngredients([])
+  }, [id])
 
   useEffect(() => {
     let active = true
@@ -86,6 +256,7 @@ export default function RecipeDetail() {
         setIsFavorite(false)
         return
       }
+
       try {
         const keys = await listFavoriteKeys()
         if (active) setIsFavorite(keys.some((item: any) => item.item_type === 'recipe' && item.item_id === id))
@@ -93,6 +264,7 @@ export default function RecipeDetail() {
         console.warn('Favorite lookup failed:', error)
       }
     }
+
     loadFavorite()
     return () => {
       active = false
@@ -120,8 +292,8 @@ export default function RecipeDetail() {
     }
   }, [id, isSupabaseRecipe])
 
-  const handleSubmitComment = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmitComment = async (event: React.FormEvent) => {
+    event.preventDefault()
     if (!id || !commentText.trim()) return
 
     setIsSendingComment(true)
@@ -142,41 +314,6 @@ export default function RecipeDetail() {
     }
   }
 
-  if (loadingRemoteRecipe) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-sky-50">
-        <ChefHat className="w-16 h-16 text-cyan-200 mb-4 animate-pulse" />
-        <h2 className="text-2xl font-black text-slate-800 mb-2">Memuat Resep</h2>
-      </div>
-    )
-  }
-
-  if (!recipe) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-sky-50">
-        <ChefHat className="w-16 h-16 text-cyan-200 mb-4" />
-        <h2 className="text-2xl font-black text-slate-800 mb-2">Recipe Not Found</h2>
-        <Link to="/" className="px-8 py-3 bg-cyan-600 text-white rounded-2xl font-bold shadow-lg shadow-cyan-600/20">
-          Back to Kitchen
-        </Link>
-      </div>
-    )
-  }
-
-  const toggleIngredient = (name: string) => {
-    setCheckedIngredients(prev => 
-      prev.includes(name) ? prev.filter(i => i !== name) : [...prev, name]
-    )
-  }
-
-  const handleStartCooking = () => {
-    const items = recipe.ingredients?.length
-      ? recipe.ingredients.map((i: any) => `${i.name} (${i.quantity})`)
-      : ['Bahan utama', 'Bumbu dasar', 'Pelengkap']
-    addGroup(`Belanja ${recipe.title}`, items)
-    navigate('/daftar-belanja')
-  }
-
   const handleToggleFavorite = async () => {
     if (!canFavoriteRecipe || !id || favoriteBusy) return
     setFavoriteBusy(true)
@@ -190,84 +327,133 @@ export default function RecipeDetail() {
     }
   }
 
+  const toggleIngredient = (name: string) => {
+    setCheckedIngredients((prev) =>
+      prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+    )
+  }
+
+  const handleStartCooking = () => {
+    if (!recipe) return
+    const items = recipe.ingredients.length
+      ? recipe.ingredients.map(formatIngredientLine)
+      : ['Bahan utama', 'Bumbu dasar', 'Pelengkap']
+    addGroup(`Belanja ${recipe.title}`, items)
+    navigate('/daftar-belanja')
+  }
+
+  if (loadingRemoteRecipe) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-sky-50 p-6 text-center">
+        <ChefHat className="mb-4 h-16 w-16 animate-pulse text-cyan-200" />
+        <h2 className="mb-2 text-2xl font-black text-slate-800">Memuat Resep</h2>
+      </div>
+    )
+  }
+
+  if (!recipe) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-sky-50 p-6 text-center">
+        <ChefHat className="mb-4 h-16 w-16 text-cyan-200" />
+        <h2 className="mb-2 text-2xl font-black text-slate-800">Recipe Not Found</h2>
+        <Link to="/recipes" className="rounded-2xl bg-cyan-600 px-8 py-3 font-bold text-white shadow-lg shadow-cyan-600/20">
+          Back to Kitchen
+        </Link>
+      </div>
+    )
+  }
+
+  const activeStepIndex = Math.min(currentStep, recipe.steps.length - 1)
+  const activeStep = recipe.steps[activeStepIndex]
+  const metricItems = [
+    { icon: Clock, label: 'Waktu', value: `${recipe.cooking_time}m`, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+    { icon: Flame, label: 'Kalori', value: recipe.calories, color: 'text-rose-500', bg: 'bg-rose-50' },
+    { icon: Award, label: 'Level', value: recipe.difficulty, color: 'text-amber-500', bg: 'bg-amber-50' },
+    { icon: Star, label: 'Rating', value: recipe.rating, color: 'text-yellow-500', bg: 'bg-yellow-50' },
+  ]
+  const nutritionItems = [
+    { label: 'Kalori', value: recipe.calories, icon: Flame },
+    { label: 'Protein', value: textValue(recipe.nutritional_info.protein, '0'), icon: Award },
+    { label: 'Karbo', value: textValue(recipe.nutritional_info.carbs ?? recipe.nutritional_info.carbohydrates, '0'), icon: UtensilsCrossed },
+    { label: 'Lemak', value: textValue(recipe.nutritional_info.fat, '0'), icon: Sparkles },
+  ]
+
   return (
-    <div className="min-h-screen relative font-sans overflow-x-hidden bg-transparent text-slate-800 dark:text-slate-100">
-      {/* INTERACTIVE COOKING MODE OVERLAY */}
+    <div className="relative min-h-screen overflow-x-hidden bg-transparent font-sans text-slate-800 dark:text-slate-100">
       <AnimatePresence>
         {isCookingMode && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-slate-900 flex flex-col"
+            className="fixed inset-0 z-[1000] flex flex-col bg-slate-900"
           >
-            {/* Header */}
-            <div className="p-8 flex items-center justify-between border-b border-white/10 bg-slate-900/50 backdrop-blur-xl">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-cyan-500 rounded-xl flex items-center justify-center">
-                  <ChefHat className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between border-b border-white/10 bg-slate-900/50 p-6 backdrop-blur-xl md:p-8">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500">
+                  <ChefHat className="h-6 w-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-white font-black text-sm uppercase tracking-widest">{recipe.title}</h3>
-                  <p className="text-cyan-400 text-[10px] font-bold uppercase tracking-tighter">Langkah {currentStep + 1} dari {recipe.instructions.length}</p>
+                <div className="min-w-0">
+                  <h3 className="truncate text-sm font-black uppercase tracking-widest text-white">{recipe.title}</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-tight text-cyan-400">
+                    Langkah {activeStepIndex + 1} dari {recipe.steps.length}
+                  </p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsCookingMode(false)}
-                className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white hover:bg-rose-500 transition-all"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white transition hover:bg-rose-500"
               >
-                <X className="w-6 h-6" />
+                <X className="h-6 w-6" />
               </button>
             </div>
 
-            {/* Step Content */}
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center overflow-y-auto">
-              <motion.div 
-                key={currentStep}
+            <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto p-8 text-center">
+              <motion.div
+                key={activeStepIndex}
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 className="max-w-3xl"
               >
-                <div className="mb-12 inline-block px-8 py-3 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-cyan-400 text-6xl font-black italic">
-                  {currentStep + 1}
+                <div className="mb-10 inline-block rounded-full border border-cyan-500/30 bg-cyan-500/10 px-8 py-3 text-6xl font-black italic text-cyan-400">
+                  {activeStepIndex + 1}
                 </div>
-                <h2 className="text-white text-4xl md:text-6xl font-black leading-tight tracking-tight px-4">
-                  {recipe.instructions[currentStep]}
+                <h2 className="px-4 text-4xl font-black leading-tight tracking-tight text-white md:text-6xl">
+                  {activeStep.instruction}
                 </h2>
               </motion.div>
             </div>
 
-            {/* Progress & Controls */}
-            <div className="p-12 bg-slate-900/80 backdrop-blur-3xl border-t border-white/10">
-              <div className="max-w-4xl mx-auto flex items-center gap-6">
-                <button 
-                  disabled={currentStep === 0}
-                  onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
-                  className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center text-white disabled:opacity-20 transition-all hover:bg-white/20"
+            <div className="border-t border-white/10 bg-slate-900/80 p-8 backdrop-blur-3xl md:p-12">
+              <div className="mx-auto flex max-w-4xl items-center gap-6">
+                <button
+                  disabled={activeStepIndex === 0}
+                  onClick={() => setCurrentStep((prev) => Math.max(0, prev - 1))}
+                  className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/10 text-white transition hover:bg-white/20 disabled:opacity-20 md:h-20 md:w-20"
                 >
-                  <ChevronLeft className="w-10 h-10" />
+                  <ChevronLeft className="h-9 w-9" />
                 </button>
-                
-                <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
-                  <motion.div 
+
+                <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/10">
+                  <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${((currentStep + 1) / recipe.instructions.length) * 100}%` }}
+                    animate={{ width: `${((activeStepIndex + 1) / recipe.steps.length) * 100}%` }}
                     className="h-full bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)]"
                   />
                 </div>
 
-                <button 
+                <button
                   onClick={() => {
-                    if (currentStep === recipe.instructions.length - 1) {
-                      setIsCookingMode(false);
-                      setCurrentStep(0);
+                    if (activeStepIndex === recipe.steps.length - 1) {
+                      setIsCookingMode(false)
+                      setCurrentStep(0)
                     } else {
-                      setCurrentStep(prev => Math.min(recipe.instructions.length - 1, prev + 1));
+                      setCurrentStep((prev) => Math.min(recipe.steps.length - 1, prev + 1))
                     }
                   }}
-                  className="w-20 h-20 bg-cyan-500 rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-cyan-500/20 hover:scale-105 active:scale-95 transition-all"
+                  className="flex h-16 w-16 items-center justify-center rounded-3xl bg-cyan-500 text-white shadow-2xl shadow-cyan-500/20 transition hover:scale-105 active:scale-95 md:h-20 md:w-20"
                 >
-                  {currentStep === recipe.instructions.length - 1 ? <Check className="w-10 h-10" /> : <ChevronRight className="w-10 h-10" />}
+                  {activeStepIndex === recipe.steps.length - 1 ? <Check className="h-9 w-9" /> : <ChevronRight className="h-9 w-9" />}
                 </button>
               </div>
             </div>
@@ -275,229 +461,223 @@ export default function RecipeDetail() {
         )}
       </AnimatePresence>
 
-      {/* GLOBAL BACKGROUND AMBIENCE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
+      <div className="pointer-events-none fixed inset-0 z-0 opacity-40 lg:hidden">
+        <div className="absolute left-[-10%] top-[-10%] h-[600px] w-[600px] rounded-full bg-cyan-200/30 blur-[120px]" />
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      {/* TOP IMAGE SECTION */}
       <div className="relative z-10 h-[55vh] w-full overflow-hidden rounded-none lg:h-[45vh] lg:rounded-[36px]">
-        <motion.img 
-          initial={{ scale: 1.1 }}
+        <motion.img
+          initial={{ scale: 1.08 }}
           animate={{ scale: 1 }}
-          src={resolveMediaUrl(recipe.imageUrl) || withImageFallback(recipe.title)}
-          onError={(e) => { e.currentTarget.src = withImageFallback(recipe.title) }}
-          alt={recipe.title} 
-          className="w-full h-full object-cover"
+          src={recipe.image_url || withImageFallback(recipe.title)}
+          onError={(event) => { event.currentTarget.src = withImageFallback(recipe.title) }}
+          alt={recipe.title}
+          className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/20" />
-        
-        {/* Actions */}
-        <div className="absolute top-10 left-6 right-6 flex items-center justify-between">
-          <motion.button 
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30" />
+
+        <div className="absolute left-6 right-6 top-10 flex items-center justify-between">
+          <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate(-1)}
-            className="w-12 h-12 bg-white/20 backdrop-blur-2xl rounded-2xl border border-white/40 flex items-center justify-center text-white shadow-2xl"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/40 bg-white/20 text-white shadow-2xl backdrop-blur-2xl"
           >
-            <ArrowLeft className="w-6 h-6" />
+            <ArrowLeft className="h-6 w-6" />
           </motion.button>
-          
+
           <div className="flex gap-3">
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={handleToggleFavorite}
               disabled={!canFavoriteRecipe || favoriteBusy}
-              className="w-12 h-12 bg-white/20 backdrop-blur-2xl rounded-2xl border border-white/40 flex items-center justify-center text-white shadow-2xl disabled:opacity-60"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/40 bg-white/20 text-white shadow-2xl backdrop-blur-2xl disabled:opacity-60"
               title="Simpan resep favorit"
             >
-              <Heart className={`w-6 h-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
+              <Heart className={`h-6 w-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
             </motion.button>
-            <motion.button whileTap={{ scale: 0.9 }} className="w-12 h-12 bg-white/20 backdrop-blur-2xl rounded-2xl border border-white/40 flex items-center justify-center text-white shadow-2xl">
-              <Share2 className="w-6 h-6" />
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/40 bg-white/20 text-white shadow-2xl backdrop-blur-2xl"
+            >
+              <Share2 className="h-6 w-6" />
             </motion.button>
           </div>
         </div>
 
-        {/* Floating Title Card */}
         <div className="absolute bottom-12 left-8 right-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-1 px-4 inline-flex items-center gap-2 bg-cyan-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-4 shadow-xl shadow-cyan-500/30"
+            className="mb-4 inline-flex items-center gap-2 rounded-full bg-cyan-500 px-4 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-cyan-500/30"
           >
-            <Sparkles className="w-3 h-3" /> {recipe.category}
+            <Sparkles className="h-3 w-3" />
+            {recipe.category}
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl font-black text-white leading-tight tracking-tight drop-shadow-lg"
+            className="text-4xl font-black leading-tight tracking-tight text-white drop-shadow-lg"
           >
             {recipe.title}
           </motion.h1>
         </div>
       </div>
 
-      {/* FROSTED GLASS LOWER PANEL */}
       <div className="relative z-20 -mt-10 mx-auto max-w-2xl px-4 pb-32 lg:max-w-6xl">
-        <motion.div 
+        <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="rounded-[48px] border border-white/80 bg-white/70 p-8 shadow-2xl backdrop-blur-3xl md:p-12 lg:bg-white"
+          className="rounded-[40px] border border-white/80 bg-white/80 p-6 shadow-2xl backdrop-blur-3xl md:p-10 lg:bg-white"
         >
-          {/* Minimalist Metrics Grid */}
-          <div className="mb-12 grid grid-cols-2 gap-4 border-b border-cyan-50 pb-10 sm:grid-cols-4">
-            {[
-              { icon: Clock, label: 'Waktu', val: recipe.prepTime, color: 'text-cyan-600', bg: 'bg-cyan-50' },
-              { icon: Flame, label: 'Kalori', val: recipe.calories, color: 'text-rose-500', bg: 'bg-rose-50' },
-              { icon: Award, label: 'Level', val: recipe.difficulty, color: 'text-amber-500', bg: 'bg-amber-50' },
-              { icon: Star, label: 'Rating', val: recipe.rating, color: 'text-yellow-500', bg: 'bg-yellow-50' },
-            ].map((item, i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <div className={`w-12 h-12 ${item.bg} rounded-2xl flex items-center justify-center ${item.color} shadow-sm border border-white`}>
-                  <item.icon className="w-6 h-6" />
+          <div className="mb-10 grid grid-cols-2 gap-4 border-b border-cyan-50 pb-8 sm:grid-cols-4">
+            {metricItems.map((item) => (
+              <div key={item.label} className="flex flex-col items-center gap-2 text-center">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-white ${item.bg} ${item.color} shadow-sm`}>
+                  <item.icon className="h-6 w-6" />
                 </div>
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
-                <span className="text-sm font-black text-slate-800">{item.val}</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
+                <span className="max-w-full break-words text-sm font-black text-slate-800">{item.value}</span>
               </div>
             ))}
           </div>
 
-          <p className="text-slate-600 text-base font-medium leading-relaxed mb-8 italic text-center px-4">
+          <p className="mb-8 px-4 text-center text-base font-medium italic leading-relaxed text-slate-600">
             "{recipe.description}"
           </p>
 
-          {/* Mother's Note if exists */}
           {recipe.motherNote && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              className="mb-12 p-6 bg-amber-50/50 backdrop-blur-sm border-2 border-amber-100/50 rounded-[2.5rem] relative overflow-hidden"
+              className="relative mb-12 overflow-hidden rounded-[2rem] border-2 border-amber-100/50 bg-amber-50/50 p-6 backdrop-blur-sm"
             >
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Heart className="w-12 h-12 text-amber-600" />
+              <div className="absolute right-0 top-0 p-4 opacity-10">
+                <Heart className="h-12 w-12 text-amber-600" />
               </div>
-              <div className="flex gap-4 items-start relative z-10">
+              <div className="relative z-10 flex items-start gap-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                   <ChefHat className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-amber-800 uppercase tracking-widest mb-1">Catatan Ibu</h4>
-                  <p className="text-amber-900/80 text-sm font-medium leading-relaxed italic">
-                    {recipe.motherNote.replace('{username}', 'Sayang')}
+                  <h4 className="mb-1 text-xs font-black uppercase tracking-widest text-amber-800">Catatan Ibu</h4>
+                  <p className="text-sm font-medium italic leading-relaxed text-amber-900/80">
+                    {recipe.motherNote.replace('{username}', username)}
                   </p>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* Nutrition Facts Detailed Grid */}
-          {recipe.nutrition && (
-            <section className="mb-16">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 bg-rose-500 rounded-2xl shadow-lg shadow-rose-500/20">
-                  <Flame className="w-5 h-5 text-white" />
+          <section className="mb-14">
+            <div className="mb-6 flex items-center gap-4">
+              <div className="rounded-2xl bg-rose-500 p-3 shadow-lg shadow-rose-500/20">
+                <Flame className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-xl font-black tracking-tight text-slate-900">Informasi Gizi</h2>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {nutritionItems.map((item) => (
+                <div key={item.label} className="flex flex-col items-center justify-center rounded-3xl border border-white bg-white/50 p-4 text-center">
+                  <item.icon className="mb-2 h-4 w-4 text-cyan-600" />
+                  <span className="mb-1 text-[9px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
+                  <span className="text-lg font-black text-slate-800">{item.value}</span>
                 </div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Informasi Gizi</h2>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { label: 'Kalori', val: recipe.nutrition.calories, icon: Flame, color: 'rose' },
-                  { label: 'Protein', val: recipe.nutrition.protein, icon: Award, color: 'cyan' },
-                  { label: 'Karbo', val: recipe.nutrition.carbs, icon: UtensilsCrossed, color: 'amber' },
-                  { label: 'Lemak', val: recipe.nutrition.fat, icon: Sparkles, color: 'emerald' },
-                ].map((nut, i) => (
-                  <div key={i} className="bg-white/40 p-4 rounded-3xl border border-white flex flex-col items-center justify-center text-center">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{nut.label}</span>
-                    <span className="text-lg font-black text-slate-800">{nut.val}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+              ))}
+            </div>
+          </section>
 
           <div className="space-y-16 lg:grid lg:grid-cols-[0.9fr_1.1fr] lg:gap-12 lg:space-y-0">
-            {/* Ingredients Section */}
             <section>
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-cyan-500 rounded-2xl shadow-lg shadow-cyan-500/20">
-                  <UtensilsCrossed className="w-5 h-5 text-white" />
+              <div className="mb-8 flex items-center gap-4">
+                <div className="rounded-2xl bg-cyan-500 p-3 shadow-lg shadow-cyan-500/20">
+                  <UtensilsCrossed className="h-5 w-5 text-white" />
                 </div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Daftar Bahan</h2>
+                <h2 className="text-xl font-black tracking-tight text-slate-900">Daftar Bahan</h2>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {recipe.ingredients.length ? recipe.ingredients.map((ing: any, idx: number) => (
-                  <motion.div 
-                    key={idx}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => toggleIngredient(ing.name)}
-                    className={`flex items-center justify-between p-5 rounded-2xl cursor-pointer transition-all border ${
-                      checkedIngredients.includes(ing.name)
-                        ? 'bg-cyan-50 border-cyan-100 opacity-60'
-                        : 'bg-white/50 border-white hover:bg-white hover:border-cyan-100 shadow-sm'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${
-                        checkedIngredients.includes(ing.name)
-                          ? 'bg-cyan-500 border-cyan-500'
-                          : 'border-slate-200 bg-white'
-                      }`}>
-                        {checkedIngredients.includes(ing.name) && <Check className="w-3.5 h-3.5 text-white" />}
-                      </div>
-                      <span className={`font-bold text-slate-800 text-sm ${checkedIngredients.includes(ing.name) ? 'line-through text-slate-400' : ''}`}>
-                        {ing.name}
-                      </span>
-                    </div>
-                    <span className="text-cyan-600 font-black text-xs bg-white px-3 py-1 rounded-full border border-cyan-50">{ing.quantity}</span>
-                  </motion.div>
-                )) : (
-                  <div className="md:col-span-2 p-5 rounded-2xl bg-white/50 border border-white text-sm font-bold text-slate-500">
-                    Bahan detail belum tersedia untuk resep komunitas ini.
-                  </div>
-                )}
-              </div>
+
+              {recipe.ingredients.length ? (
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {recipe.ingredients.map((ingredient, index) => {
+                    const checked = checkedIngredients.includes(ingredient.name)
+                    return (
+                      <motion.button
+                        type="button"
+                        key={`${ingredient.name}-${index}`}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => toggleIngredient(ingredient.name)}
+                        className={`flex min-h-16 items-center justify-between rounded-2xl border p-5 text-left transition-all ${
+                          checked
+                            ? 'border-cyan-100 bg-cyan-50 opacity-70'
+                            : 'border-white bg-white/60 shadow-sm hover:border-cyan-100 hover:bg-white'
+                        }`}
+                      >
+                        <span className="flex min-w-0 items-center gap-4">
+                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-xl border-2 transition-all ${
+                            checked ? 'border-cyan-500 bg-cyan-500' : 'border-slate-200 bg-white'
+                          }`}>
+                            {checked && <Check className="h-3.5 w-3.5 text-white" />}
+                          </span>
+                          <span className={`break-words text-sm font-bold text-slate-800 ${checked ? 'text-slate-400 line-through' : ''}`}>
+                            {ingredient.name}
+                          </span>
+                        </span>
+                        {ingredient.quantity && (
+                          <span className="ml-3 shrink-0 rounded-full border border-cyan-50 bg-white px-3 py-1 text-xs font-black text-cyan-600">
+                            {ingredient.quantity}
+                          </span>
+                        )}
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-white bg-white/60 p-5 text-sm font-bold text-slate-500">
+                  Bahan detail belum tersedia untuk resep ini.
+                </div>
+              )}
             </section>
 
-            {/* Preparation Steps Section */}
             <section>
-              <div className="flex items-center gap-4 mb-10">
-                <div className="p-3 bg-cyan-500 rounded-2xl shadow-lg shadow-cyan-500/20">
-                  <ChefHat className="w-5 h-5 text-white" />
+              <div className="mb-10 flex items-center gap-4">
+                <div className="rounded-2xl bg-cyan-500 p-3 shadow-lg shadow-cyan-500/20">
+                  <ChefHat className="h-5 w-5 text-white" />
                 </div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Cara Pembuatan</h2>
+                <h2 className="text-xl font-black tracking-tight text-slate-900">Cara Pembuatan</h2>
               </div>
 
               <div className="space-y-10 px-2">
-                {recipe.instructions.map((step, idx) => (
-                  <motion.div 
-                    key={idx}
+                {recipe.steps.map((step, index) => (
+                  <motion.div
+                    key={`${step.instruction}-${index}`}
                     initial={{ opacity: 0, x: -10 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    className="flex gap-6 items-start group relative"
+                    className="group relative flex items-start gap-6"
                   >
-                    {/* Numbering Line */}
-                    {idx !== recipe.instructions.length - 1 && (
-                      <div className="absolute top-12 left-6 -translate-x-1/2 w-[2px] h-[calc(100%+40px)] bg-cyan-100/50" />
+                    {index !== recipe.steps.length - 1 && (
+                      <div className="absolute left-6 top-12 h-[calc(100%+40px)] w-[2px] -translate-x-1/2 bg-cyan-100/50" />
                     )}
-                    
-                    <div className="w-12 h-12 bg-white border-2 border-cyan-500 rounded-2xl flex items-center justify-center text-cyan-600 font-black text-lg shadow-xl shrink-0 z-10 relative">
-                      {idx + 1}
+
+                    <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-cyan-500 bg-white text-lg font-black text-cyan-600 shadow-xl">
+                      {index + 1}
                     </div>
-                    
+
                     <div className="flex-1 pt-1">
-                      <div className="bg-white/40 backdrop-blur-sm p-6 rounded-[2.5rem] border border-white group-hover:bg-white group-hover:shadow-xl transition-all duration-300">
-                        <p className="text-slate-700 text-base font-medium leading-relaxed">
-                          {step}
-                        </p>
-                        <div className="mt-5 flex gap-3">
-                          <span className="flex items-center gap-1.5 text-[8px] font-black uppercase text-cyan-600 bg-cyan-50 px-3 py-1.5 rounded-full border border-cyan-100">
-                            <Timer className="w-3 h-3" /> Titik Fokus
+                      <div className="rounded-[2rem] border border-white bg-white/50 p-6 backdrop-blur-sm transition-all duration-300 group-hover:bg-white group-hover:shadow-xl">
+                        <p className="text-base font-medium leading-relaxed text-slate-700">{step.instruction}</p>
+                        <div className="mt-5 flex flex-wrap gap-3">
+                          <span className="flex items-center gap-1.5 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-[8px] font-black uppercase text-cyan-600">
+                            <Timer className="h-3 w-3" />
+                            Titik Fokus
                           </span>
+                          {Boolean(step.duration) && (
+                            <span className="rounded-full border border-slate-100 bg-slate-50 px-3 py-1.5 text-[8px] font-black uppercase text-slate-500">
+                              {step.duration}m
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -509,72 +689,77 @@ export default function RecipeDetail() {
 
           {isSupabaseRecipe && (
             <section className="mt-16 border-t border-cyan-50 pt-12">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-cyan-500 rounded-2xl shadow-lg shadow-cyan-500/20">
-                  <Share2 className="w-5 h-5 text-white" />
+              <div className="mb-8 flex items-center gap-4">
+                <div className="rounded-2xl bg-cyan-500 p-3 shadow-lg shadow-cyan-500/20">
+                  <Share2 className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Komentar Komunitas</h2>
-                  <p className="text-xs font-bold text-slate-400 mt-1">Realtime dengan dukungan foto lampiran</p>
+                  <h2 className="text-xl font-black tracking-tight text-slate-900">Komentar Komunitas</h2>
+                  <p className="mt-1 text-xs font-bold text-slate-400">Realtime dengan dukungan foto lampiran</p>
                 </div>
               </div>
 
-              <div className="space-y-4 mb-8">
+              <div className="mb-8 space-y-4">
                 {comments.length === 0 ? (
-                  <div className="p-6 rounded-3xl bg-white/50 border border-white text-sm font-bold text-slate-500 text-center">
+                  <div className="rounded-3xl border border-white bg-white/50 p-6 text-center text-sm font-bold text-slate-500">
                     Belum ada komentar. Jadilah yang pertama memberi feedback.
                   </div>
-                ) : comments.map((comment) => (
-                  <div key={comment.id} className="bg-white/60 border border-white rounded-3xl p-5 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <img
-                        src={resolveMediaUrl(comment.profiles?.avatar_url) || avatarFallbackUrl(comment.profiles?.username)}
-                        alt=""
-                        className="w-10 h-10 rounded-2xl object-cover bg-cyan-50"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <h4 className="text-sm font-black text-slate-800">{comment.profiles?.username || 'Koki CookEdu'}</h4>
-                          <span className="text-[10px] font-bold text-slate-400">{new Date(comment.created_at).toLocaleDateString('id-ID')}</span>
+                ) : comments.map((comment) => {
+                  const commentAuthor = comment.profiles?.username || username
+                  return (
+                    <div key={comment.id} className="rounded-3xl border border-white bg-white/60 p-5 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={resolveMediaUrl(comment.profiles?.avatar_url) || avatarFallbackUrl(commentAuthor)}
+                          alt={commentAuthor}
+                          className="h-10 w-10 rounded-2xl bg-cyan-50 object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <h4 className="truncate text-sm font-black text-slate-800">{commentAuthor}</h4>
+                            <span className="shrink-0 text-[10px] font-bold text-slate-400">
+                              {new Date(comment.created_at).toLocaleDateString('id-ID')}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">{comment.content}</p>
+                          {comment.comment_photo_url && (
+                            <img
+                              src={resolveMediaUrl(comment.comment_photo_url)}
+                              alt=""
+                              className="mt-4 max-h-64 w-full rounded-2xl border border-cyan-50 object-cover"
+                            />
+                          )}
                         </div>
-                        <p className="mt-2 text-sm font-medium text-slate-600 leading-relaxed">{comment.content}</p>
-                        {comment.comment_photo_url && (
-                          <img
-                            src={resolveMediaUrl(comment.comment_photo_url)}
-                            alt=""
-                            className="mt-4 w-full max-h-64 object-cover rounded-2xl border border-cyan-50"
-                          />
-                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
-              <form onSubmit={handleSubmitComment} className="bg-white/70 border border-white rounded-[2rem] p-5 space-y-4">
+              <form onSubmit={handleSubmitComment} className="space-y-4 rounded-[2rem] border border-white bg-white/70 p-5">
                 {commentError && (
-                  <div className="bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold rounded-2xl px-4 py-3">
+                  <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-600">
                     {commentError}
                   </div>
                 )}
                 <textarea
                   value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
+                  onChange={(event) => setCommentText(event.target.value)}
                   placeholder="Tulis pengalaman atau foto hasil masakanmu..."
-                  className="w-full min-h-24 bg-white/70 border border-cyan-50 rounded-2xl p-4 text-sm font-bold text-slate-700 focus:outline-none focus:border-cyan-300 resize-none"
+                  className="min-h-24 w-full resize-none rounded-2xl border border-cyan-50 bg-white/70 p-4 text-sm font-bold text-slate-700 outline-none focus:border-cyan-300"
                 />
                 <div className="flex items-center justify-between gap-3">
-                  <label className="flex items-center gap-2 text-xs font-black text-cyan-600 cursor-pointer">
-                    <ImageIcon className="w-4 h-4" />
-                    <span>{commentPhoto ? commentPhoto.name : 'Tambah foto'}</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => setCommentPhoto(e.target.files?.[0] || null)} />
+                  <label className="flex min-w-0 cursor-pointer items-center gap-2 text-xs font-black text-cyan-600">
+                    <ImageIcon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{commentPhoto ? commentPhoto.name : 'Tambah foto'}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(event) => setCommentPhoto(event.target.files?.[0] || null)} />
                   </label>
                   <button
                     type="submit"
                     disabled={isSendingComment || !commentText.trim()}
-                    className="px-5 py-3 bg-cyan-600 text-white rounded-2xl text-xs font-black flex items-center gap-2 disabled:opacity-50"
+                    className="flex shrink-0 items-center gap-2 rounded-2xl bg-cyan-600 px-5 py-3 text-xs font-black text-white disabled:opacity-50"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="h-4 w-4" />
                     Kirim
                   </button>
                 </div>
@@ -582,25 +767,24 @@ export default function RecipeDetail() {
             </section>
           )}
 
-          {/* Master Cooking CTA */}
           <div className="mt-20 flex flex-col gap-4 lg:flex-row">
             <motion.button
               whileHover={{ scale: 1.02, y: -5 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleStartCooking}
-              className="w-full py-6 bg-cyan-600 text-white rounded-[2.5rem] font-black text-lg shadow-2xl shadow-cyan-600/30 flex items-center justify-center gap-3 group relative overflow-hidden"
+              className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-[2rem] bg-cyan-600 py-6 text-lg font-black text-white shadow-2xl shadow-cyan-600/30"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              <ShoppingCart className="w-7 h-7" />
+              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+              <ShoppingCart className="h-7 w-7" />
               MULAI BELANJA & MASAK
             </motion.button>
-            
+
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setIsCookingMode(true)}
-              className="w-full py-4 bg-white text-cyan-600 rounded-[2rem] font-black text-sm border-2 border-cyan-100 shadow-xl flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-[2rem] border-2 border-cyan-100 bg-white py-4 text-sm font-black text-cyan-600 shadow-xl"
             >
-              <ChefHat className="w-5 h-5" />
+              <ChefHat className="h-5 w-5" />
               MODE MEMASAK SAJA
             </motion.button>
           </div>
