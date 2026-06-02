@@ -122,7 +122,18 @@ async function getFunctionErrorMessage(error: unknown) {
   return functionError?.message || 'Supabase Function gagal dipanggil.';
 }
 
-async function invokeCoinFunction<T>(action: 'qris-checkout' | 'bypass-success' | 'wallet-balance', payload: Record<string, unknown> = {}) {
+type CoinAction =
+  | 'qris-checkout'
+  | 'bypass-success'
+  | 'wallet-balance'
+  | 'wallet-history'
+  | 'claim-daily-reward'
+  | 'spend-coins'
+  | 'admin-search-users'
+  | 'admin-give-coins'
+  | 'admin-wallet-audit'
+
+async function invokeCoinFunction<T>(action: CoinAction, payload: Record<string, unknown> = {}) {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error('Supabase belum dikonfigurasi untuk pembayaran koin.');
   }
@@ -168,6 +179,67 @@ export const coinApi = {
     status: 'success';
     coin_balance: number;
   }>('wallet-balance'),
+  walletHistory: (data: { limit?: number } = {}) => invokeCoinFunction<{
+    status: 'success';
+    transactions: Array<{
+      id: string;
+      amount: number;
+      transaction_type: string;
+      description: string;
+      reference_type?: string | null;
+      reference_id?: string | null;
+      metadata?: Record<string, unknown>;
+      created_at: string;
+    }>;
+  }>('wallet-history', data),
+  claimDailyReward: () => invokeCoinFunction<{
+    status: 'success';
+    claimed: boolean;
+    coins_added: number;
+    coin_balance: number;
+    message: string;
+  }>('claim-daily-reward'),
+  spendCoins: (data: { spend_type: 'premium_recipe' | 'ai_boost' | 'badge'; reference_id?: string }) => invokeCoinFunction<{
+    status: 'success';
+    spend_type: string;
+    coins_spent: number;
+    coin_balance: number;
+    message: string;
+  }>('spend-coins', data),
+  adminSearchUsers: (data: { query: string }) => invokeCoinFunction<{
+    status: 'success';
+    users: Array<{
+      id: string;
+      username?: string | null;
+      email?: string | null;
+      avatar_url?: string | null;
+      role?: string | null;
+      coin_balance: number;
+    }>;
+  }>('admin-search-users', data),
+  adminGiveCoins: (data: { target_user_id: string; amount: number; reason: string }) => invokeCoinFunction<{
+    status: 'success';
+    target_user_id: string;
+    coins_added: number;
+    coin_balance: number;
+    reference_id: string;
+  }>('admin-give-coins', data),
+  adminWalletAudit: (data: { limit?: number } = {}) => invokeCoinFunction<{
+    status: 'success';
+    logs: Array<{
+      id: string;
+      admin_user_id: string;
+      admin_username?: string | null;
+      target_user_id?: string | null;
+      target_username?: string | null;
+      target_email?: string | null;
+      action: string;
+      amount: number;
+      reason: string;
+      metadata?: Record<string, unknown>;
+      created_at: string;
+    }>;
+  }>('admin-wallet-audit', data),
 };
 
 // ===== Recipe API =====

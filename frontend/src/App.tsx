@@ -20,6 +20,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const RecipesCRUD = lazy(() => import('./pages/admin/RecipesCRUD'))
 const LessonsManager = lazy(() => import('./pages/admin/LessonsManager'))
 const AuditLog = lazy(() => import('./pages/admin/AuditLog'))
+const WalletAdmin = lazy(() => import('./pages/admin/WalletAdmin'))
 const Stats = lazy(() => import('./pages/user/Stats'))
 const FridgeScanner = lazy(() => import('./pages/user/FridgeScanner'))
 const CatatanIbu = lazy(() => import('./pages/user/CatatanIbu'))
@@ -141,6 +142,7 @@ export default function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="recipes" element={<RecipesCRUD />} />
               <Route path="lessons" element={<LessonsManager />} />
+              <Route path="wallet" element={<WalletAdmin />} />
               <Route path="audit-logs" element={<AuditLog />} />
             </Route>
 

@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { 
   User, Mail, Phone, Settings, LogOut, ChevronRight,
   Camera, Save, X, Loader2, ShieldCheck,
-  CheckCircle2, AlertCircle, Coins, QrCode
+  CheckCircle2, AlertCircle, Coins, QrCode,
+  CalendarCheck, Sparkles, History, WalletCards, Bot, Trophy, LockKeyhole
 } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import { useNavigate } from 'react-router-dom'
@@ -19,6 +20,22 @@ const COIN_PACKAGES = [
   { id: 'plus', label: 'Plus', coins: 275, price: 'Rp25.000' },
   { id: 'pro', label: 'Pro', coins: 600, price: 'Rp50.000' },
 ] as const
+
+const SPEND_OPTIONS = [
+  { id: 'premium_recipe', label: 'Unlock Resep Premium', cost: 25, icon: LockKeyhole },
+  { id: 'ai_boost', label: 'Chef AI Boost', cost: 15, icon: Bot },
+  { id: 'badge', label: 'Badge Kolektor', cost: 40, icon: Trophy },
+] as const
+
+type WalletTransaction = {
+  id: string
+  amount: number
+  transaction_type: string
+  description: string
+  reference_type?: string | null
+  reference_id?: string | null
+  created_at: string
+}
 
 export default function Profile() {
   const { user, setAuth, logout } = useAuthStore()
@@ -37,6 +54,10 @@ export default function Profile() {
   const [bypassLoading, setBypassLoading] = useState(false)
   const [coinError, setCoinError] = useState('')
   const [coinSuccess, setCoinSuccess] = useState('')
+  const [walletHistory, setWalletHistory] = useState<WalletTransaction[]>([])
+  const [walletHistoryLoading, setWalletHistoryLoading] = useState(false)
+  const [walletActionLoading, setWalletActionLoading] = useState('')
+  const [walletNotice, setWalletNotice] = useState('')
   
   const [form, setForm] = useState({
     name: '',
@@ -44,6 +65,20 @@ export default function Profile() {
     avatar: null as File | null
   })
   const [preview, setPreview] = useState<string | null>(null)
+
+  const loadWalletHistory = useCallback(async () => {
+    if (!user?.id) return
+
+    setWalletHistoryLoading(true)
+    try {
+      const response = await coinApi.walletHistory({ limit: 12 })
+      setWalletHistory(response.data.transactions || [])
+    } catch (err) {
+      console.warn('Wallet history sync failed:', err)
+    } finally {
+      setWalletHistoryLoading(false)
+    }
+  }, [user?.id])
 
   useEffect(() => {
     if (user) {
@@ -55,6 +90,10 @@ export default function Profile() {
       setPreview(resolveMediaUrl(user.avatar_url || user.avatar) || avatarFallbackUrl(user.name))
     }
   }, [user])
+
+  useEffect(() => {
+    void loadWalletHistory()
+  }, [loadWalletHistory])
 
   const handleLogout = () => {
     logout()
@@ -150,6 +189,7 @@ export default function Profile() {
       console.log('TESTING_URL:', imageUrl)
       setQrisImageUrl(imageUrl)
       setQrisOrderId(response.data.order_id || '')
+      await loadWalletHistory()
     } catch (err: any) {
       console.error('QRIS checkout failed:', err)
       setQrisImageUrl('')
@@ -170,6 +210,7 @@ export default function Profile() {
       const response = await coinApi.bypassSuccess({ order_id: qrisOrderId })
       await refreshWallet()
       notifyWalletRefresh(Number(response.data.coin_balance || 0))
+      await loadWalletHistory()
       const coinsAdded = Number(response.data.coins_added || 0)
       setCoinSuccess(coinsAdded > 0
         ? `Sandbox sukses. +${coinsAdded} koin masuk ke wallet.`
@@ -180,6 +221,40 @@ export default function Profile() {
       setCoinError(err.response?.data?.message || err.message || 'Gagal menjalankan sandbox bypass.')
     } finally {
       setBypassLoading(false)
+    }
+  }
+
+  const handleClaimDailyReward = async () => {
+    setWalletActionLoading('daily')
+    setWalletNotice('')
+    setCoinError('')
+    try {
+      const response = await coinApi.claimDailyReward()
+      notifyWalletRefresh(Number(response.data.coin_balance || 0))
+      await refreshWallet()
+      await loadWalletHistory()
+      setWalletNotice(response.data.message || 'Bonus harian berhasil diproses.')
+    } catch (err: any) {
+      setCoinError(err.message || 'Gagal klaim bonus harian.')
+    } finally {
+      setWalletActionLoading('')
+    }
+  }
+
+  const handleSpendCoins = async (spendType: typeof SPEND_OPTIONS[number]['id']) => {
+    setWalletActionLoading(spendType)
+    setWalletNotice('')
+    setCoinError('')
+    try {
+      const response = await coinApi.spendCoins({ spend_type: spendType })
+      notifyWalletRefresh(Number(response.data.coin_balance || 0))
+      await refreshWallet()
+      await loadWalletHistory()
+      setWalletNotice(response.data.message || 'Koin berhasil dipakai.')
+    } catch (err: any) {
+      setCoinError(err.message || 'Gagal memakai koin.')
+    } finally {
+      setWalletActionLoading('')
     }
   }
 
@@ -393,6 +468,132 @@ export default function Profile() {
             </div>
           </section>
 
+          <section className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div className="space-y-6">
+              <div className="rounded-[32px] border border-cyan-100 bg-white p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+                      <CalendarCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">Daily Login</p>
+                      <h2 className="text-xl font-black text-slate-950">Bonus Harian</h2>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700">+10</div>
+                </div>
+                <p className="mt-4 text-sm font-semibold leading-6 text-slate-500">
+                  Klaim bonus login sekali per hari. Reward ini langsung masuk ke Supabase wallet.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClaimDailyReward}
+                  disabled={walletActionLoading === 'daily'}
+                  className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-cyan-600 text-xs font-black uppercase tracking-widest text-white transition hover:bg-cyan-700 disabled:opacity-60"
+                >
+                  {walletActionLoading === 'daily' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  Klaim Bonus
+                </button>
+              </div>
+
+              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-cyan-300">
+                    <WalletCards className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Coin Usage</p>
+                    <h2 className="text-xl font-black text-slate-950">Pakai Koin</h2>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {SPEND_OPTIONS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleSpendCoins(item.id)}
+                      disabled={Boolean(walletActionLoading)}
+                      className="flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left transition hover:border-cyan-200 hover:bg-cyan-50 disabled:opacity-60"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-700 shadow-sm">
+                        {walletActionLoading === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <item.icon className="h-5 w-5" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-black text-slate-900">{item.label}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.cost} koin</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-slate-300" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {walletNotice && (
+                <div className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{walletNotice}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-700">
+                    <History className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Wallet History</p>
+                    <h2 className="text-xl font-black text-slate-950">Riwayat Transaksi</h2>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void loadWalletHistory()}
+                  className="rounded-2xl border border-slate-200 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:border-cyan-200 hover:text-cyan-700"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              {walletHistoryLoading ? (
+                <div className="flex items-center justify-center py-16 text-cyan-700">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : walletHistory.length === 0 ? (
+                <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+                  <History className="mx-auto h-9 w-9 text-slate-300" />
+                  <p className="mt-4 text-sm font-black text-slate-700">Belum ada transaksi wallet.</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-400">Top up, gift admin, daily reward, dan spend akan muncul di sini.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {walletHistory.map((transaction) => {
+                    const isPositive = Number(transaction.amount) > 0
+                    return (
+                      <div key={transaction.id} className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${isPositive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                          <Coins className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-black text-slate-900">{transaction.description || formatTransactionType(transaction.transaction_type)}</p>
+                          <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            {formatTransactionType(transaction.transaction_type)} • {new Date(transaction.created_at).toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                        <div className={`text-right text-base font-black ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {isPositive ? '+' : ''}{transaction.amount}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* MENU LIST */}
           <div className="grid overflow-hidden rounded-[40px] border border-white bg-white/70 shadow-premium backdrop-blur-2xl lg:grid-cols-2 lg:border-cyan-100 lg:bg-white">
             <MenuLink icon={Mail} label="Email" value={user?.email} disabled />
@@ -442,4 +643,17 @@ function MenuLink({ icon: Icon, label, value, disabled, onClick }: any) {
       {!disabled && <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-cyan-600 transition-all" />}
     </button>
   )
+}
+
+function formatTransactionType(type: string) {
+  const labels: Record<string, string> = {
+    purchase: 'Pembelian',
+    admin_gift: 'Gift Admin',
+    daily_reward: 'Bonus Harian',
+    spend: 'Pemakaian',
+    refund: 'Refund',
+    adjustment: 'Penyesuaian',
+  }
+
+  return labels[type] || type
 }

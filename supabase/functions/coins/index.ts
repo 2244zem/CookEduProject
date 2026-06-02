@@ -17,25 +17,21 @@ type CoinPurchase = {
   status: string
 }
 
+type ProfileRole = {
+  id: string
+  role: string | null
+}
+
 const COIN_PACKAGES: Record<CoinPackageId, CoinPackage> = {
-  starter: {
-    id: 'starter',
-    name: 'CookEdu Coin Starter',
-    coins: 100,
-    amount: 10000,
-  },
-  plus: {
-    id: 'plus',
-    name: 'CookEdu Coin Plus',
-    coins: 275,
-    amount: 25000,
-  },
-  pro: {
-    id: 'pro',
-    name: 'CookEdu Coin Pro',
-    coins: 600,
-    amount: 50000,
-  },
+  starter: { id: 'starter', name: 'CookEdu Coin Starter', coins: 100, amount: 10000 },
+  plus: { id: 'plus', name: 'CookEdu Coin Plus', coins: 275, amount: 25000 },
+  pro: { id: 'pro', name: 'CookEdu Coin Pro', coins: 600, amount: 50000 },
+}
+
+const SPEND_OPTIONS: Record<string, { label: string; cost: number }> = {
+  premium_recipe: { label: 'Unlock resep premium', cost: 25 },
+  ai_boost: { label: 'Chef AI Boost', cost: 15 },
+  badge: { label: 'Badge kolektor CookEdu', cost: 40 },
 }
 
 const corsHeaders = {
@@ -69,20 +65,17 @@ Deno.serve(async (req) => {
     const user = await requireSupabaseUser(req)
     const action = String(body.action || '')
 
-    if (action === 'qris-checkout') {
-      return jsonResponse(await chargeQris(body, user))
-    }
-
-    if (action === 'bypass-success') {
-      return jsonResponse(await bypassSuccess(body, user))
-    }
-
+    if (action === 'qris-checkout') return jsonResponse(await chargeQris(body, user))
+    if (action === 'bypass-success') return jsonResponse(await bypassSuccess(body, user))
     if (action === 'wallet-balance') {
-      return jsonResponse({
-        status: 'success',
-        coin_balance: await walletBalance(user.id),
-      })
+      return jsonResponse({ status: 'success', coin_balance: await walletBalance(user.id) })
     }
+    if (action === 'wallet-history') return jsonResponse(await walletHistory(user.id, body))
+    if (action === 'claim-daily-reward') return jsonResponse(await claimDailyReward(user))
+    if (action === 'spend-coins') return jsonResponse(await spendCoins(body, user))
+    if (action === 'admin-search-users') return jsonResponse(await adminSearchUsers(body, user))
+    if (action === 'admin-give-coins') return jsonResponse(await adminGiveCoins(body, user))
+    if (action === 'admin-wallet-audit') return jsonResponse(await adminWalletAudit(body, user))
 
     return jsonResponse({ status: 'error', message: 'Aksi koin tidak dikenali.' }, 400)
   } catch (error) {
@@ -199,25 +192,17 @@ async function bypassSuccess(body: Record<string, unknown>, user: User) {
     )
 
     const purchase = purchaseResult.rows[0]
-    if (!purchase) {
-      throw new HttpError(404, 'Order koin tidak ditemukan untuk user aktif.')
-    }
+    if (!purchase) throw new HttpError(404, 'Order koin tidak ditemukan untuk user aktif.')
 
     if (purchase.status !== 'pending') {
-      const balanceResult = await client.queryObject<{ coin_balance: number }>(
-        `select coalesce(coin_balance, 0)::int as coin_balance
-         from public.user_wallets
-         where user_id = $1`,
-        [user.id],
-      )
-
+      const balance = await walletBalanceInClient(client, user.id)
       await client.queryArray('commit')
       return {
         status: 'success',
         order_id: purchase.order_id,
         purchase_status: purchase.status,
         coins_added: 0,
-        coin_balance: Number(balanceResult.rows[0]?.coin_balance || 0),
+        coin_balance: balance,
       }
     }
 
@@ -228,20 +213,17 @@ async function bypassSuccess(body: Record<string, unknown>, user: User) {
       [purchase.order_id, user.id],
     )
 
-    await client.queryObject(
-      `insert into public.user_wallets (user_id, coin_balance)
-       values ($1, $2)
-       on conflict (user_id) do update
-       set coin_balance = coalesce(public.user_wallets.coin_balance, 0) + excluded.coin_balance`,
-      [user.id, Number(purchase.coin_amount || 0)],
-    )
-
-    const balanceResult = await client.queryObject<{ coin_balance: number }>(
-      `select coalesce(coin_balance, 0)::int as coin_balance
-       from public.user_wallets
-       where user_id = $1`,
-      [user.id],
-    )
+    const balance = await incrementWalletInClient(client, user.id, Number(purchase.coin_amount || 0))
+    await recordWalletTransactionInClient(client, {
+      userId: user.id,
+      amount: Number(purchase.coin_amount || 0),
+      type: 'purchase',
+      description: `Pembelian koin ${purchase.order_id}`,
+      referenceType: 'coin_purchase',
+      referenceId: purchase.order_id,
+      metadata: { order_id: purchase.order_id },
+      createdBy: user.id,
+    })
 
     await client.queryArray('commit')
 
@@ -250,11 +232,276 @@ async function bypassSuccess(body: Record<string, unknown>, user: User) {
       order_id: purchase.order_id,
       purchase_status: 'settlement',
       coins_added: Number(purchase.coin_amount || 0),
-      coin_balance: Number(balanceResult.rows[0]?.coin_balance || 0),
+      coin_balance: balance,
     }
   } catch (error) {
     await client.queryArray('rollback').catch(() => undefined)
     throw error
+  } finally {
+    client.release()
+  }
+}
+
+async function walletHistory(userId: string, body: Record<string, unknown>) {
+  const limit = clampNumber(Number(body.limit || 20), 1, 50)
+  const client = await dbPool.connect()
+
+  try {
+    const result = await client.queryObject(
+      `select id::text, user_id::text, amount, transaction_type, description,
+              reference_type, reference_id, metadata, created_by::text, created_at
+       from public.wallet_transactions
+       where user_id = $1
+       order by created_at desc
+       limit $2`,
+      [userId, limit],
+    )
+
+    return { status: 'success', transactions: result.rows }
+  } finally {
+    client.release()
+  }
+}
+
+async function claimDailyReward(user: User) {
+  const rewardDate = getJakartaDateKey()
+  const rewardAmount = 10
+  const client = await dbPool.connect()
+
+  try {
+    await client.queryArray('begin')
+
+    const existing = await client.queryObject(
+      `select id
+       from public.wallet_transactions
+       where user_id = $1
+         and transaction_type = 'daily_reward'
+         and reference_type = 'daily_login'
+         and reference_id = $2
+       limit 1`,
+      [user.id, rewardDate],
+    )
+
+    if (existing.rows.length > 0) {
+      const balance = await walletBalanceInClient(client, user.id)
+      await client.queryArray('commit')
+      return {
+        status: 'success',
+        claimed: false,
+        coins_added: 0,
+        coin_balance: balance,
+        message: 'Bonus harian sudah diklaim hari ini.',
+      }
+    }
+
+    const balance = await incrementWalletInClient(client, user.id, rewardAmount)
+    await recordWalletTransactionInClient(client, {
+      userId: user.id,
+      amount: rewardAmount,
+      type: 'daily_reward',
+      description: `Daily login reward ${rewardDate}`,
+      referenceType: 'daily_login',
+      referenceId: rewardDate,
+      metadata: { reward_date: rewardDate },
+      createdBy: user.id,
+    })
+
+    await client.queryArray('commit')
+
+    return {
+      status: 'success',
+      claimed: true,
+      coins_added: rewardAmount,
+      coin_balance: balance,
+      message: `Bonus harian +${rewardAmount} koin berhasil diklaim.`,
+    }
+  } catch (error) {
+    await client.queryArray('rollback').catch(() => undefined)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+async function spendCoins(body: Record<string, unknown>, user: User) {
+  const spendType = String(body.spend_type || '').trim()
+  const option = SPEND_OPTIONS[spendType]
+  if (!option) throw new HttpError(422, 'Pilihan penggunaan koin tidak tersedia.')
+
+  const referenceId = String(body.reference_id || crypto.randomUUID()).slice(0, 120)
+  const client = await dbPool.connect()
+
+  try {
+    await client.queryArray('begin')
+
+    const currentBalance = await walletBalanceInClient(client, user.id, true)
+    if (currentBalance < option.cost) {
+      throw new HttpError(402, `Saldo koin kurang. Butuh ${option.cost} koin.`)
+    }
+
+    const balance = await incrementWalletInClient(client, user.id, -option.cost)
+    await recordWalletTransactionInClient(client, {
+      userId: user.id,
+      amount: -option.cost,
+      type: 'spend',
+      description: option.label,
+      referenceType: spendType,
+      referenceId,
+      metadata: { spend_type: spendType, label: option.label },
+      createdBy: user.id,
+    })
+
+    await client.queryArray('commit')
+
+    return {
+      status: 'success',
+      spend_type: spendType,
+      coins_spent: option.cost,
+      coin_balance: balance,
+      message: `${option.label} berhasil dipakai.`,
+    }
+  } catch (error) {
+    await client.queryArray('rollback').catch(() => undefined)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+async function adminSearchUsers(body: Record<string, unknown>, adminUser: User) {
+  await requireAdmin(adminUser.id)
+  const query = String(body.query || '').trim()
+  if (query.length < 2) return { status: 'success', users: [] }
+
+  const client = await dbPool.connect()
+
+  try {
+    const result = await client.queryObject(
+      `select p.id::text,
+              p.username,
+              p.avatar_url,
+              p.role,
+              u.email,
+              coalesce(w.coin_balance, 0)::int as coin_balance
+       from public.profiles p
+       left join auth.users u on u.id = p.id
+       left join public.user_wallets w on w.user_id = p.id
+       where p.username ilike $1 or u.email ilike $1
+       order by p.updated_at desc nulls last, p.username asc
+       limit 12`,
+      [`%${query}%`],
+    )
+
+    return { status: 'success', users: result.rows }
+  } finally {
+    client.release()
+  }
+}
+
+async function adminGiveCoins(body: Record<string, unknown>, adminUser: User) {
+  await requireAdmin(adminUser.id)
+
+  const targetUserId = String(body.target_user_id || '').trim()
+  const amount = Number(body.amount || 0)
+  const reason = String(body.reason || '').trim()
+
+  if (!isUuid(targetUserId)) throw new HttpError(422, 'Target user tidak valid.')
+  if (!Number.isInteger(amount) || amount < 1 || amount > 100000) {
+    throw new HttpError(422, 'Jumlah koin harus 1 sampai 100000.')
+  }
+  if (reason.length < 3) throw new HttpError(422, 'Alasan pemberian koin wajib diisi.')
+
+  const client = await dbPool.connect()
+
+  try {
+    await client.queryArray('begin')
+
+    const target = await client.queryObject(
+      `select p.id::text, p.username, u.email
+       from public.profiles p
+       left join auth.users u on u.id = p.id
+       where p.id = $1
+       limit 1`,
+      [targetUserId],
+    )
+
+    if (target.rows.length === 0) throw new HttpError(404, 'User target tidak ditemukan.')
+
+    const balance = await incrementWalletInClient(client, targetUserId, amount)
+    const referenceId = `ADMIN-GIFT-${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}-${crypto.randomUUID().slice(0, 8)}`
+
+    await recordWalletTransactionInClient(client, {
+      userId: targetUserId,
+      amount,
+      type: 'admin_gift',
+      description: reason,
+      referenceType: 'admin_gift',
+      referenceId,
+      metadata: {
+        reason,
+        target: target.rows[0],
+      },
+      createdBy: adminUser.id,
+    })
+
+    await client.queryObject(
+      `insert into public.wallet_admin_audit_logs
+       (admin_user_id, target_user_id, action, amount, reason, metadata, created_at)
+       values ($1, $2, 'give_coins', $3, $4, $5::jsonb, now())`,
+      [
+        adminUser.id,
+        targetUserId,
+        amount,
+        reason,
+        JSON.stringify({ reference_id: referenceId, target: target.rows[0] }),
+      ],
+    )
+
+    await client.queryArray('commit')
+
+    return {
+      status: 'success',
+      target_user_id: targetUserId,
+      coins_added: amount,
+      coin_balance: balance,
+      reference_id: referenceId,
+    }
+  } catch (error) {
+    await client.queryArray('rollback').catch(() => undefined)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+async function adminWalletAudit(body: Record<string, unknown>, adminUser: User) {
+  await requireAdmin(adminUser.id)
+  const limit = clampNumber(Number(body.limit || 25), 1, 100)
+  const client = await dbPool.connect()
+
+  try {
+    const result = await client.queryObject(
+      `select l.id::text,
+              l.admin_user_id::text,
+              admin.username as admin_username,
+              l.target_user_id::text,
+              target.username as target_username,
+              target_auth.email as target_email,
+              l.action,
+              l.amount,
+              l.reason,
+              l.metadata,
+              l.created_at
+       from public.wallet_admin_audit_logs l
+       left join public.profiles admin on admin.id = l.admin_user_id
+       left join public.profiles target on target.id = l.target_user_id
+       left join auth.users target_auth on target_auth.id = l.target_user_id
+       order by l.created_at desc
+       limit $1`,
+      [limit],
+    )
+
+    return { status: 'success', logs: result.rows }
   } finally {
     client.release()
   }
@@ -275,21 +522,74 @@ async function recordPendingPurchase(orderId: string, userId: string, selectedPa
   }
 }
 
+async function incrementWalletInClient(client: any, userId: string, amount: number) {
+  const result = await client.queryObject<{ coin_balance: number }>(
+    `insert into public.user_wallets (user_id, coin_balance, updated_at)
+     values ($1, $2, now())
+     on conflict (user_id) do update
+     set coin_balance = greatest(0, coalesce(public.user_wallets.coin_balance, 0) + excluded.coin_balance),
+         updated_at = now()
+     returning coin_balance::int`,
+    [userId, amount],
+  )
+
+  return Number(result.rows[0]?.coin_balance || 0)
+}
+
+async function recordWalletTransactionInClient(
+  client: any,
+  input: {
+    userId: string
+    amount: number
+    type: string
+    description: string
+    referenceType?: string
+    referenceId?: string
+    metadata?: Record<string, unknown>
+    createdBy?: string
+  },
+) {
+  await client.queryObject(
+    `insert into public.wallet_transactions
+     (user_id, amount, transaction_type, description, reference_type, reference_id, metadata, created_by, created_at)
+     values ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, now())`,
+    [
+      input.userId,
+      input.amount,
+      input.type,
+      input.description,
+      input.referenceType || null,
+      input.referenceId || null,
+      JSON.stringify(input.metadata || {}),
+      input.createdBy || null,
+    ],
+  )
+}
+
 async function walletBalance(userId: string) {
   const client = await dbPool.connect()
 
   try {
-    const result = await client.queryObject<{ coin_balance: number }>(
-      `select coalesce(coin_balance, 0)::int as coin_balance
-       from public.user_wallets
-       where user_id = $1`,
-      [userId],
-    )
-
-    return Number(result.rows[0]?.coin_balance || 0)
+    return await walletBalanceInClient(client, userId)
   } finally {
     client.release()
   }
+}
+
+async function walletBalanceInClient(
+  client: any,
+  userId: string,
+  lock = false,
+) {
+  const result = await client.queryObject<{ coin_balance: number }>(
+    `select coalesce(coin_balance, 0)::int as coin_balance
+     from public.user_wallets
+     where user_id = $1
+     ${lock ? 'for update' : ''}`,
+    [userId],
+  )
+
+  return Number(result.rows[0]?.coin_balance || 0)
 }
 
 async function requireSupabaseUser(req: Request) {
@@ -313,6 +613,26 @@ async function requireSupabaseUser(req: Request) {
   }
 
   return data.user
+}
+
+async function requireAdmin(userId: string) {
+  const client = await dbPool.connect()
+
+  try {
+    const result = await client.queryObject<ProfileRole>(
+      `select id::text, role
+       from public.profiles
+       where id = $1
+       limit 1`,
+      [userId],
+    )
+
+    if (result.rows[0]?.role !== 'admin') {
+      throw new HttpError(403, 'Akses admin diperlukan untuk aksi wallet ini.')
+    }
+  } finally {
+    client.release()
+  }
 }
 
 function getSupabaseServiceRoleKey() {
@@ -386,6 +706,24 @@ function sandboxQrPlaceholderUrl(orderId: string, selectedPackage: CoinPackage) 
 </svg>`
 
   return `data:image/svg+xml;base64,${btoa(svg)}`
+}
+
+function getJakartaDateKey() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) return min
+  return Math.min(max, Math.max(min, Math.floor(value)))
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
 
 function requiredEnv(key: string) {
