@@ -11,6 +11,7 @@ import { authApi, coinApi } from '../../lib/api'
 import { isSupabaseConfigured, supabase, uploadPublicMedia, upsertProfileForUser } from '../../lib/supabaseClient'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 import { notifyWalletRefresh, useRealtimeWallet } from '../../hooks/useRealtimeWallet'
+import HumanSignalButtons from '../../components/ui/HumanSignalButtons'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -345,6 +346,8 @@ export default function Profile() {
         </header>
 
         <main className="px-6 space-y-6 lg:px-0 lg:py-12">
+          <HumanSignalButtons />
+
           {/* STATS GRID */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <div className="bg-white/70 backdrop-blur-2xl p-6 rounded-[32px] border border-white shadow-premium">
