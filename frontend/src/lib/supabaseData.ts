@@ -82,6 +82,54 @@ function getDifficultyLabel(difficulty?: string | null) {
   return 'Beginner'
 }
 
+function formatIngredientQuantity(ingredient: any) {
+  const rawQuantity = ingredient?.quantity ?? ingredient?.amount ?? ingredient?.qty ?? ''
+  const unit = ingredient?.unit ?? ingredient?.unit_name ?? ''
+  return [rawQuantity, unit].filter(Boolean).join(' ').trim()
+}
+
+function normalizeRecipeIngredient(ingredient: any, index: number) {
+  if (typeof ingredient === 'string') {
+    return {
+      name: ingredient,
+      item: ingredient,
+      quantity: '',
+      amount: '',
+      unit: '',
+    }
+  }
+
+  const name = String(
+    ingredient?.name
+    || ingredient?.item
+    || ingredient?.ingredient
+    || ingredient?.title
+    || `Bahan ${index + 1}`
+  ).trim()
+  const quantity = formatIngredientQuantity(ingredient)
+
+  return {
+    ...ingredient,
+    name,
+    item: ingredient?.item || name,
+    quantity,
+    amount: ingredient?.amount ?? ingredient?.quantity ?? '',
+    unit: ingredient?.unit ?? '',
+  }
+}
+
+function normalizeRecipeIngredients(ingredients: unknown) {
+  if (!Array.isArray(ingredients)) return []
+  return ingredients
+    .map((ingredient, index) => normalizeRecipeIngredient(ingredient, index))
+    .filter((ingredient) => ingredient.name.trim().length > 0)
+}
+
+function normalizeRecipeInstruction(step: any) {
+  if (typeof step === 'string') return step
+  return step?.instruction || step?.text || step?.step || step?.description || ''
+}
+
 function normalizeAdminRecipe(row: Partial<SupabaseRecipeRow>) {
   const categoryName = row.categories?.name || row.category || 'Community'
   const imageUrl = resolveMediaUrl(row.image_url || row.video_url) || ''
@@ -104,7 +152,7 @@ function normalizeAdminRecipe(row: Partial<SupabaseRecipeRow>) {
     prep_time: prepTime,
     total_time: cookingTime + prepTime,
     servings: row.servings || 1,
-    ingredients: Array.isArray(row.ingredients) ? row.ingredients : [],
+    ingredients: normalizeRecipeIngredients(row.ingredients),
     steps: Array.isArray(row.steps) ? row.steps : [],
     nutritional_info: row.nutritional_info || null,
     min_temp_celsius: row.min_temp_celsius,
@@ -299,7 +347,7 @@ export async function listSupabaseRecipes() {
     prep_time: row.prep_time || 0,
     prepTime: String(row.cooking_time || 25),
     difficulty: row.difficulty || (row.is_official ? 'intermediate' : 'beginner'),
-    ingredients: Array.isArray(row.ingredients) ? row.ingredients : [],
+    ingredients: normalizeRecipeIngredients(row.ingredients),
     steps: Array.isArray(row.steps) ? row.steps : [],
     servings: row.servings || 1,
     nutritional_info: row.nutritional_info || null,
@@ -323,7 +371,7 @@ export async function getSupabaseRecipe(id: string) {
 
   const row = data as Partial<SupabaseRecipeRow>
   const steps = Array.isArray(row.steps)
-    ? row.steps.map((step: any) => typeof step === 'string' ? step : step?.instruction || step?.text).filter(Boolean)
+    ? row.steps.map(normalizeRecipeInstruction).filter(Boolean)
     : []
 
   return {
@@ -336,7 +384,7 @@ export async function getSupabaseRecipe(id: string) {
     calories: (row.nutritional_info as any)?.calories || '-',
     difficulty: row.difficulty || (row.is_official ? 'Official' : 'Community'),
     rating: '5.0',
-    ingredients: Array.isArray(row.ingredients) ? row.ingredients : [],
+    ingredients: normalizeRecipeIngredients(row.ingredients),
     instructions: steps.length ? steps : ['Siapkan bahan.', 'Masak sesuai instruksi resep.', 'Sajikan selagi hangat.'],
   }
 }

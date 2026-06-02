@@ -52,6 +52,7 @@ export default function RecipeList() {
   const [weatherAlert, setWeatherAlert] = useState<{title: string, msg: string} | null>(null)
   
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [createError, setCreateError] = useState('')
   const [newRecipeForm, setNewRecipeForm] = useState({
     title: '',
     cooking_time: 20,
@@ -144,12 +145,16 @@ export default function RecipeList() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
+      setCreateError('')
       setIsModalOpen(false)
       setNewRecipeForm({
         title: '', cooking_time: 20, prep_time: 10, difficulty: 'beginner', category_id: '', description: '',
         ingredients: [{ item: '', amount: '', unit: '' }]
       })
-    }
+    },
+    onError: (error: any) => {
+      setCreateError(error?.message || error?.response?.data?.message || 'Gagal menambah resep. Pastikan kamu sudah login dan tabel Supabase sudah benar.')
+    },
   })
 
   const deleteMutation = useMutation({
@@ -283,6 +288,18 @@ export default function RecipeList() {
   }
 
   const handleSaveRecipe = () => {
+    setCreateError('')
+    if (!newRecipeForm.title.trim()) {
+      setCreateError('Judul resep wajib diisi.')
+      return
+    }
+
+    const cleanIngredients = newRecipeForm.ingredients.filter((ingredient) => ingredient.item.trim())
+    if (!cleanIngredients.length) {
+      setCreateError('Minimal isi satu bahan.')
+      return
+    }
+
     const formData = new FormData()
     formData.append('title', newRecipeForm.title)
     formData.append('description', newRecipeForm.description || 'Resep baru dari pengguna')
@@ -290,7 +307,7 @@ export default function RecipeList() {
     formData.append('prep_time', newRecipeForm.prep_time.toString())
     formData.append('difficulty', newRecipeForm.difficulty)
     formData.append('category_id', newRecipeForm.category_id)
-    formData.append('ingredients', JSON.stringify(newRecipeForm.ingredients))
+    formData.append('ingredients', JSON.stringify(cleanIngredients))
     formData.append('steps', JSON.stringify([{ instruction: 'Siapkan bahan dan masak sesuai selera.', duration: newRecipeForm.cooking_time }]))
     
     createMutation.mutate(formData)
@@ -298,27 +315,39 @@ export default function RecipeList() {
 
   if (isDesktop) {
     return (
-      <DesktopRecipeHome
-        user={user}
-        weather={weather}
-        weatherAlert={weatherAlert}
-        setWeatherAlert={setWeatherAlert}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        searchAddressInput={searchAddressInput}
-        setSearchAddressInput={setSearchAddressInput}
-        handleFetchWeather={handleFetchWeather}
-        categories={categories}
-        activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
-        filteredRecipes={filteredRecipes}
-        isLoadingRecipes={isLoadingRecipes}
-        cartCount={cartCount}
-        navigate={navigate}
-        onCreate={() => setIsModalOpen(true)}
-        onAddRecipeToShopping={handleAddRecipeToShopping}
-        deleteRecipe={(id: number) => deleteMutation.mutate(id)}
-      />
+      <>
+        <DesktopRecipeHome
+          user={user}
+          weather={weather}
+          weatherAlert={weatherAlert}
+          setWeatherAlert={setWeatherAlert}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          searchAddressInput={searchAddressInput}
+          setSearchAddressInput={setSearchAddressInput}
+          handleFetchWeather={handleFetchWeather}
+          categories={categories}
+          activeCategory={activeCategory}
+          setActiveCategory={setActiveCategory}
+          filteredRecipes={filteredRecipes}
+          isLoadingRecipes={isLoadingRecipes}
+          cartCount={cartCount}
+          navigate={navigate}
+          onCreate={() => setIsModalOpen(true)}
+          onAddRecipeToShopping={handleAddRecipeToShopping}
+          deleteRecipe={(id: number) => deleteMutation.mutate(id)}
+        />
+        <RecipeCreateModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          newRecipeForm={newRecipeForm}
+          setNewRecipeForm={setNewRecipeForm}
+          mergedCategories={mergedCategories}
+          createMutation={createMutation}
+          handleSaveRecipe={handleSaveRecipe}
+          createError={createError}
+        />
+      </>
     )
   }
 
@@ -782,6 +811,12 @@ export default function RecipeList() {
                 </button>
               </div>
 
+              {createError && (
+                <div className="mb-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-left text-xs font-bold leading-5 text-rose-600">
+                  {createError}
+                </div>
+              )}
+
               <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar text-left">
                 {/* Title */}
                 <div className="space-y-1">
@@ -918,6 +953,185 @@ export default function RecipeList() {
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+function RecipeCreateModal({
+  isOpen,
+  onClose,
+  newRecipeForm,
+  setNewRecipeForm,
+  mergedCategories,
+  createMutation,
+  handleSaveRecipe,
+  createError,
+}: any) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 32 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 32 }}
+            className="relative z-10 w-full max-w-2xl rounded-[32px] border border-cyan-100 bg-white p-8 shadow-2xl"
+          >
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-3xl font-black tracking-tight text-slate-950">Tambah Resep</h3>
+                <p className="mt-1 text-xs font-black uppercase tracking-widest text-slate-400">Simpan ke Supabase CookEdu</p>
+              </div>
+              <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-500 hover:bg-slate-100">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {createError && (
+              <div className="mb-5 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold leading-6 text-rose-600">
+                {createError}
+              </div>
+            )}
+
+            <div className="grid max-h-[65vh] gap-4 overflow-y-auto pr-2">
+              <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-3">
+                <label className="space-y-1">
+                  <span className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Judul</span>
+                  <input
+                    value={newRecipeForm.title}
+                    onChange={(event) => setNewRecipeForm({ ...newRecipeForm, title: event.target.value })}
+                    className="h-14 w-full rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 text-sm font-bold text-slate-900 outline-none focus:border-primary focus:bg-white"
+                    placeholder="Contoh: Sup Ayam Hangat"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Kategori</span>
+                  <select
+                    value={newRecipeForm.category_id}
+                    onChange={(event) => setNewRecipeForm({ ...newRecipeForm, category_id: event.target.value })}
+                    className="h-14 w-full rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 text-xs font-black text-slate-700 outline-none focus:border-primary focus:bg-white"
+                  >
+                    <option value="">Community</option>
+                    {mergedCategories.map((category: any) => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="space-y-1">
+                <span className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Deskripsi</span>
+                <textarea
+                  value={newRecipeForm.description}
+                  onChange={(event) => setNewRecipeForm({ ...newRecipeForm, description: event.target.value })}
+                  className="min-h-24 w-full rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-primary focus:bg-white"
+                  placeholder="Ceritakan resep ini secara singkat..."
+                />
+              </label>
+
+              <div className="grid grid-cols-3 gap-3">
+                <label className="space-y-1">
+                  <span className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Masak</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={newRecipeForm.cooking_time}
+                    onChange={(event) => setNewRecipeForm({ ...newRecipeForm, cooking_time: Number(event.target.value) })}
+                    className="h-14 w-full rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 text-sm font-bold text-slate-900 outline-none focus:border-primary focus:bg-white"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Prep</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={newRecipeForm.prep_time}
+                    onChange={(event) => setNewRecipeForm({ ...newRecipeForm, prep_time: Number(event.target.value) })}
+                    className="h-14 w-full rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 text-sm font-bold text-slate-900 outline-none focus:border-primary focus:bg-white"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Level</span>
+                  <select
+                    value={newRecipeForm.difficulty}
+                    onChange={(event) => setNewRecipeForm({ ...newRecipeForm, difficulty: event.target.value })}
+                    className="h-14 w-full rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 text-xs font-black text-slate-700 outline-none focus:border-primary focus:bg-white"
+                  >
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="rounded-3xl border border-cyan-100 bg-cyan-50/35 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Bahan</span>
+                  <button
+                    type="button"
+                    onClick={() => setNewRecipeForm({ ...newRecipeForm, ingredients: [...newRecipeForm.ingredients, { item: '', amount: '', unit: '' }] })}
+                    className="rounded-full bg-white px-3 py-1 text-[10px] font-black text-primary shadow-sm"
+                  >
+                    + Add Line
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {newRecipeForm.ingredients.map((ingredient: any, index: number) => (
+                    <div key={index} className="grid grid-cols-[minmax(0,1fr)_110px_40px] gap-2">
+                      <input
+                        value={ingredient.item}
+                        onChange={(event) => {
+                          const nextIngredients = [...newRecipeForm.ingredients]
+                          nextIngredients[index].item = event.target.value
+                          setNewRecipeForm({ ...newRecipeForm, ingredients: nextIngredients })
+                        }}
+                        className="h-12 rounded-2xl border border-cyan-100 bg-white px-4 text-xs font-bold text-slate-900 outline-none focus:border-primary"
+                        placeholder="Nama bahan"
+                      />
+                      <input
+                        value={ingredient.amount}
+                        onChange={(event) => {
+                          const nextIngredients = [...newRecipeForm.ingredients]
+                          nextIngredients[index].amount = event.target.value
+                          setNewRecipeForm({ ...newRecipeForm, ingredients: nextIngredients })
+                        }}
+                        className="h-12 rounded-2xl border border-cyan-100 bg-white px-4 text-xs font-bold text-slate-900 outline-none focus:border-primary"
+                        placeholder="Qty"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewRecipeForm({ ...newRecipeForm, ingredients: newRecipeForm.ingredients.filter((_: any, itemIndex: number) => itemIndex !== index) })}
+                        disabled={newRecipeForm.ingredients.length <= 1}
+                        className="flex h-12 items-center justify-center rounded-2xl text-rose-400 hover:bg-rose-50 disabled:opacity-30"
+                        title="Hapus bahan"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={createMutation.isPending}
+              onClick={handleSaveRecipe}
+              className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 text-sm font-black uppercase tracking-widest text-white shadow-xl shadow-slate-900/20 hover:bg-primary disabled:opacity-50"
+            >
+              {createMutation.isPending ? <ChefHat className="h-5 w-5 animate-spin" /> : <PlusCircle className="h-5 w-5 text-cyan-300" />}
+              {createMutation.isPending ? 'Menyimpan...' : 'Simpan Resep'}
+            </button>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   )
 }
 
