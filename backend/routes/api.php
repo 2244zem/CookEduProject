@@ -28,6 +28,7 @@ Route::get('/lessons', [LessonController::class, 'index']);
 
 Route::prefix('v1')->group(function () {
     Route::post('/coins/qris-checkout', [MidtransCoinController::class, 'chargeQris']);
+    Route::post('/coins/bypass-success', [MidtransCoinController::class, 'bypassSuccess']);
 });
 
 /*

@@ -1,9 +1,9 @@
-import { useAuthStore, useThemeStore } from '../../store'
+import { useAuthStore } from '../../store'
 import { motion } from 'framer-motion'
 import { 
   Award, Target, Zap, TrendingUp, BarChart, 
   Calendar, Trophy, Crown, Medal, User,
-  Bookmark, BookOpen, Snowflake, Globe, Moon
+  Bookmark, BookOpen, Snowflake
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -42,12 +42,9 @@ export default function Stats() {
 
   const navigate = useNavigate()
   const location = useLocation()
-  const { isDarkMode } = useThemeStore()
 
   return (
-    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent ${
-      isDarkMode ? 'dark text-white' : 'text-slate-800'
-    } pb-40`}>
+    <div className="min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent text-slate-800 pb-40">
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Bot, ChefHat, Loader2, Moon, Send, Sun, Utensils, Zap } from 'lucide-react'
-import { useAuthStore, useThemeStore } from '../../store'
+import { ArrowLeft, Bot, ChefHat, Loader2, Send, Utensils, Zap } from 'lucide-react'
+import { useAuthStore } from '../../store'
 
 type Message = {
   id: string
@@ -13,7 +13,6 @@ type Message = {
 export default function AiAssistantPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { isDarkMode, toggleDarkMode } = useThemeStore()
   const displayName = user?.name || user?.username || 'Koki CookEdu'
   const [messages, setMessages] = useState<Message[]>([{
     id: 'welcome',
@@ -65,7 +64,7 @@ export default function AiAssistantPage() {
   ]
 
   return (
-    <div className={`min-h-screen bg-slate-50 text-slate-950 ${isDarkMode ? 'dark' : ''}`}>
+    <div className="min-h-screen bg-slate-50 text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-5 px-4 py-5 lg:px-8 lg:py-8">
         <header className="flex items-center justify-between rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-3">
@@ -85,10 +84,6 @@ export default function AiAssistantPage() {
               </div>
             </div>
           </div>
-
-          <button onClick={toggleDarkMode} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-50 text-slate-600">
-            {isDarkMode ? <Sun className="h-5 w-5 text-amber-500" /> : <Moon className="h-5 w-5" />}
-          </button>
         </header>
 
         <main className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">

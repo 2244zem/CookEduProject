@@ -4,10 +4,10 @@ import {
   BookOpen, Clock, Heart, Search, 
   ChevronRight, ArrowLeft, Bookmark, 
   ShoppingCart, Snowflake, Globe, 
-  User, Moon 
+  User 
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuthStore, useThemeStore } from '../../store'
+import { useAuthStore } from '../../store'
 import { recipeData } from '../../data/catatanIbuRecipes'
 
 // Asset Imports
@@ -20,7 +20,6 @@ export default function CatatanIbu() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuthStore()
-  const { isDarkMode } = useThemeStore()
 
   useEffect(() => {
     if (user?.name) {
@@ -34,9 +33,7 @@ export default function CatatanIbu() {
   )
 
   return (
-    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent ${
-      isDarkMode ? 'dark text-white' : 'text-slate-800'
-    } pb-40`}>
+    <div className="min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent text-slate-800 pb-40">
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />

@@ -3,11 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Search, Plus, X, Flame, Clock, ArrowRight, Loader2, 
   ArrowLeft, Refrigerator, CheckCircle2, BookOpen, Snowflake, User, Bookmark, BarChart3,
-  Globe, Moon
+  Globe
 } from 'lucide-react'
 import { recipeApi } from '../../lib/api'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useThemeStore } from '../../store'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -22,7 +21,6 @@ export default function FridgeScanner() {
   const [hasScanned, setHasScanned] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
-  const { isDarkMode } = useThemeStore()
 
   // Grouped suggestions for the UI
   const categories = Array.from(new Set(stapleIngredientsData.map(i => i.category)))
@@ -81,9 +79,7 @@ export default function FridgeScanner() {
   }
 
   return (
-    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent ${
-      isDarkMode ? 'dark text-white' : 'text-slate-800'
-    } pb-40`}>
+    <div className="min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent text-slate-800 pb-40">
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />

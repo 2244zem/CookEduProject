@@ -2,12 +2,10 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Clock, ChevronRight, Play, CheckCircle2, ArrowLeft, 
-  ChevronLeft, BarChart3, BookOpen, Snowflake, User, Bookmark,
-  Globe, Moon
+  ChevronLeft, BarChart3, BookOpen, Snowflake, User, Bookmark
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { lessonApi, categoryApi } from '../../lib/api'
-import { useThemeStore } from '../../store'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -21,7 +19,6 @@ export default function Learning() {
   const [selectedLesson, setSelectedLesson] = useState<any>(null)
   const [showModal, setShowModal] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
-  const { isDarkMode } = useThemeStore()
 
   useEffect(() => {
     fetchData()
@@ -63,7 +60,7 @@ export default function Learning() {
   }
 
   return (
-    <div className="min-h-screen relative font-sans overflow-x-hidden bg-transparent text-slate-800 dark:text-slate-100 pb-40">
+    <div className="min-h-screen relative font-sans overflow-x-hidden bg-transparent text-slate-800 pb-40">
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />

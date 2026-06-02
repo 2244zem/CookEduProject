@@ -106,6 +106,7 @@ export const coinApi = {
     customer_name?: string;
     customer_email?: string;
   }) => api.post('/v1/coins/qris-checkout', data),
+  bypassSuccess: (data: { order_id: string }) => api.post('/v1/coins/bypass-success', data),
 };
 
 // ===== Recipe API =====

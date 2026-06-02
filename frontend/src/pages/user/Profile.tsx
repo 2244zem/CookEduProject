@@ -1,16 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  User, Mail, Phone, Settings, LogOut, ChevronRight, Award, 
-  Clock, BookOpen, Camera, Save, X, Loader2, ShieldCheck, 
-  Key, CheckCircle2, AlertCircle, Snowflake, Bookmark, BarChart3,
-  Globe, Moon, Coins, QrCode, Copy
+  User, Mail, Phone, Settings, LogOut, ChevronRight,
+  Camera, Save, X, Loader2, ShieldCheck,
+  CheckCircle2, AlertCircle, Coins, QrCode
 } from 'lucide-react'
-import { useAuthStore, useThemeStore } from '../../store'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuthStore } from '../../store'
+import { useNavigate } from 'react-router-dom'
 import { authApi, coinApi } from '../../lib/api'
 import { isSupabaseConfigured, supabase, uploadPublicMedia, upsertProfileForUser } from '../../lib/supabaseClient'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
+import { notifyWalletRefresh, useRealtimeWallet } from '../../hooks/useRealtimeWallet'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -24,23 +23,20 @@ const COIN_PACKAGES = [
 export default function Profile() {
   const { user, setAuth, logout } = useAuthStore()
   const navigate = useNavigate()
-  const location = useLocation()
-  const { isDarkMode } = useThemeStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const phoneInputRef = useRef<HTMLInputElement>(null)
+  const { balance: walletBalance, loading: walletLoading, refresh: refreshWallet } = useRealtimeWallet(user?.id)
 
   const [isEditing, setIsEditing] = useState(false)
-  const [showPassModal, setShowPassModal] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [otpSent, setOtpSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [passForm, setPassForm] = useState({ otp: '', password: '', password_confirmation: '' })
   const [selectedCoinPackage, setSelectedCoinPackage] = useState<typeof COIN_PACKAGES[number]['id']>('starter')
   const [qrisImageUrl, setQrisImageUrl] = useState('')
   const [qrisOrderId, setQrisOrderId] = useState('')
+  const [qrisImageFailed, setQrisImageFailed] = useState(false)
   const [coinLoading, setCoinLoading] = useState(false)
+  const [bypassLoading, setBypassLoading] = useState(false)
   const [coinError, setCoinError] = useState('')
-  const [copiedTestingUrl, setCopiedTestingUrl] = useState(false)
+  const [coinSuccess, setCoinSuccess] = useState('')
   
   const [form, setForm] = useState({
     name: '',
@@ -138,7 +134,8 @@ export default function Profile() {
 
     setCoinLoading(true)
     setCoinError('')
-    setCopiedTestingUrl(false)
+    setCoinSuccess('')
+    setQrisImageFailed(false)
     try {
       const response = await coinApi.qrisCheckout({
         package_id: selectedCoinPackage,
@@ -163,17 +160,31 @@ export default function Profile() {
     }
   }
 
-  const handleCopyTestingUrl = async () => {
-    if (!qrisImageUrl) return
-    await navigator.clipboard.writeText(qrisImageUrl)
-    setCopiedTestingUrl(true)
-    window.setTimeout(() => setCopiedTestingUrl(false), 1600)
+  const handleBypassSuccess = async () => {
+    if (!qrisOrderId) return
+
+    setBypassLoading(true)
+    setCoinError('')
+    setCoinSuccess('')
+    try {
+      const response = await coinApi.bypassSuccess({ order_id: qrisOrderId })
+      await refreshWallet()
+      notifyWalletRefresh()
+      const coinsAdded = Number(response.data.coins_added || 0)
+      setCoinSuccess(coinsAdded > 0
+        ? `Sandbox sukses. +${coinsAdded} koin masuk ke wallet.`
+        : 'Order ini sudah pernah diproses, saldo sudah sinkron.'
+      )
+    } catch (err: any) {
+      console.error('QRIS bypass failed:', err)
+      setCoinError(err.response?.data?.message || err.message || 'Gagal menjalankan sandbox bypass.')
+    } finally {
+      setBypassLoading(false)
+    }
   }
 
   return (
-    <div className={`min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent ${
-      isDarkMode ? 'dark text-white' : 'text-slate-800'
-    } pb-40`}>
+    <div className="min-h-screen relative font-sans transition-colors duration-500 overflow-x-hidden bg-transparent text-slate-800 pb-40">
       {/* GLOBAL BACKGROUND AMBIENCE */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40 lg:hidden">
         <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-200/30 blur-[120px] rounded-full" />
@@ -269,21 +280,27 @@ export default function Profile() {
               </div>
             </div>
             <div className="bg-white/70 backdrop-blur-2xl p-6 rounded-[32px] border border-white shadow-premium flex flex-col justify-center">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Resep Dikuasai</p>
-              <p className="text-2xl font-black text-slate-900">12</p>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo Koin</p>
+              <p className="text-2xl font-black text-slate-900">{walletLoading ? '...' : walletBalance}</p>
             </div>
           </div>
 
-          <section className="relative overflow-hidden rounded-[40px] border border-cyan-100 bg-white p-5 shadow-premium lg:p-6">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="space-y-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
-                    <Coins className="h-6 w-6" />
+          <section className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="space-y-5 p-5 lg:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+                      <Coins className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">CookEdu Wallet</p>
+                      <h2 className="text-2xl font-black tracking-tight text-slate-950">Top Up Koin</h2>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">CookEdu Wallet</p>
-                    <h2 className="text-2xl font-black tracking-tight text-slate-950">Beli Koin</h2>
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-right">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Saldo Aktif</p>
+                    <p className="text-2xl font-black text-slate-950">{walletLoading ? '...' : walletBalance}</p>
                   </div>
                 </div>
 
@@ -293,15 +310,15 @@ export default function Profile() {
                       key={item.id}
                       type="button"
                       onClick={() => setSelectedCoinPackage(item.id)}
-                      className={`rounded-3xl border p-4 text-left transition ${
+                      className={`rounded-2xl border p-4 text-left transition ${
                         selectedCoinPackage === item.id
                           ? 'border-cyan-300 bg-cyan-50 text-cyan-900 shadow-sm'
-                          : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-cyan-100 hover:bg-white'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:bg-cyan-50/40'
                       }`}
                     >
                       <p className="text-sm font-black">{item.label}</p>
-                      <p className="mt-1 text-2xl font-black text-slate-950">{item.coins}</p>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Koin | {item.price}</p>
+                      <p className="mt-1 text-3xl font-black text-slate-950">{item.coins}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.price}</p>
                     </button>
                   ))}
                 </div>
@@ -313,44 +330,61 @@ export default function Profile() {
                   </div>
                 )}
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={handleBuyCoins}
-                    disabled={coinLoading}
-                    className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black uppercase tracking-widest text-white transition hover:bg-cyan-700 disabled:opacity-60"
-                  >
-                    {coinLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <QrCode className="h-5 w-5 text-cyan-300" />}
-                    Generate QRIS
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCopyTestingUrl}
-                    disabled={!qrisImageUrl}
-                    className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-xs font-black uppercase tracking-widest text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700 disabled:opacity-40"
-                  >
-                    {copiedTestingUrl ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                    {copiedTestingUrl ? 'Copied' : 'Copy URL'}
-                  </button>
-                </div>
+                {coinSuccess && (
+                  <div className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{coinSuccess}</span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleBuyCoins}
+                  disabled={coinLoading}
+                  className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black uppercase tracking-widest text-white transition hover:bg-cyan-700 disabled:opacity-60"
+                >
+                  {coinLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <QrCode className="h-5 w-5 text-cyan-300" />}
+                  Generate Sandbox QRIS
+                </button>
               </div>
 
-              <div className="relative min-h-[300px] overflow-hidden rounded-[32px] bg-slate-950 p-5 text-white">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.22),_transparent_45%)]" />
-                <div className="relative z-10 flex h-full min-h-[260px] items-center justify-center">
+              <div className="relative min-h-[340px] border-t border-slate-100 bg-slate-950 p-5 text-white lg:border-l lg:border-t-0">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.22),_transparent_48%)]" />
+                <div className="relative z-10 flex h-full min-h-[300px] items-center justify-center">
                   {qrisImageUrl ? (
                     <div className="w-full rounded-[28px] bg-white p-5 text-center shadow-2xl">
-                      <img src={qrisImageUrl} className="w-48 h-48 mx-auto object-contain" alt="CookEdu QRIS payment code" />
+                      {qrisImageFailed ? (
+                        <div className="mx-auto flex h-48 w-48 flex-col items-center justify-center rounded-3xl border border-dashed border-cyan-200 bg-cyan-50 text-cyan-800">
+                          <QrCode className="h-14 w-14" />
+                          <p className="mt-3 text-xs font-black uppercase tracking-widest">Sandbox QR</p>
+                        </div>
+                      ) : (
+                        <img
+                          src={qrisImageUrl}
+                          onError={() => setQrisImageFailed(true)}
+                          className="w-48 h-48 mx-auto object-contain"
+                          alt="CookEdu QRIS payment code"
+                        />
+                      )}
                       <p className="mt-4 break-all text-[10px] font-black uppercase tracking-wide text-slate-400">
                         {qrisOrderId || 'COOKEDU-QRIS'}
                       </p>
+                      <button
+                        type="button"
+                        onClick={handleBypassSuccess}
+                        disabled={bypassLoading || !qrisOrderId}
+                        className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 text-xs font-black uppercase tracking-wide text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                      >
+                        {bypassLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                        🧪 Debug: Simulate Success Payment
+                      </button>
                     </div>
                   ) : (
                     <div className="max-w-xs text-center">
                       <QrCode className="mx-auto h-16 w-16 text-cyan-300" />
-                      <p className="mt-5 text-lg font-black">QRIS akan muncul di sini.</p>
+                      <p className="mt-5 text-lg font-black">QRIS sandbox siap dibuat.</p>
                       <p className="mt-2 text-xs font-bold leading-6 text-white/55">
-                        Setelah generate, buka browser console dan copy baris TESTING_URL untuk Midtrans Simulator.
+                        Pilih paket, generate QRIS, lalu tekan tombol debug untuk menyelesaikan pembayaran tanpa simulator manual.
                       </p>
                     </div>
                   )}
@@ -371,8 +405,8 @@ export default function Profile() {
             <MenuLink 
               icon={ShieldCheck} 
               label="Keamanan" 
-              value="Ubah Kata Sandi" 
-              onClick={() => setShowPassModal(true)}
+              value="Akun Supabase aktif" 
+              disabled
             />
             <button 
               onClick={handleLogout}

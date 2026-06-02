@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuthStore, useThemeStore } from './store'
+import { useAuthStore } from './store'
 import SplashScreen from './components/layout/SplashScreen'
 import Onboarding from './components/layout/Onboarding'
 import { useDeviceProfile } from './hooks/useDeviceProfile'
@@ -45,7 +45,6 @@ function RouteFallback() {
 
 export default function App() {
   const { isAuthenticated, isAdmin, hydrateSupabaseSession, logout } = useAuthStore()
-  const { isDarkMode } = useThemeStore()
   const { shouldReduceMotion } = useDeviceProfile()
   const [showSplash, setShowSplash] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -104,14 +103,6 @@ export default function App() {
       navigate('/admin')
     }
   }, [isAuthenticated, isAdmin, location.pathname, navigate])
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [isDarkMode])
 
   if (showSplash) return <SplashScreen />
 

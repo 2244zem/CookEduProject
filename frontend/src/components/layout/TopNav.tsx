@@ -1,12 +1,13 @@
-import { Home, User, Moon, Sun, Wand2, Bookmark, ShoppingBag, BookOpen, ChefHat } from 'lucide-react'
+import { Home, User, Wand2, Bookmark, ShoppingBag, BookOpen, ChefHat, Coins } from 'lucide-react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { useThemeStore, useAuthStore } from '../../store'
+import { useAuthStore } from '../../store'
+import { useRealtimeWallet } from '../../hooks/useRealtimeWallet'
 
 const TopNav = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  const { isDarkMode, toggleDarkMode } = useThemeStore()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
+  const { balance: walletBalance, loading: walletLoading } = useRealtimeWallet(user?.id)
 
   const navItems = [
     { path: '/', icon: Home, label: 'Social' },
@@ -48,13 +49,12 @@ const TopNav = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={toggleDarkMode}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-white text-slate-600 transition hover:border-cyan-200 hover:text-primary"
-            title="Ganti tema"
-          >
-            {isDarkMode ? <Sun className="h-5 w-5 text-amber-500" /> : <Moon className="h-5 w-5" />}
-          </button>
+          {isAuthenticated && (
+            <div className="hidden h-11 items-center gap-2 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 text-cyan-800 sm:flex">
+              <Coins className="h-4 w-4" />
+              <span className="text-xs font-black uppercase tracking-wide">{walletLoading ? '...' : walletBalance} Koin</span>
+            </div>
+          )}
           <button
             onClick={() => navigate(isAuthenticated ? '/profile' : '/login')}
             className="flex h-11 items-center gap-2 rounded-2xl bg-primary px-5 text-sm font-black text-white shadow-sm transition hover:bg-primary-dark"
