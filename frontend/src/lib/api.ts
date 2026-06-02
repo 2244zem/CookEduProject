@@ -98,6 +98,16 @@ export const authApi = {
   logout: () => api.post('/logout'),
 };
 
+// ===== Coin / QRIS API =====
+export const coinApi = {
+  qrisCheckout: (data: {
+    package_id?: 'starter' | 'plus' | 'pro';
+    user_id?: string | number;
+    customer_name?: string;
+    customer_email?: string;
+  }) => api.post('/v1/coins/qris-checkout', data),
+};
+
 // ===== Recipe API =====
 export const recipeApi = {
   list: (params?: any) => api.get('/recipes', { params }),

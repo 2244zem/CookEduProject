@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\MidtransCoinController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +25,10 @@ Route::get('/recipes/{recipe}', [RecipeController::class, 'show']);
 Route::get('/recipes/{recipe}/steps', [RecipeController::class, 'steps']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/lessons', [LessonController::class, 'index']);
+
+Route::prefix('v1')->group(function () {
+    Route::post('/coins/qris-checkout', [MidtransCoinController::class, 'chargeQris']);
+});
 
 /*
 |--------------------------------------------------------------------------

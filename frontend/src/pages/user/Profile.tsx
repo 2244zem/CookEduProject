@@ -4,16 +4,22 @@ import {
   User, Mail, Phone, Settings, LogOut, ChevronRight, Award, 
   Clock, BookOpen, Camera, Save, X, Loader2, ShieldCheck, 
   Key, CheckCircle2, AlertCircle, Snowflake, Bookmark, BarChart3,
-  Globe, Moon
+  Globe, Moon, Coins, QrCode, Copy
 } from 'lucide-react'
 import { useAuthStore, useThemeStore } from '../../store'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { authApi } from '../../lib/api'
+import { authApi, coinApi } from '../../lib/api'
 import { isSupabaseConfigured, supabase, uploadPublicMedia, upsertProfileForUser } from '../../lib/supabaseClient'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
+
+const COIN_PACKAGES = [
+  { id: 'starter', label: 'Starter', coins: 100, price: 'Rp10.000' },
+  { id: 'plus', label: 'Plus', coins: 275, price: 'Rp25.000' },
+  { id: 'pro', label: 'Pro', coins: 600, price: 'Rp50.000' },
+] as const
 
 export default function Profile() {
   const { user, setAuth, logout } = useAuthStore()
@@ -29,6 +35,12 @@ export default function Profile() {
   const [otpSent, setOtpSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [passForm, setPassForm] = useState({ otp: '', password: '', password_confirmation: '' })
+  const [selectedCoinPackage, setSelectedCoinPackage] = useState<typeof COIN_PACKAGES[number]['id']>('starter')
+  const [qrisImageUrl, setQrisImageUrl] = useState('')
+  const [qrisOrderId, setQrisOrderId] = useState('')
+  const [coinLoading, setCoinLoading] = useState(false)
+  const [coinError, setCoinError] = useState('')
+  const [copiedTestingUrl, setCopiedTestingUrl] = useState(false)
   
   const [form, setForm] = useState({
     name: '',
@@ -119,6 +131,43 @@ export default function Profile() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleBuyCoins = async () => {
+    if (!user) return
+
+    setCoinLoading(true)
+    setCoinError('')
+    setCopiedTestingUrl(false)
+    try {
+      const response = await coinApi.qrisCheckout({
+        package_id: selectedCoinPackage,
+        user_id: user.id,
+        customer_name: user.username || user.name,
+        customer_email: user.email,
+      })
+
+      const imageUrl = response.data.qris_image_url
+      if (!imageUrl) throw new Error('Laravel belum mengembalikan qris_image_url.')
+
+      console.log('TESTING_URL:', imageUrl)
+      setQrisImageUrl(imageUrl)
+      setQrisOrderId(response.data.order_id || '')
+    } catch (err: any) {
+      console.error('QRIS checkout failed:', err)
+      setQrisImageUrl('')
+      setQrisOrderId('')
+      setCoinError(err.response?.data?.message || err.message || 'Gagal membuat QRIS Midtrans.')
+    } finally {
+      setCoinLoading(false)
+    }
+  }
+
+  const handleCopyTestingUrl = async () => {
+    if (!qrisImageUrl) return
+    await navigator.clipboard.writeText(qrisImageUrl)
+    setCopiedTestingUrl(true)
+    window.setTimeout(() => setCopiedTestingUrl(false), 1600)
   }
 
   return (
@@ -224,6 +273,91 @@ export default function Profile() {
               <p className="text-2xl font-black text-slate-900">12</p>
             </div>
           </div>
+
+          <section className="relative overflow-hidden rounded-[40px] border border-cyan-100 bg-white p-5 shadow-premium lg:p-6">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+                    <Coins className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">CookEdu Wallet</p>
+                    <h2 className="text-2xl font-black tracking-tight text-slate-950">Beli Koin</h2>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {COIN_PACKAGES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedCoinPackage(item.id)}
+                      className={`rounded-3xl border p-4 text-left transition ${
+                        selectedCoinPackage === item.id
+                          ? 'border-cyan-300 bg-cyan-50 text-cyan-900 shadow-sm'
+                          : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-cyan-100 hover:bg-white'
+                      }`}
+                    >
+                      <p className="text-sm font-black">{item.label}</p>
+                      <p className="mt-1 text-2xl font-black text-slate-950">{item.coins}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Koin | {item.price}</p>
+                    </button>
+                  ))}
+                </div>
+
+                {coinError && (
+                  <div className="flex items-start gap-3 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{coinError}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={handleBuyCoins}
+                    disabled={coinLoading}
+                    className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black uppercase tracking-widest text-white transition hover:bg-cyan-700 disabled:opacity-60"
+                  >
+                    {coinLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <QrCode className="h-5 w-5 text-cyan-300" />}
+                    Generate QRIS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyTestingUrl}
+                    disabled={!qrisImageUrl}
+                    className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-xs font-black uppercase tracking-widest text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700 disabled:opacity-40"
+                  >
+                    {copiedTestingUrl ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                    {copiedTestingUrl ? 'Copied' : 'Copy URL'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative min-h-[300px] overflow-hidden rounded-[32px] bg-slate-950 p-5 text-white">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.22),_transparent_45%)]" />
+                <div className="relative z-10 flex h-full min-h-[260px] items-center justify-center">
+                  {qrisImageUrl ? (
+                    <div className="w-full rounded-[28px] bg-white p-5 text-center shadow-2xl">
+                      <img src={qrisImageUrl} className="w-48 h-48 mx-auto object-contain" alt="CookEdu QRIS payment code" />
+                      <p className="mt-4 break-all text-[10px] font-black uppercase tracking-wide text-slate-400">
+                        {qrisOrderId || 'COOKEDU-QRIS'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="max-w-xs text-center">
+                      <QrCode className="mx-auto h-16 w-16 text-cyan-300" />
+                      <p className="mt-5 text-lg font-black">QRIS akan muncul di sini.</p>
+                      <p className="mt-2 text-xs font-bold leading-6 text-white/55">
+                        Setelah generate, buka browser console dan copy baris TESTING_URL untuk Midtrans Simulator.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* MENU LIST */}
           <div className="grid overflow-hidden rounded-[40px] border border-white bg-white/70 shadow-premium backdrop-blur-2xl lg:grid-cols-2 lg:border-cyan-100 lg:bg-white">
