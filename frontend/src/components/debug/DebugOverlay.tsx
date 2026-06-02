@@ -94,7 +94,7 @@ export default function DebugOverlay() {
               initial={{ y: 100, opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 100, opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-xl h-[80vh] bg-[#0D1117] border border-white/10 rounded-[40px] shadow-2xl flex flex-col overflow-hidden font-mono"
+              className="relative w-full max-w-xl h-[80vh] bg-slate-950 border border-white/10 rounded-[40px] shadow-2xl flex flex-col overflow-hidden font-mono"
             >
               {/* Header */}
               <div className="p-6 border-b border-white/10 flex items-center justify-between bg-black/20">

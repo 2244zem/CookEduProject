@@ -194,7 +194,7 @@ export default function FridgeScanner() {
                 <motion.div 
                   animate={{ y: [-100, 300] }}
                   transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                  className="absolute top-0 left-0 w-full h-1 bg-cyan-400 shadow-[0_0_20px_#22D3EE] z-20"
+                  className="absolute top-0 left-0 w-full h-1 bg-ocean-city shadow-glow-sm z-20"
                 />
                 <Search className="w-12 h-12 text-cyan-600 mb-4 animate-pulse" />
                 <h3 className="text-xl font-black text-cyan-600">Sedang Memindai...</h3>

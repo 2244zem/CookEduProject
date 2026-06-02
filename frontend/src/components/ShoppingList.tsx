@@ -76,7 +76,7 @@ export default function ShoppingList({
       {cartItems.length === 0 ? (
         // Empty Cart state
         <div className="text-center py-10 text-slate-400 space-y-3">
-          <div className="w-12 h-12 bg-[#FAF9F6] border border-slate-100 rounded-full flex items-center justify-center mx-auto shadow-sm">
+          <div className="w-12 h-12 bg-concepto border border-slate-100 rounded-full flex items-center justify-center mx-auto shadow-sm">
             <ShoppingBag className="w-6 h-6 text-slate-300" />
           </div>
           <div className="space-y-1">
@@ -98,7 +98,7 @@ export default function ShoppingList({
               {cartItems.map(item => (
                 <div 
                   key={item.id} 
-                  className="bg-[#FAF9F6] rounded-xl p-3 border border-slate-100 flex items-center justify-between group transition-all hover:bg-slate-50"
+                  className="bg-concepto rounded-xl p-3 border border-slate-100 flex items-center justify-between group transition-all hover:bg-slate-50"
                 >
                   <div className="flex items-center gap-2">
                     <img 

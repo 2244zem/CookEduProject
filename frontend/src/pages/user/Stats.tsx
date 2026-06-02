@@ -118,12 +118,12 @@ export default function Stats() {
                   <AreaChart data={data}>
                     <defs>
                       <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0891B2" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#0891B2" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#2A4D88" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#2A4D88" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB33" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 12, fontWeight: 700}} dy={10} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#B1BBC855" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#7C94B8', fontSize: 12, fontWeight: 700}} dy={10} />
                     <YAxis hide />
                     <Tooltip 
                       contentStyle={{ 
@@ -133,7 +133,7 @@ export default function Stats() {
                         boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
                       }} 
                     />
-                    <Area type="monotone" dataKey="xp" stroke="#0891B2" strokeWidth={4} fillOpacity={1} fill="url(#colorXp)" />
+                    <Area type="monotone" dataKey="xp" stroke="#2A4D88" strokeWidth={4} fillOpacity={1} fill="url(#colorXp)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

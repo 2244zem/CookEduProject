@@ -219,7 +219,7 @@ export default function CookingMode() {
         particleCount: 180, 
         spread: 80, 
         origin: { y: 0.55 }, 
-        colors: ['#0EA5E9', '#14B8A6', '#38BDF8', '#2DD4BF'] 
+        colors: ['#2A4D88', '#7C94B8', '#B1BBC8', '#D9D9D8']
       });
       
       // API call fallback support
@@ -248,7 +248,7 @@ export default function CookingMode() {
   // Safe Loading State
   if (apiLoading && !resolvedRecipe) {
     return (
-      <div className="min-h-screen bg-[#F0F9FF] flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-12 h-12 animate-spin text-sky-500" />
         <span className="text-xs font-bold text-slate-500 tracking-wider">Menyiapkan Dapur Masterchef...</span>
       </div>
@@ -258,7 +258,7 @@ export default function CookingMode() {
   // Not Found State
   if (!resolvedRecipe) {
     return (
-      <div className="min-h-screen bg-[#F0F9FF] flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
         <Award className="w-16 h-16 text-sky-300 mb-4 animate-bounce" />
         <h2 className="text-xl font-black text-slate-800 mb-2">Resep Tidak Ditemukan</h2>
         <p className="text-xs text-slate-400 max-w-sm mb-6">Kami gagal mencari detail instruksi langkah masak resep ini. Silakan coba resep lainnya.</p>

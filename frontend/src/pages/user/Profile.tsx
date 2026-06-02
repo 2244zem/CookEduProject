@@ -303,7 +303,7 @@ export default function Profile() {
             
             <button 
               onClick={() => setIsEditing(!isEditing)}
-              className={`absolute -bottom-2 -right-2 w-12 h-12 ${isEditing ? 'bg-rose-500' : 'bg-cyan-600'} text-white rounded-2xl shadow-lg border-4 border-[#F0F9FF] flex items-center justify-center hover:scale-110 transition-all`}
+              className={`absolute -bottom-2 -right-2 w-12 h-12 ${isEditing ? 'bg-ocean-city' : 'bg-cyan-600'} text-white rounded-2xl shadow-lg border-4 border-slate-50 flex items-center justify-center hover:scale-110 transition-all`}
             >
               {isEditing ? <X className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
             </button>
@@ -424,7 +424,7 @@ export default function Profile() {
               </div>
 
               <div className="relative min-h-[340px] border-t border-slate-100 bg-slate-950 p-5 text-white lg:border-l lg:border-t-0">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.22),_transparent_48%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(124,148,184,0.28),_transparent_48%)]" />
                 <div className="relative z-10 flex h-full min-h-[300px] items-center justify-center">
                   {qrisImageUrl ? (
                     <div className="w-full rounded-[28px] bg-white p-5 text-center shadow-2xl">

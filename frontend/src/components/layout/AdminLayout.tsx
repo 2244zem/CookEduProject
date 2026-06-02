@@ -34,7 +34,7 @@ export default function AdminLayout() {
   useEffect(() => { setSidebarOpen(false) }, [location.pathname])
 
   return (
-    <div className="min-h-screen flex bg-[#F8FAFC] dark:bg-[#0A0A0A] font-sans selection:bg-primary selection:text-white">
+    <div className="min-h-screen flex bg-slate-50 font-sans selection:bg-primary selection:text-white">
       <DebugOverlay />
       
       {/* Sidebar (Desktop Only) */}

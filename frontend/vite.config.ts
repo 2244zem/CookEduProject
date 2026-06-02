@@ -21,8 +21,8 @@ export default defineConfig({
         name: 'CookEdu Platform',
         short_name: 'CookEdu',
         description: 'Learn to Cook Like a Pro',
-        theme_color: '#10367D',
-        background_color: '#EBEBEB',
+        theme_color: '#2A4D88',
+        background_color: '#D9D9D8',
         display: 'standalone',
         icons: [
           {

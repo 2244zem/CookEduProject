@@ -208,7 +208,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-sm font-black text-white shadow-[0_16px_32px_rgba(0,180,216,0.22)] transition hover:translate-y-[-1px] disabled:opacity-50"
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-sm font-black text-white shadow-[0_16px_32px_rgba(42,77,136,0.22)] transition hover:translate-y-[-1px] disabled:opacity-50"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Buat Akun Saya'}
             </button>

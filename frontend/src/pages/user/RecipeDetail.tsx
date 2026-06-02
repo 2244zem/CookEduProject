@@ -438,7 +438,7 @@ export default function RecipeDetail() {
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${((activeStepIndex + 1) / recipe.steps.length) * 100}%` }}
-                    className="h-full bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)]"
+                    className="h-full bg-cyan-500 shadow-[0_0_20px_rgba(42,77,136,0.32)]"
                   />
                 </div>
 

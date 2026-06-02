@@ -150,13 +150,13 @@ export default function AdminDashboard() {
   const pendingCount = allRecipes.filter(r => r.status === 'pending').length;
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] p-4 md:p-10 font-sans text-slate-700">
+    <div className="min-h-screen bg-concepto p-4 md:p-10 font-sans text-slate-700">
       <div className="max-w-7xl mx-auto space-y-10">
         
         {/* HEADER */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <h1 className="text-4xl font-black tracking-tighter text-slate-900">Command <span className="text-[#10B981]">Center</span></h1>
+            <h1 className="text-4xl font-black tracking-tighter text-slate-900">Command <span className="text-primary">Center</span></h1>
             <p className="text-sm font-medium text-slate-400">Moderation Hub & Culinary Intelligence</p>
           </div>
           <div className="flex gap-3">
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input 
                   type="text" placeholder="Search entries..." 
-                  className="bg-white border border-slate-100 rounded-2xl py-3 pl-12 pr-6 text-sm font-bold focus:ring-4 focus:ring-[#10B981]/5 outline-none transition-all w-64 shadow-sm"
+                  className="bg-white border border-slate-100 rounded-2xl py-3 pl-12 pr-6 text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all w-64 shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -207,11 +207,11 @@ export default function AdminDashboard() {
                   <AreaChart data={trendData}>
                     <defs>
                       <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#2A4D88" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#2A4D88" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <Area type="monotone" dataKey="count" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+                    <Area type="monotone" dataKey="count" stroke="#2A4D88" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
                     <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                   </AreaChart>
                 </ResponsiveContainer>

@@ -120,17 +120,17 @@ export default function Dashboard() {
                   <AreaChart data={userGrowth}>
                      <defs>
                         <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
-                           <stop offset="5%" stopColor="#00B4D8" stopOpacity={0.3}/>
-                           <stop offset="95%" stopColor="#00B4D8" stopOpacity={0}/>
+                           <stop offset="5%" stopColor="#2A4D88" stopOpacity={0.3}/>
+                           <stop offset="95%" stopColor="#2A4D88" stopOpacity={0}/>
                         </linearGradient>
                      </defs>
-                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 10, fontWeight: 700}} dy={10} />
+                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#7C94B8', fontSize: 10, fontWeight: 700}} dy={10} />
                      <YAxis hide />
                      <Tooltip 
                         contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '15px', color: '#fff', fontSize: '10px' }} 
-                        itemStyle={{ color: '#00B4D8' }}
+                        itemStyle={{ color: '#2A4D88' }}
                      />
-                     <Area type="monotone" dataKey="count" stroke="#00B4D8" strokeWidth={4} fill="url(#growthGrad)" />
+                     <Area type="monotone" dataKey="count" stroke="#2A4D88" strokeWidth={4} fill="url(#growthGrad)" />
                   </AreaChart>
                </ResponsiveContainer>
             </div>

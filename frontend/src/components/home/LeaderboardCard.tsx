@@ -57,7 +57,7 @@ export default function LeaderboardCard({ leaders }: { leaders?: LeaderboardEntr
   return (
     <motion.div
       whileHover={{ y: -5 }}
-      className="bg-gradient-to-br from-[#fcf8f2] to-[#f5f1ea] dark:from-[#1a1a1a] dark:to-[#2a2a2a] rounded-[40px] p-6 shadow-lg border-2 border-[#e6d5c3] dark:border-white/10 relative overflow-hidden"
+      className="bg-gradient-to-br from-slate-50 to-concepto rounded-[40px] p-6 shadow-lg border-2 border-glacial-salt relative overflow-hidden"
     >
       {/* Decorative background */}
       <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-blue-100/20 to-transparent pointer-events-none" />
@@ -67,7 +67,7 @@ export default function LeaderboardCard({ leaders }: { leaders?: LeaderboardEntr
       <div className="relative z-10 mb-8">
         <div className="flex items-center gap-2 mb-3">
           <Crown className="w-5 h-5 text-yellow-500" />
-          <h3 className="text-xl font-bold text-[#03045E] dark:text-white font-serif">
+          <h3 className="text-xl font-bold text-slate-950 font-serif">
             Leaderboard
           </h3>
         </div>
@@ -119,7 +119,7 @@ export default function LeaderboardCard({ leaders }: { leaders?: LeaderboardEntr
             </motion.div>
             <div className="relative">
               <motion.div
-                animate={{ boxShadow: ['0 8px 16px rgba(255,193,7,0.3)', '0 12px 24px rgba(255,193,7,0.5)', '0 8px 16px rgba(255,193,7,0.3)'] }}
+                animate={{ boxShadow: ['0 8px 16px rgba(124,148,184,0.3)', '0 12px 24px rgba(124,148,184,0.5)', '0 8px 16px rgba(124,148,184,0.3)'] }}
                 className={`${getPodiumHeight(1)} w-16 bg-gradient-to-b from-yellow-200 to-yellow-400 rounded-t-3xl shadow-2xl flex items-end justify-center p-2 ring-2 ring-yellow-300`}
               >
                 <Crown className="w-7 h-7 text-yellow-700" />
@@ -167,9 +167,9 @@ export default function LeaderboardCard({ leaders }: { leaders?: LeaderboardEntr
       {/* Points Display */}
       <div className="grid grid-cols-3 gap-2 relative z-10">
         {topThree.map((leader) => (
-          <div key={leader.rank} className="bg-white dark:bg-white/5 p-3 rounded-2xl border border-[#e6d5c3] dark:border-white/10 text-center">
+          <div key={leader.rank} className="bg-white p-3 rounded-2xl border border-glacial-salt text-center">
             <p className="text-[9px] font-bold text-gray-500 uppercase">Poin</p>
-            <p className="text-lg font-black text-[#0077B6] mt-1">{leader.points}</p>
+            <p className="text-lg font-black text-primary mt-1">{leader.points}</p>
           </div>
         ))}
       </div>
