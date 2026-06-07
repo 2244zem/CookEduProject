@@ -8,6 +8,7 @@ import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
 import { getPreferredIdentityName } from '../../lib/supabaseClient'
 import { buildLocalChefReply } from '../../lib/chefLocalBrain'
 import { formatAiMemory, loadAiMemory } from '../../lib/aiMemory'
+import { trackAiUsage } from '../../lib/aiUsage'
 
 type Message = {
   id: string
@@ -94,6 +95,7 @@ export default function AiAssistant() {
         role: 'model',
         content: response.data.reply || 'Maaf, Chef AI belum punya jawaban untuk pertanyaan itu.',
       }])
+      trackAiUsage('chat', user?.id)
     } catch {
       const message = buildLocalChefReply(prompt, displayName)
       setMessages((prev) => [...prev, {
@@ -101,6 +103,7 @@ export default function AiAssistant() {
         role: 'model',
         content: message,
       }])
+      trackAiUsage('chat', user?.id)
       pushToast({
         tone: 'warning',
         title: 'CookEdu Brain aktif',

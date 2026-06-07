@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Bot, Camera, ChefHat, Coins, Image, Loader2, Save, Sparkles, Upload, Wand2, X } from '@icons/CookEduIcons'
+import { ArrowRight, Bot, Camera, ChefHat, Coins, Image, Loader2, Save, ShoppingBag, Sparkles, Upload, Wand2, X } from '@icons/CookEduIcons'
 import { useNavigate } from 'react-router-dom'
 import { chefAiApi, coinApi, type ChefAiDetectedIngredient } from '../../lib/api'
 import { emptyAiMemory, formatAiMemory, loadAiMemory, saveAiMemory, type CookEduAiMemory } from '../../lib/aiMemory'
@@ -8,6 +8,8 @@ import { useAuthStore } from '../../store'
 import { getPreferredIdentityName } from '../../lib/supabaseClient'
 import { useToastStore } from '../../store/toastStore'
 import { stapleIngredientsData } from '../../data/stapleIngredients'
+import { useShoppingStore } from '../../store/shoppingStore'
+import { getAiUsageSummary, trackAiUsage } from '../../lib/aiUsage'
 
 const AI_BOOST_COST = 15
 
@@ -18,6 +20,35 @@ function readFileAsDataUrl(file: File) {
     reader.onerror = () => reject(new Error('File gambar gagal dibaca.'))
     reader.readAsDataURL(file)
   })
+}
+
+function normalizeText(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9\u00C0-\u024F\u1E00-\u1EFF\s]/gi, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function inferShoppingItems(text: string, detected: ChefAiDetectedIngredient[]) {
+  const normalized = normalizeText(text)
+  const fromText = stapleIngredientsData
+    .filter((item) => normalized.includes(normalizeText(item.name)))
+    .slice(0, 14)
+    .map((item) => ({ item: item.name, amount: 1, unit: '' }))
+
+  const fromDetected = detected.map((item) => ({ item: item.name, amount: 1, unit: '' }))
+  const combined = [...fromText, ...fromDetected]
+  const seen = new Set<string>()
+  const unique = combined.filter((item) => {
+    const key = normalizeText(item.item)
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  return unique.length ? unique : [
+    { item: 'Telur', amount: 4, unit: 'butir' },
+    { item: 'Bawang Putih', amount: 3, unit: 'siung' },
+    { item: 'Tomat', amount: 2, unit: 'buah' },
+    { item: 'Sayur Hijau', amount: 1, unit: 'ikat' },
+  ]
 }
 
 export default function AiKitchenLab() {
@@ -37,7 +68,16 @@ export default function AiKitchenLab() {
   const [mealReply, setMealReply] = useState('')
   const [scanNote, setScanNote] = useState('')
   const [loadingAction, setLoadingAction] = useState('')
+  const [usageSummary, setUsageSummary] = useState(() => getAiUsageSummary(user?.id))
+  const addShoppingGroup = useShoppingStore((state) => state.addGroup)
+  const addPantryItems = useShoppingStore((state) => state.addPantryItems)
+  const pantryItems = useShoppingStore((state) => state.pantryItems)
   const memoryText = useMemo(() => formatAiMemory(memory), [memory])
+
+  const recordUsage = (action: Parameters<typeof trackAiUsage>[0]) => {
+    trackAiUsage(action, user?.id)
+    setUsageSummary(getAiUsageSummary(user?.id))
+  }
 
   const updateMemory = (key: keyof CookEduAiMemory, value: string) => {
     setMemory((current) => ({ ...current, [key]: value }))
@@ -85,6 +125,7 @@ export default function AiKitchenLab() {
       const ingredients = response.data.ingredients || []
       setDetectedIngredients(ingredients)
       setScanNote(response.data.note || 'Scan selesai.')
+      recordUsage('scan-fridge')
       pushToast({
         tone: ingredients.length ? 'success' : 'warning',
         title: ingredients.length ? 'Bahan terdeteksi' : 'Belum ada bahan jelas',
@@ -117,6 +158,7 @@ export default function AiKitchenLab() {
         preferences: memoryText,
       })
       setDoctorReply(response.data.reply || '')
+      recordUsage('recipe-doctor')
     } catch (error) {
       pushToast({
         tone: 'error',
@@ -143,6 +185,7 @@ export default function AiKitchenLab() {
         preferences: memoryText,
       })
       setMealReply(response.data.reply || '')
+      recordUsage('meal-plan')
     } catch (error) {
       pushToast({
         tone: 'error',
@@ -152,6 +195,41 @@ export default function AiKitchenLab() {
     } finally {
       setLoadingAction('')
     }
+  }
+
+  const addDetectedToPantry = () => {
+    const names = detectedIngredients.map((item) => item.name)
+    if (!names.length) return
+    addPantryItems(names)
+    updateMemory('pantry', Array.from(new Set([...pantryItems, ...names.map((name) => name.toLowerCase())])).join(', '))
+    pushToast({
+      tone: 'success',
+      title: 'Bahan masuk pantry',
+      message: 'Bahan hasil scan disimpan sebagai isi dapur untuk rekomendasi berikutnya.',
+    })
+  }
+
+  const addMealPlanToShopping = () => {
+    const items = inferShoppingItems(mealReply || mealPrompt, detectedIngredients)
+    addShoppingGroup('AI Meal Plan CookEdu', items)
+    pushToast({
+      tone: 'success',
+      title: 'Daftar belanja dibuat',
+      message: `${items.length} bahan dari AI Meal Plan masuk ke daftar belanja.`,
+    })
+  }
+
+  const saveDoctorNote = () => {
+    if (!doctorReply) return
+    const key = `cookedu_ai_notes_${user?.id || 'guest'}`
+    const saved = JSON.parse(localStorage.getItem(key) || '[]')
+    const next = [{ id: crypto.randomUUID(), text: doctorReply, createdAt: new Date().toISOString() }, ...saved].slice(0, 40)
+    localStorage.setItem(key, JSON.stringify(next))
+    pushToast({
+      tone: 'success',
+      title: 'Catatan tersimpan',
+      message: 'Diagnosis Recipe Doctor disimpan di perangkat ini.',
+    })
   }
 
   return (
@@ -194,6 +272,7 @@ export default function AiKitchenLab() {
               ['budget', 'Budget', 'Hemat 50 ribu per hari...'],
               ['cookingTime', 'Waktu masak', 'Maksimal 30 menit...'],
               ['goals', 'Target', 'Meal prep, protein tinggi, bekal sekolah...'],
+              ['pantry', 'Pantry', 'Telur, bawang putih, nasi, tahu...'],
             ].map(([key, label, placeholder]) => (
               <label key={key} className="mb-3 block">
                 <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
@@ -214,6 +293,25 @@ export default function AiKitchenLab() {
               <Save className="h-4 w-4" />
               Simpan Memory
             </button>
+
+            <div className="mt-5 rounded-[24px] bg-[#EDF1F6] p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#2A4D88]">AI Usage</p>
+              <p className="mt-1 text-3xl font-black text-slate-950">{usageSummary.total}</p>
+              <p className="text-xs font-semibold text-slate-500">aksi AI tercatat di perangkat ini</p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {[
+                  ['Scan', usageSummary.counts['scan-fridge']],
+                  ['Doctor', usageSummary.counts['recipe-doctor']],
+                  ['Meal', usageSummary.counts['meal-plan']],
+                  ['Chat', usageSummary.counts.chat],
+                ].map(([label, value]) => (
+                  <div key={String(label)} className="rounded-2xl bg-white px-3 py-2">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+                    <p className="text-lg font-black text-[#2A4D88]">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </aside>
 
           <div className="grid gap-5 xl:grid-cols-2">
@@ -253,6 +351,16 @@ export default function AiKitchenLab() {
                 </div>
               )}
               {scanNote && <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">{scanNote}</p>}
+              {detectedIngredients.length > 0 && (
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  <button type="button" onClick={addDetectedToPantry} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-600 text-xs font-black uppercase tracking-widest text-white">
+                    <Save className="h-4 w-4" /> Pantry
+                  </button>
+                  <button type="button" onClick={() => navigate('/fridge')} className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#B1BBC8] text-xs font-black uppercase tracking-widest text-[#2A4D88]">
+                    <ChefHat className="h-4 w-4" /> Resep Cocok
+                  </button>
+                </div>
+              )}
             </article>
 
             <article className="rounded-[28px] border border-[#B1BBC8]/40 bg-white p-5 shadow-sm">
@@ -289,7 +397,14 @@ export default function AiKitchenLab() {
                   <X className="h-4 w-4" /> Hapus foto lampiran
                 </button>
               )}
-              {doctorReply && <p className="mt-4 whitespace-pre-line rounded-2xl bg-[#EDF1F6] p-4 text-sm font-semibold leading-6 text-slate-700">{doctorReply}</p>}
+              {doctorReply && (
+                <div className="mt-4 rounded-2xl bg-[#EDF1F6] p-4">
+                  <p className="whitespace-pre-line text-sm font-semibold leading-6 text-slate-700">{doctorReply}</p>
+                  <button type="button" onClick={saveDoctorNote} className="mt-4 flex h-10 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-xs font-black uppercase tracking-widest text-[#2A4D88]">
+                    <Save className="h-4 w-4" /> Simpan Catatan
+                  </button>
+                </div>
+              )}
             </article>
 
             <article className="rounded-[28px] border border-[#B1BBC8]/40 bg-white p-5 shadow-sm xl:col-span-2">
@@ -314,7 +429,19 @@ export default function AiKitchenLab() {
                   Buat Plan
                 </button>
               </div>
-              {mealReply && <p className="mt-4 whitespace-pre-line rounded-2xl bg-[#EDF1F6] p-5 text-sm font-semibold leading-7 text-slate-700">{mealReply}</p>}
+              {mealReply && (
+                <div className="mt-4 rounded-2xl bg-[#EDF1F6] p-5">
+                  <p className="whitespace-pre-line text-sm font-semibold leading-7 text-slate-700">{mealReply}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={addMealPlanToShopping} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 text-xs font-black uppercase tracking-widest text-white">
+                      <ShoppingBag className="h-4 w-4" /> Masuk Belanja
+                    </button>
+                    <button type="button" onClick={() => navigate('/daftar-belanja')} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-xs font-black uppercase tracking-widest text-[#2A4D88]">
+                      Buka Daftar
+                    </button>
+                  </div>
+                </div>
+              )}
             </article>
           </div>
         </section>

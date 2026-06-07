@@ -4,6 +4,7 @@ import { Bot, RotateCcw, Send } from '@icons/CookEduIcons'
 import { useToastStore } from '../../store/toastStore'
 import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
 import { buildLocalChefReply } from '../../lib/chefLocalBrain'
+import { trackAiUsage } from '../../lib/aiUsage'
 
 interface Message {
   id: string
@@ -64,6 +65,7 @@ export default function ChefAiChat() {
         text: response.data.reply || 'Maaf, Chef AI belum punya jawaban untuk pertanyaan itu.',
         timestamp: new Date(),
       }])
+      trackAiUsage('chat')
       setRetryMessage(null)
     } catch {
       const message = buildLocalChefReply(prompt)
@@ -73,6 +75,7 @@ export default function ChefAiChat() {
         text: message,
         timestamp: new Date(),
       }])
+      trackAiUsage('chat')
       setRetryMessage(prompt)
       pushToast({
         tone: 'warning',

@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { Bot, ChefHat, Coins, Loader2, Save, Sparkles, Wand2 } from '@icons/CookEduIcons'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Bot, ChefHat, Coins, FileText, Loader2, Save, Sparkles, Wand2 } from '@icons/CookEduIcons'
 import { motion } from 'framer-motion'
 import { chefAiApi, coinApi, type ChefAiDraftRecipe } from '../../lib/api'
-import { saveSupabaseAdminRecipe } from '../../lib/supabaseData'
+import { listSupabaseAdminRecipes, saveSupabaseAdminRecipe } from '../../lib/supabaseData'
 import { useAuthStore } from '../../store'
 import { getPreferredIdentityName } from '../../lib/supabaseClient'
 import { useToastStore } from '../../store/toastStore'
+import { getAiUsageSummary, trackAiUsage } from '../../lib/aiUsage'
 
 const AI_BOOST_COST = 15
 
@@ -20,6 +21,22 @@ export default function AiManager() {
   const [notes, setNotes] = useState<string[]>([])
   const [reply, setReply] = useState('')
   const [loading, setLoading] = useState('')
+  const [selectedRecipeId, setSelectedRecipeId] = useState('')
+  const [draftTargetId, setDraftTargetId] = useState<string | null>(null)
+  const [draftMode, setDraftMode] = useState<'new' | 'fix'>('new')
+  const [usageSummary, setUsageSummary] = useState(() => getAiUsageSummary(user?.id))
+
+  const { data: recipesData } = useQuery({
+    queryKey: ['admin-recipes-ai-manager'],
+    queryFn: listSupabaseAdminRecipes,
+  })
+  const recipes = recipesData?.data?.data || []
+  const selectedRecipe = recipes.find((recipe: any) => String(recipe.id) === selectedRecipeId)
+
+  const recordUsage = (action: Parameters<typeof trackAiUsage>[0]) => {
+    trackAiUsage(action, user?.id)
+    setUsageSummary(getAiUsageSummary(user?.id))
+  }
 
   const generateDraft = async () => {
     if (prompt.trim().length < 3) {
@@ -37,6 +54,9 @@ export default function AiManager() {
       setDraft(response.data.draft || null)
       setNotes(response.data.cleanup_notes || [])
       setReply(response.data.reply || '')
+      setDraftMode('new')
+      setDraftTargetId(null)
+      recordUsage('admin-draft')
       pushToast({
         tone: 'success',
         title: 'Draft AI siap',
@@ -53,12 +73,65 @@ export default function AiManager() {
     }
   }
 
+  const generateFix = async () => {
+    if (!selectedRecipe) {
+      pushToast({ tone: 'warning', title: 'Pilih resep dulu', message: 'Pilih resep production yang ingin dibersihkan oleh AI.' })
+      return
+    }
+
+    setLoading('fix')
+    try {
+      await coinApi.spendCoins({ spend_type: 'ai_boost', reference_id: `recipe-fixer-${selectedRecipe.id}-${Date.now()}` })
+      const response = await chefAiApi.adminDraft({
+        prompt: [
+          'Perbaiki resep production CookEdu berikut menjadi draft yang bersih, realistis, dan siap disimpan kembali.',
+          'Jaga schema recipes tetap sama. Jangan membuat kolom baru.',
+          'Pastikan ingredients array berisi nama, amount, unit. Pastikan steps array berisi instruction dan tip singkat.',
+          'Perbaiki data yang ngawur, waktu masak, level, deskripsi, dan urutan langkah agar masuk akal.',
+          JSON.stringify({
+            title: selectedRecipe.title,
+            category: selectedRecipe.category?.name || selectedRecipe.category,
+            description: selectedRecipe.description,
+            difficulty: selectedRecipe.difficulty,
+            cooking_time: selectedRecipe.cooking_time,
+            prep_time: selectedRecipe.prep_time,
+            servings: selectedRecipe.servings,
+            ingredients: selectedRecipe.ingredients,
+            steps: selectedRecipe.steps,
+            nutritional_info: selectedRecipe.nutritional_info,
+          }).slice(0, 6000),
+        ].join('\n'),
+        user_name: displayName,
+      })
+      setDraft(response.data.draft || null)
+      setNotes(response.data.cleanup_notes || [])
+      setReply(response.data.reply || 'Smart Recipe Fixer selesai. Tinjau hasilnya sebelum update resep lama.')
+      setDraftMode('fix')
+      setDraftTargetId(String(selectedRecipe.id))
+      recordUsage('recipe-fixer')
+      pushToast({
+        tone: 'success',
+        title: 'Recipe Fixer selesai',
+        message: 'AI membuat versi resep yang lebih rapi. Review dulu sebelum update.',
+      })
+    } catch (error) {
+      pushToast({
+        tone: 'error',
+        title: 'Recipe Fixer gagal',
+        message: error instanceof Error ? error.message : 'Coba ulangi setelah koneksi stabil.',
+      })
+    } finally {
+      setLoading('')
+    }
+  }
+
   const saveDraft = async () => {
     if (!draft) return
 
     setLoading('save')
     try {
       await saveSupabaseAdminRecipe({
+        id: draftTargetId,
         title: draft.title,
         category: draft.category,
         description: draft.description,
@@ -71,15 +144,16 @@ export default function AiManager() {
         image: null,
         existingImageUrl: null,
         videoUrl: null,
-        is_published: false,
+        is_published: draftMode === 'fix' ? selectedRecipe?.is_published !== false : false,
         isOfficial: true,
       })
       queryClient.invalidateQueries({ queryKey: ['admin-recipes'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-recipes-ai-manager'] })
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
       pushToast({
         tone: 'success',
-        title: 'Draft tersimpan',
-        message: 'Resep masuk ke Supabase sebagai draft unpublished.',
+        title: draftMode === 'fix' ? 'Resep diperbarui' : 'Draft tersimpan',
+        message: draftMode === 'fix' ? 'Versi resep production sudah diperbarui di Supabase.' : 'Resep masuk ke Supabase sebagai draft unpublished.',
       })
     } catch (error) {
       pushToast({
@@ -141,6 +215,49 @@ export default function AiManager() {
             {loading === 'generate' ? <Loader2 className="h-5 w-5 animate-spin" /> : <Wand2 className="h-5 w-5 text-cyan-300" />}
             Generate Draft
           </button>
+
+          <div className="mt-5 rounded-[24px] border border-[#B1BBC8]/40 bg-[#EDF1F6] p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#2A4D88]" />
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#2A4D88]">Smart Recipe Fixer</p>
+            </div>
+            <select
+              value={selectedRecipeId}
+              onChange={(event) => setSelectedRecipeId(event.target.value)}
+              className="h-12 w-full rounded-2xl border border-white bg-white px-4 text-sm font-black text-slate-700 outline-none focus:border-[#7C94B8]"
+            >
+              <option value="">Pilih resep yang mau dirapikan</option>
+              {recipes.slice(0, 80).map((recipe: any) => (
+                <option key={recipe.id} value={recipe.id}>
+                  {recipe.title}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={generateFix}
+              disabled={loading === 'fix'}
+              className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2A4D88] text-xs font-black uppercase tracking-widest text-white disabled:opacity-60"
+            >
+              {loading === 'fix' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-yellow-200" />}
+              Fix Selected Recipe
+            </button>
+            <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">
+              Mode ini memakai data resep lama sebagai bahan, lalu menyimpan balik ke row yang sama setelah kamu review.
+            </p>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            {[
+              ['Draft', usageSummary.counts['admin-draft']],
+              ['Fixer', usageSummary.counts['recipe-fixer']],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-2xl bg-slate-50 p-3">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+                <p className="text-2xl font-black text-[#2A4D88]">{value}</p>
+              </div>
+            ))}
+          </div>
         </motion.article>
 
         <motion.article
@@ -163,6 +280,11 @@ export default function AiManager() {
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-700">{draft.category}</p>
                   <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{draft.title}</h2>
+                  {draftMode === 'fix' && (
+                    <p className="mt-2 inline-flex rounded-full bg-yellow-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-yellow-800">
+                      Update existing recipe
+                    </p>
+                  )}
                   <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">{draft.description}</p>
                 </div>
                 <button
@@ -172,7 +294,7 @@ export default function AiManager() {
                   className="flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 text-xs font-black uppercase tracking-widest text-white disabled:opacity-60"
                 >
                   {loading === 'save' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save Draft
+                  {draftMode === 'fix' ? 'Update Recipe' : 'Save Draft'}
                 </button>
               </div>
 

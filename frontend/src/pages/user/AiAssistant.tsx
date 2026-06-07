@@ -8,6 +8,7 @@ import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
 import { buildLocalChefReply } from '../../lib/chefLocalBrain'
 import { useToastStore } from '../../store/toastStore'
 import { formatAiMemory, loadAiMemory } from '../../lib/aiMemory'
+import { trackAiUsage } from '../../lib/aiUsage'
 
 type Message = {
   id: string
@@ -61,12 +62,14 @@ export default function AiAssistantPage() {
         text: response.data.reply || buildLocalChefReply(prompt, displayName),
         sender: 'ai',
       }])
+      trackAiUsage('chat', user?.id)
     } catch {
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         text: buildLocalChefReply(prompt, displayName),
         sender: 'ai',
       }])
+      trackAiUsage('chat', user?.id)
       pushToast({
         tone: 'warning',
         title: 'CookEdu Brain aktif',

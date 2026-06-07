@@ -4,6 +4,7 @@ export type CookEduAiMemory = {
   budget: string
   cookingTime: string
   goals: string
+  pantry: string
 }
 
 export const emptyAiMemory: CookEduAiMemory = {
@@ -12,6 +13,7 @@ export const emptyAiMemory: CookEduAiMemory = {
   budget: '',
   cookingTime: '',
   goals: '',
+  pantry: '',
 }
 
 function storageKey(userId?: string | number | null) {
@@ -39,6 +41,7 @@ export function formatAiMemory(memory: CookEduAiMemory) {
     memory.budget && `Budget: ${memory.budget}`,
     memory.cookingTime && `Waktu masak ideal: ${memory.cookingTime}`,
     memory.goals && `Target: ${memory.goals}`,
+    memory.pantry && `Isi dapur yang sering tersedia: ${memory.pantry}`,
   ].filter(Boolean)
 
   return lines.join('. ')

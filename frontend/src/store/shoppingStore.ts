@@ -24,6 +24,7 @@ interface ShoppingState {
   removeGroup: (groupId: string) => void;
   clearChecked: (groupId: string) => void;
   togglePantry: (name: string) => void;
+  addPantryItems: (names: string[]) => void;
   setPrices: (prices: Record<string, number>) => void;
   getMergedItems: () => { name: string; amount: number; unit: string; checked: boolean; isPantry: boolean; price: number }[];
 }
@@ -114,6 +115,14 @@ export const useShoppingStore = create<ShoppingState>()(
           ? state.pantryItems.filter(i => i !== name.toLowerCase())
           : [...state.pantryItems, name.toLowerCase()]
       })),
+      addPantryItems: (names) => set((state) => {
+        const next = new Set(state.pantryItems)
+        names.forEach((name) => {
+          const clean = String(name || '').trim().toLowerCase()
+          if (clean) next.add(clean)
+        })
+        return { pantryItems: Array.from(next) }
+      }),
       setPrices: (prices) => set({ ingredientPrices: prices }),
       getMergedItems: () => {
         const { groups, pantryItems, ingredientPrices } = get();
