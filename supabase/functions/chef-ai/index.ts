@@ -69,7 +69,7 @@ Deno.serve(async (request) => {
 
   try {
     const apiKey = Deno.env.get('GEMINI_API_KEY')
-    const model = Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash'
+    const model = Deno.env.get('GEMINI_MODEL') || 'gemini-3.5-flash'
 
     if (!apiKey) {
       return jsonResponse({
