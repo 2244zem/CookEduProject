@@ -382,7 +382,7 @@ export default function RecipeDetail() {
   ]
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-transparent font-sans text-slate-800 dark:text-slate-100">
+    <div className="relative min-h-screen overflow-x-hidden bg-transparent pb-[10rem] font-sans text-slate-800 dark:text-slate-100 lg:pb-0">
       <AnimatePresence>
         {isCookingMode && (
           <motion.div
@@ -469,7 +469,7 @@ export default function RecipeDetail() {
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url(${bgPattern})`, backgroundSize: 'cover' }} />
       </div>
 
-      <div className="relative z-10 h-[55vh] w-full overflow-hidden rounded-none lg:h-[45vh] lg:rounded-[36px]">
+      <div className="relative z-10 h-[34svh] min-h-[260px] max-h-[360px] w-full overflow-hidden rounded-none sm:h-[40vh] lg:h-[45vh] lg:max-h-none lg:rounded-[36px]">
         <motion.img
           initial={{ scale: 1.08 }}
           animate={{ scale: 1 }}
@@ -480,11 +480,11 @@ export default function RecipeDetail() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30" />
 
-        <div className="absolute left-6 right-6 top-10 flex items-center justify-between">
+        <div className="absolute left-4 right-4 top-6 flex items-center justify-between sm:left-6 sm:right-6 sm:top-10">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate(-1)}
-            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/40 bg-white/20 text-white shadow-2xl backdrop-blur-2xl"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/40 bg-white/20 text-white shadow-2xl backdrop-blur-2xl sm:h-12 sm:w-12"
           >
             <ArrowLeft className="h-6 w-6" />
           </motion.button>
@@ -494,25 +494,25 @@ export default function RecipeDetail() {
               whileTap={{ scale: 0.9 }}
               onClick={handleToggleFavorite}
               disabled={!canFavoriteRecipe || favoriteBusy}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/40 bg-white/20 text-white shadow-2xl backdrop-blur-2xl disabled:opacity-60"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/40 bg-white/20 text-white shadow-2xl backdrop-blur-2xl disabled:opacity-60 sm:h-12 sm:w-12"
               title="Simpan resep favorit"
             >
               <Heart className={`h-6 w-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.9 }}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/40 bg-white/20 text-white shadow-2xl backdrop-blur-2xl"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/40 bg-white/20 text-white shadow-2xl backdrop-blur-2xl sm:h-12 sm:w-12"
             >
               <Share2 className="h-6 w-6" />
             </motion.button>
           </div>
         </div>
 
-        <div className="absolute bottom-12 left-8 right-8">
+        <div className="absolute bottom-7 left-5 right-5 sm:bottom-12 sm:left-8 sm:right-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 inline-flex items-center gap-2 rounded-full bg-cyan-500 px-4 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-cyan-500/30"
+            className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full bg-cyan-500 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white shadow-xl shadow-cyan-500/30 sm:mb-4 sm:px-4 sm:text-[10px]"
           >
             <Sparkles className="h-3 w-3" />
             {recipe.category}
@@ -521,32 +521,32 @@ export default function RecipeDetail() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl font-black leading-tight tracking-tight text-white drop-shadow-lg"
+            className="line-clamp-2 text-2xl font-black leading-tight tracking-tight text-white drop-shadow-lg sm:text-4xl"
           >
             {recipe.title}
           </motion.h1>
         </div>
       </div>
 
-      <div className="relative z-20 -mt-10 mx-auto max-w-2xl px-4 pb-32 lg:max-w-6xl">
+      <div className="relative z-20 -mt-6 mx-auto max-w-2xl px-3 pb-[11rem] sm:-mt-10 sm:px-4 lg:max-w-6xl lg:pb-32">
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="rounded-[40px] border border-white/80 bg-white/80 p-6 shadow-2xl backdrop-blur-3xl md:p-10 lg:bg-white"
+          className="rounded-[28px] border border-white/80 bg-white/90 p-4 shadow-2xl backdrop-blur-3xl sm:rounded-[40px] sm:p-6 md:p-10 lg:bg-white"
         >
-          <div className="mb-10 grid grid-cols-2 gap-4 border-b border-cyan-50 pb-8 sm:grid-cols-4">
+          <div className="mb-8 grid grid-cols-2 gap-3 border-b border-cyan-50 pb-6 sm:mb-10 sm:grid-cols-4 sm:gap-4 sm:pb-8">
             {metricItems.map((item) => (
               <div key={item.label} className="flex flex-col items-center gap-2 text-center">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-white ${item.bg} ${item.color} shadow-sm`}>
-                  <item.icon className="h-6 w-6" />
+                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-white ${item.bg} ${item.color} shadow-sm sm:h-12 sm:w-12`}>
+                  <item.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
                 <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
-                <span className="max-w-full break-words text-sm font-black text-slate-800">{item.value}</span>
+                <span className="max-w-full break-words text-xs font-black text-slate-800 sm:text-sm">{item.value}</span>
               </div>
             ))}
           </div>
 
-          <p className="mb-8 px-4 text-center text-base font-medium italic leading-relaxed text-slate-600">
+          <p className="mb-8 px-1 text-center text-sm font-medium italic leading-relaxed text-slate-600 sm:px-4 sm:text-base">
             "{recipe.description}"
           </p>
 

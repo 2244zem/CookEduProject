@@ -24,10 +24,10 @@ export default function UserLayout() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-50 via-white to-slate-50 font-sans text-slate-900">
       <AiAssistant />
-      <main className="mx-auto w-full px-0 pb-28">
+      <main className="mx-auto w-full px-0 pb-[9.5rem]">
         <Outlet />
       </main>
-      <div className="fixed bottom-0 left-0 right-0 z-[999] bg-gradient-to-t from-white via-white/95 to-transparent px-4 pb-4 pt-12 pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 z-[999] bg-gradient-to-t from-white via-white/95 to-transparent px-4 pb-safe-bottom pt-7 pointer-events-none">
         <div className="mx-auto max-w-md pointer-events-auto">
           <BottomNav />
         </div>

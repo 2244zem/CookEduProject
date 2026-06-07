@@ -69,9 +69,9 @@ function RecipeCard({
   const category = recipe.category?.name || recipe.category || 'Recipe'
 
   return (
-    <article className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
+    <article className="group overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl sm:rounded-[26px]">
       <Link to={`/recipes/${recipe.id}`} className="block text-left">
-        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+        <div className="relative h-44 overflow-hidden bg-slate-100 sm:h-48 lg:h-auto lg:aspect-[4/3]">
           <img
             src={imageUrl}
             onError={(event) => { event.currentTarget.src = avatarFallbackUrl(recipe.title || 'CookEdu') }}
@@ -79,36 +79,38 @@ function RecipeCard({
             loading="lazy"
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/65 to-transparent" />
-          <span className="absolute left-4 top-4 rounded-full border border-white/60 bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-cyan-700">
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/55 to-transparent" />
+          <span className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full border border-white/60 bg-white/90 px-3 py-1 text-[9px] font-black uppercase tracking-wide text-cyan-700">
             {category}
           </span>
         </div>
       </Link>
 
-      <div className="space-y-4 p-5 text-left">
+      <div className="space-y-3 p-4 text-left sm:p-5">
         <div>
-          <h2 className="line-clamp-2 min-h-[52px] text-xl font-black leading-tight text-slate-950">{recipe.title || 'Resep CookEdu'}</h2>
-          <p className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{recipe.description || 'Resep komunitas CookEdu.'}</p>
+          <h2 className="line-clamp-2 min-h-[42px] text-base font-black leading-snug text-slate-950 sm:min-h-[48px] sm:text-lg">{recipe.title || 'Resep CookEdu'}</h2>
+          <p className="mt-2 hidden text-sm font-semibold leading-6 text-slate-600 sm:line-clamp-2">{recipe.description || 'Resep komunitas CookEdu.'}</p>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-black text-slate-500">
-          <span className="flex items-center gap-1">
-            <Clock className="h-4 w-4 text-cyan-700" />
+        <div className="flex flex-wrap items-center gap-2 text-[11px] font-black text-slate-500">
+          <span className="flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1">
+            <Clock className="h-3.5 w-3.5 text-cyan-700" />
             {recipe.cooking_time || recipe.prepTime || 20}m
           </span>
-          <span className="flex items-center gap-1">
-            <Flame className="h-4 w-4 text-rose-600" />
+          <span className="flex min-w-0 items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1">
+            <Flame className="h-3.5 w-3.5 shrink-0 text-rose-600" />
+            <span className="truncate">
             {recipe.difficulty || 'beginner'}
+            </span>
           </span>
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+        <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
           <button
             onClick={onAdd}
-            className="flex h-10 items-center gap-2 rounded-2xl bg-slate-950 px-4 text-xs font-black uppercase tracking-widest text-white transition hover:bg-cyan-700"
+            className="flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-cyan-700 sm:flex-none sm:px-4"
           >
-            <ShoppingCart className="h-4 w-4" />
+            <ShoppingCart className="h-4 w-4 shrink-0" />
             Belanja
           </button>
 
@@ -116,7 +118,7 @@ function RecipeCard({
             {canFavorite && (
               <button
                 onClick={onFavorite}
-                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 transition hover:bg-cyan-100"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 transition hover:bg-cyan-100"
                 title="Simpan favorit"
               >
                 <Bookmark className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
@@ -125,7 +127,7 @@ function RecipeCard({
             {canDelete && (
               <button
                 onClick={onDelete}
-                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 transition hover:bg-rose-100"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 transition hover:bg-rose-100"
                 title="Hapus resep"
               >
                 <Trash2 className="h-5 w-5" />
@@ -492,28 +494,28 @@ export default function RecipeList() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-5 text-slate-950 lg:px-8 lg:py-8">
-      <div className="mx-auto max-w-[1480px] space-y-6">
-        <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="min-h-screen bg-slate-50 px-3 py-4 pb-[11rem] text-slate-950 sm:px-4 lg:px-8 lg:py-8 lg:pb-8">
+      <div className="mx-auto max-w-[1480px] space-y-4 sm:space-y-6">
+        <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[30px] sm:p-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div className="text-left">
               <div className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">
                 <ChefHat className="h-3.5 w-3.5" />
                 Recipe Catalog
               </div>
-              <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 md:text-6xl">CookEdu Recipes</h1>
-              <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-slate-600">
+              <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl md:text-6xl">CookEdu Recipes</h1>
+              <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-600 sm:mt-3 sm:leading-7">
                 Browse, save, and prepare recipes from Supabase in a focused kitchen catalog.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 md:w-80">
-              <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-left">
-                <p className="text-3xl font-black text-slate-950">{filteredRecipes.length}</p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:w-80">
+              <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-3 text-left sm:p-4">
+                <p className="text-2xl font-black text-slate-950 sm:text-3xl">{filteredRecipes.length}</p>
                 <p className="text-xs font-black uppercase tracking-wide text-slate-500">Resep siap</p>
               </div>
-              <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-left">
-                <p className="text-3xl font-black text-slate-950">{groups.length}</p>
+              <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-left sm:p-4">
+                <p className="text-2xl font-black text-slate-950 sm:text-3xl">{groups.length}</p>
                 <p className="text-xs font-black uppercase tracking-wide text-slate-500">Daftar belanja</p>
               </div>
             </div>
@@ -531,7 +533,7 @@ export default function RecipeList() {
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black uppercase tracking-widest text-white shadow-sm transition hover:bg-cyan-700"
+              className="flex h-[52px] items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition hover:bg-cyan-700 md:h-14 md:text-sm"
             >
               <Plus className="h-5 w-5 text-cyan-300" />
               Tambah Resep
@@ -539,8 +541,8 @@ export default function RecipeList() {
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-          <aside className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
+          <aside className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[28px]">
             <h2 className="px-2 text-left text-sm font-black uppercase tracking-[0.2em] text-slate-500">Kategori</h2>
             <div className="mt-4 flex gap-2 overflow-x-auto lg:block lg:space-y-2">
               {categories.map((item) => (
@@ -564,7 +566,7 @@ export default function RecipeList() {
                 <p className="mt-3 text-sm font-black text-slate-500">Memuat resep...</p>
               </div>
             ) : filteredRecipes.length ? (
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {filteredRecipes.map((recipe: any, index: number) => (
                   <RecipeCard
                     key={`${recipe.id || recipe.title}-${index}`}
