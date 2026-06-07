@@ -92,6 +92,22 @@ function isMissingColumnError(error: unknown) {
   return err?.code === 'PGRST204' || /column .* does not exist|Could not find .* column/i.test(err?.message || '')
 }
 
+function isUniqueViolation(error: unknown) {
+  const err = error as { code?: string; message?: string } | null
+  return err?.code === '23505' || /duplicate key|unique constraint/i.test(err?.message || '')
+}
+
+function withUserSuffix(username: string, userId: string) {
+  const base = username
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40) || 'koki'
+
+  return `${base}-${userId.slice(0, 8)}`
+}
+
 export async function upsertProfileForUser(user: SupabaseUser, values: Partial<CookEduProfile> = {}) {
   if (!supabase) return null
 
@@ -130,6 +146,23 @@ export async function upsertProfileForUser(user: SupabaseUser, values: Partial<C
 
   if (error) throw error
   return data as CookEduProfile
+}
+
+export async function ensureProfileForUser(user: SupabaseUser) {
+  if (!supabase) return null
+
+  const existing = await getProfileForSession({ user } as Session)
+  if (existing?.id) return existing
+
+  try {
+    return await upsertProfileForUser(user)
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error
+
+    return await upsertProfileForUser(user, {
+      username: withUserSuffix(getSafeProfileUsername(user), user.id),
+    })
+  }
 }
 
 export async function uploadPublicMedia(bucket: 'avatars' | 'recipe-media' | 'comment-attachments' | 'social-media-assets', file: File, userId: string) {

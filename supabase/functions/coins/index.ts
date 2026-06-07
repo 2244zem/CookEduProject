@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}))
     const user = await requireSupabaseUser(req)
+    await ensureProfileForUser(user)
     const action = String(body.action || '')
 
     if (action === 'qris-checkout') return jsonResponse(await chargeQris(body, user))
@@ -522,6 +523,45 @@ async function recordPendingPurchase(orderId: string, userId: string, selectedPa
   }
 }
 
+async function ensureProfileForUser(user: User) {
+  const client = await dbPool.connect()
+
+  try {
+    const username = getSafeUsername(user)
+
+    try {
+      await tryInsertProfileInClient(client, user, username)
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error
+      await tryInsertProfileInClient(client, user, withUserSuffix(username, user.id))
+    }
+  } finally {
+    client.release()
+  }
+}
+
+async function tryInsertProfileInClient(client: any, user: User, username: string) {
+  const avatarUrl = typeof user.user_metadata?.avatar_url === 'string' ? user.user_metadata.avatar_url : null
+
+  try {
+    await client.queryObject(
+      `insert into public.profiles (id, username, avatar_url, updated_at)
+       values ($1, $2, $3, now())
+       on conflict (id) do nothing`,
+      [user.id, username, avatarUrl],
+    )
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error
+
+    await client.queryObject(
+      `insert into public.profiles (id, username)
+       values ($1, $2)
+       on conflict (id) do nothing`,
+      [user.id, username],
+    )
+  }
+}
+
 async function incrementWalletInClient(client: any, userId: string, amount: number) {
   const result = await client.queryObject<{ coin_balance: number }>(
     `insert into public.user_wallets (user_id, coin_balance, updated_at)
@@ -724,6 +764,46 @@ function clampNumber(value: number, min: number, max: number) {
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
+function isUniqueViolation(error: unknown) {
+  const err = error as { code?: string; message?: string } | null
+  return err?.code === '23505' || /duplicate key|unique constraint/i.test(err?.message || '')
+}
+
+function isMissingColumnError(error: unknown) {
+  const err = error as { code?: string; message?: string } | null
+  return err?.code === '42703' || /column .* does not exist/i.test(err?.message || '')
+}
+
+function getSafeUsername(user: User) {
+  const metadata = user.user_metadata || {}
+  const candidate = String(
+    metadata.username ||
+    metadata.name ||
+    metadata.full_name ||
+    user.email?.split('@')[0] ||
+    `koki-${user.id.slice(0, 8)}`,
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40)
+
+  return candidate.length >= 2 ? candidate : `koki-${user.id.slice(0, 8)}`
+}
+
+function withUserSuffix(username: string, userId: string) {
+  const base = username
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40) || 'koki'
+
+  return `${base}-${userId.slice(0, 8)}`
 }
 
 function requiredEnv(key: string) {

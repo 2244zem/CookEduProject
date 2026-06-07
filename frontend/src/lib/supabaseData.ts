@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, supabase, supabaseAnonKey, supabaseUrl, uploadPublicMedia } from './supabaseClient'
+import { ensureProfileForUser, isSupabaseConfigured, supabase, supabaseAnonKey, supabaseUrl, uploadPublicMedia } from './supabaseClient'
 import { avatarFallbackUrl, resolveMediaUrl } from './media'
 
 export type SupabaseRecipeRow = {
@@ -145,6 +145,8 @@ async function requireSupabaseUser() {
   const { data, error } = await client.auth.getUser()
   if (error) throw error
   if (!data.user) throw new Error('Login diperlukan untuk melanjutkan')
+
+  await ensureProfileForUser(data.user)
   return data.user
 }
 
@@ -362,26 +364,24 @@ export async function saveSupabaseAdminRecipe(input: {
   isOfficial?: boolean
 }) {
   const client = assertSupabase()
-  const { data: authData, error: authError } = await client.auth.getUser()
-  if (authError) throw authError
-  if (!authData.user) throw new Error('Login diperlukan untuk menyimpan resep')
+  const user = await requireSupabaseUser()
 
   const { data: profile } = await client
     .from('profiles')
     .select('role')
-    .eq('id', authData.user.id)
+    .eq('id', user.id)
     .maybeSingle()
   const canCreateOfficial = profile?.role === 'admin'
   const isOfficial = input.isOfficial ?? canCreateOfficial
 
   let imageUrl = input.existingImageUrl || null
   if (input.image) {
-    imageUrl = await uploadPublicMedia('recipe-media', input.image, authData.user.id)
+    imageUrl = await uploadPublicMedia('recipe-media', input.image, user.id)
   }
 
   const categoryName = await resolveCategoryName(input.category_id, input.category || null)
   const payload = {
-    user_id: authData.user.id,
+    user_id: user.id,
     title: input.title,
     category: categoryName,
     category_id: input.category_id || null,
@@ -407,7 +407,7 @@ export async function saveSupabaseAdminRecipe(input: {
 
   if (error && isMissingColumnError(error)) {
     const legacyPayload = {
-      user_id: authData.user.id,
+      user_id: user.id,
       title: input.title,
       category: categoryName,
       description: input.description || null,
@@ -522,19 +522,17 @@ export async function createSupabaseRecipe(input: {
   imageUrl?: string | null
 }) {
   const client = assertSupabase()
-  const { data: authData, error: authError } = await client.auth.getUser()
-  if (authError) throw authError
-  if (!authData.user) throw new Error('Login diperlukan untuk membuat resep')
+  const user = await requireSupabaseUser()
 
   let mediaUrl: string | null = null
   if (input.mediaFile) {
-    mediaUrl = await uploadPublicMedia('recipe-media', input.mediaFile, authData.user.id)
+    mediaUrl = await uploadPublicMedia('recipe-media', input.mediaFile, user.id)
   }
 
   const { data, error } = await client
     .from('recipes')
     .insert({
-      user_id: authData.user.id,
+      user_id: user.id,
       title: input.title,
       category: input.category,
       description: input.description || null,
@@ -559,7 +557,7 @@ export async function createSupabaseRecipe(input: {
     const { data: legacyData, error: legacyError } = await client
       .from('recipes')
       .insert({
-        user_id: authData.user.id,
+        user_id: user.id,
         title: input.title,
         category: input.category,
         description: input.description || null,
@@ -961,19 +959,17 @@ export async function createCommunityPost(input: {
   mediaFile?: File | null
 }) {
   const client = assertSupabase()
-  const { data: authData, error: authError } = await client.auth.getUser()
-  if (authError) throw authError
-  if (!authData.user) throw new Error('Login diperlukan untuk membuat postingan')
+  const user = await requireSupabaseUser()
 
   let mediaUrl: string | null = null
   if (input.mediaFile) {
-    mediaUrl = await uploadPublicMedia('recipe-media', input.mediaFile, authData.user.id)
+    mediaUrl = await uploadPublicMedia('recipe-media', input.mediaFile, user.id)
   }
 
   const { data, error } = await client
     .from('community_sharing')
     .insert({
-      user_id: authData.user.id,
+      user_id: user.id,
       title: input.title,
       content: input.content,
       media_url: mediaUrl,
@@ -1004,20 +1000,18 @@ export async function createRecipeComment(input: {
   photoFile?: File | null
 }) {
   const client = assertSupabase()
-  const { data: authData, error: authError } = await client.auth.getUser()
-  if (authError) throw authError
-  if (!authData.user) throw new Error('Login diperlukan untuk berkomentar')
+  const user = await requireSupabaseUser()
 
   let photoUrl: string | null = null
   if (input.photoFile) {
-    photoUrl = await uploadPublicMedia('comment-attachments', input.photoFile, authData.user.id)
+    photoUrl = await uploadPublicMedia('comment-attachments', input.photoFile, user.id)
   }
 
   const { data, error } = await client
     .from('comments')
     .insert({
       recipe_id: input.recipeId,
-      user_id: authData.user.id,
+      user_id: user.id,
       content: input.content,
       comment_photo_url: photoUrl,
     })
