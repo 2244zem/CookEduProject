@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ChefHat, Heart, ShoppingBag, Sparkles, User } from '@icons/CookEduIcons'
+import { Bookmark, ChefHat, Home, ShoppingBag, Sparkles, User, Wand2 } from '@icons/CookEduIcons'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 const BottomNav = () => {
@@ -7,11 +7,13 @@ const BottomNav = () => {
   const navigate = useNavigate()
 
   const navItems = [
-    { id: "home", path: "/", icon: Heart },
-    { id: "recipes", path: "/recipes", icon: ChefHat },
-    { id: "ai-lab", path: "/ai-lab", icon: Sparkles },
-    { id: "shopping", path: "/daftar-belanja", icon: ShoppingBag },
-    { id: "profile", path: "/profile", icon: User }
+    { id: 'social', path: '/', icon: Home, label: 'Social' },
+    { id: 'recipes', path: '/recipes', icon: ChefHat, label: 'Resep' },
+    { id: 'fridge', path: '/fridge', icon: Wand2, label: 'Kulkas' },
+    { id: 'favorites', path: '/favorites', icon: Bookmark, label: 'Favorit' },
+    { id: 'shopping', path: '/daftar-belanja', icon: ShoppingBag, label: 'Belanja' },
+    { id: 'ai-lab', path: '/ai-lab', icon: Sparkles, label: 'AI' },
+    { id: 'profile', path: '/profile', icon: User, label: 'Profil' },
   ]
 
   return (
@@ -20,7 +22,7 @@ const BottomNav = () => {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="bg-white/95 backdrop-blur-3xl border border-slate-200/80 rounded-[28px] py-2 px-4 shadow-xl shadow-slate-950/10 flex items-center justify-between w-full max-w-sm pointer-events-auto"
+        className="bg-white/95 backdrop-blur-3xl border border-slate-200/80 rounded-[28px] py-2 px-2 shadow-xl shadow-slate-950/10 flex items-center justify-between gap-1 w-full max-w-md pointer-events-auto"
       >
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))
@@ -28,7 +30,9 @@ const BottomNav = () => {
             <button 
               key={item.id}
               onClick={() => navigate(item.path)} 
-              className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition-all ${
+              aria-label={item.label}
+              title={item.label}
+              className={`relative flex h-11 min-w-0 flex-1 items-center justify-center rounded-2xl transition-all ${
                 isActive 
                   ? "text-sky-600 scale-110" 
                   : "text-slate-400 hover:text-slate-700"
