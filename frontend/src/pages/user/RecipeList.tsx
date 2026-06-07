@@ -472,9 +472,37 @@ export default function RecipeList() {
 
   const favoriteMutation = useMutation({
     mutationFn: (id: string) => toggleFavoriteItem(id, 'recipe'),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['favorite-keys'] })
+      const previousKeys = queryClient.getQueryData<Array<{ item_id: string; item_type: string }>>(['favorite-keys'])
+      const currentKeys = previousKeys || []
+      const exists = currentKeys.some((item) => item.item_type === 'recipe' && item.item_id === id)
+      const nextFavorited = !exists
+
+      queryClient.setQueryData(['favorite-keys'], exists
+        ? currentKeys.filter((item) => !(item.item_type === 'recipe' && item.item_id === id))
+        : [...currentKeys, { item_id: id, item_type: 'recipe' }]
+      )
+
+      return { previousKeys, nextFavorited }
+    },
+    onSuccess: (nextFavorited, _id, context) => {
+      const saved = typeof nextFavorited === 'boolean' ? nextFavorited : Boolean(context?.nextFavorited)
+      pushToast({
+        tone: saved ? 'success' : 'warning',
+        title: saved ? 'Resep disimpan' : 'Resep dihapus dari favorit',
+        message: saved ? 'Resep sudah masuk My Favorites.' : 'Resep sudah keluar dari My Favorites.',
+      })
       queryClient.invalidateQueries({ queryKey: ['favorite-keys'] })
       queryClient.invalidateQueries({ queryKey: ['favorite-items'] })
+    },
+    onError: (error: any, _id, context) => {
+      if (context?.previousKeys) queryClient.setQueryData(['favorite-keys'], context.previousKeys)
+      pushToast({
+        tone: 'error',
+        title: 'Favorit gagal',
+        message: error?.message || 'Favorit gagal diproses. Silakan login ulang jika sesi habis.',
+      })
     },
   })
 

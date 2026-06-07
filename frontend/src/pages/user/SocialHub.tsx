@@ -483,6 +483,16 @@ function CommentsDrawer({
   )
 }
 
+function patchPostInCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  postId: string,
+  updater: (post: SocialPostView) => SocialPostView,
+) {
+  queryClient.setQueryData<SocialPostView[]>(['social-posts'], (current = []) => (
+    current.map((post) => post.id === postId ? updater(post) : post)
+  ))
+}
+
 export default function SocialHub() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
@@ -510,19 +520,73 @@ export default function SocialHub() {
 
   const likeMutation = useMutation({
     mutationFn: (post: SocialPostView) => toggleSocialPostLike(post.id),
-    onMutate: () => setSocialActionError(''),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['social-posts'] }),
+    onMutate: async (post) => {
+      setSocialActionError('')
+      await queryClient.cancelQueries({ queryKey: ['social-posts'] })
+      const previousPosts = queryClient.getQueryData<SocialPostView[]>(['social-posts'])
+      const nextLiked = !post.liked_by_user
+
+      patchPostInCache(queryClient, post.id, (current) => ({
+        ...current,
+        liked_by_user: nextLiked,
+        likes_count: Math.max(0, current.likes_count + (nextLiked ? 1 : -1)),
+      }))
+
+      return { previousPosts, postId: post.id, nextLiked }
+    },
+    onSuccess: (nextLiked, post, context) => {
+      patchPostInCache(queryClient, post.id, (current) => {
+        const desired = typeof nextLiked === 'boolean' ? nextLiked : context?.nextLiked ?? current.liked_by_user
+        return {
+          ...current,
+          liked_by_user: desired,
+          likes_count: Math.max(0, current.likes_count + (desired === current.liked_by_user ? 0 : desired ? 1 : -1)),
+        }
+      })
+      pushToast({
+        tone: nextLiked ? 'success' : 'warning',
+        title: nextLiked ? 'Like ditambahkan' : 'Like dihapus',
+        message: nextLiked ? 'Post sudah masuk daftar yang kamu sukai.' : 'Like untuk post ini sudah dilepas.',
+      })
+      queryClient.invalidateQueries({ queryKey: ['social-posts'] })
+    },
     onError: (err: any) => {
       const message = err?.message || 'Like gagal diproses. Silakan login ulang jika sesi habis.'
       setSocialActionError(message)
       pushToast({ tone: 'error', title: 'Like gagal', message })
     },
+    onSettled: (_data, error, _variables, context) => {
+      if (error && context?.previousPosts) {
+        queryClient.setQueryData(['social-posts'], context.previousPosts)
+      }
+    },
   })
 
   const favoriteMutation = useMutation({
     mutationFn: (post: SocialPostView) => toggleFavoriteItem(post.id, 'post'),
-    onMutate: () => setSocialActionError(''),
-    onSuccess: () => {
+    onMutate: async (post) => {
+      setSocialActionError('')
+      await queryClient.cancelQueries({ queryKey: ['social-posts'] })
+      const previousPosts = queryClient.getQueryData<SocialPostView[]>(['social-posts'])
+      const nextFavorited = !post.favorited_by_user
+
+      patchPostInCache(queryClient, post.id, (current) => ({
+        ...current,
+        favorited_by_user: nextFavorited,
+      }))
+
+      return { previousPosts, nextFavorited }
+    },
+    onSuccess: (nextFavorited, post, context) => {
+      patchPostInCache(queryClient, post.id, (current) => ({
+        ...current,
+        favorited_by_user: typeof nextFavorited === 'boolean' ? nextFavorited : context?.nextFavorited ?? current.favorited_by_user,
+      }))
+      pushToast({
+        tone: nextFavorited ? 'success' : 'warning',
+        title: nextFavorited ? 'Favorit disimpan' : 'Favorit dihapus',
+        message: nextFavorited ? 'Post sudah masuk My Favorites.' : 'Post sudah keluar dari My Favorites.',
+      })
       queryClient.invalidateQueries({ queryKey: ['social-posts'] })
       queryClient.invalidateQueries({ queryKey: ['favorite-items'] })
     },
@@ -530,6 +594,11 @@ export default function SocialHub() {
       const message = err?.message || 'Favorit gagal diproses. Silakan login ulang jika sesi habis.'
       setSocialActionError(message)
       pushToast({ tone: 'error', title: 'Favorit gagal', message })
+    },
+    onSettled: (_data, error, _variables, context) => {
+      if (error && context?.previousPosts) {
+        queryClient.setQueryData(['social-posts'], context.previousPosts)
+      }
     },
   })
 

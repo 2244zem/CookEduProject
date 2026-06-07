@@ -133,7 +133,12 @@ async function getFunctionErrorMessage(error: unknown) {
   if (status === 429) return 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.';
   if (status >= 500) return 'Supabase Edge Function gagal. Periksa deployment function dan secret yang dibutuhkan.';
 
-  return functionError?.message || 'Supabase Function gagal dipanggil.';
+  const message = functionError?.message || '';
+  if (/failed to send a request to the edge function/i.test(message)) {
+    return 'Supabase Edge Function belum bisa dijangkau. Pastikan function sudah dideploy, JWT aktif sesuai kebutuhan, dan koneksi perangkat stabil.';
+  }
+
+  return message || 'Supabase Function gagal dipanggil.';
 }
 
 type CoinAction =

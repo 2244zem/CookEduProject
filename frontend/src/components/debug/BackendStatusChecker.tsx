@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Loader2, RefreshCw, TriangleAlert, XCircle } from 'lucide-react'
 import { coinApi } from '../../lib/api'
 import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient'
+import { useAuthStore } from '../../store/authStore'
 
 type CheckTone = 'ok' | 'warn' | 'error'
 
@@ -14,7 +15,13 @@ type BackendCheck = {
 
 function normalizeError(error: unknown) {
   const err = error as { message?: string; code?: string } | null
-  return err?.message || err?.code || 'Tidak tersedia'
+  const message = err?.message || err?.code || 'Tidak tersedia'
+
+  if (/failed to send a request to the edge function/i.test(message)) {
+    return 'Edge Function belum bisa dijangkau. Deploy ulang function atau cek secret/JWT.'
+  }
+
+  return message
 }
 
 function statusFromError(id: string, label: string, error: unknown): BackendCheck {
@@ -106,12 +113,16 @@ const toneIcon: Record<CheckTone, typeof CheckCircle2> = {
 }
 
 export default function BackendStatusChecker({ compact = false }: { compact?: boolean }) {
+  const isAdmin = useAuthStore((state) => state.user?.role === 'admin')
   const checksQuery = useQuery({
     queryKey: ['backend-status-checks'],
     queryFn: runBackendChecks,
+    enabled: isAdmin,
     staleTime: 30_000,
     retry: false,
   })
+
+  if (!isAdmin) return null
 
   const checks = checksQuery.data || []
   const errorCount = checks.filter((item) => item.tone === 'error').length
