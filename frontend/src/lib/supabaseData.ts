@@ -101,6 +101,15 @@ export type SupabaseSocialCommentRow = {
   } | null
 }
 
+export type SocialPostMediaAsset = {
+  path: string
+  url: string
+  type: 'image' | 'video'
+  name?: string
+  size?: number
+  duration?: number
+}
+
 export type SocialCommentView = SupabaseSocialCommentRow & {
   author_name: string
   author_avatar_url: string
@@ -113,6 +122,7 @@ export type SocialPostView = SupabaseSocialPostRow & {
   author_role: string
   media_url: string
   media_type: 'image' | 'video'
+  media_assets: SocialPostMediaAsset[]
   likes_count: number
   comments_count: number
   liked_by_user: boolean
@@ -593,11 +603,20 @@ export async function deleteSupabaseRecipe(id: string) {
 }
 
 const SOCIAL_MEDIA_BUCKET = 'social-media-assets'
-const SOCIAL_FILE_LIMIT = 100 * 1024 * 1024
+const SOCIAL_IMAGE_FILE_LIMIT = 10 * 1024 * 1024
+const SOCIAL_VIDEO_FILE_LIMIT = 45 * 1024 * 1024
 
 function getSocialMediaType(pathOrMime: string): 'image' | 'video' {
   const value = pathOrMime.toLowerCase()
   return value.includes('video/') || /\.(mp4|mov|webm|m4v|avi)$/i.test(value) ? 'video' : 'image'
+}
+
+function formatFileLimit(bytes: number) {
+  return `${Math.round(bytes / 1024 / 1024)}MB`
+}
+
+function getSocialFileLimit(file: File) {
+  return file.type.startsWith('video/') ? SOCIAL_VIDEO_FILE_LIMIT : SOCIAL_IMAGE_FILE_LIMIT
 }
 
 function safeStorageFileName(file: File) {
@@ -608,6 +627,55 @@ function safeStorageFileName(file: File) {
 function getSocialMediaPublicUrl(path?: string | null) {
   if (!path || !supabase) return ''
   return supabase.storage.from(SOCIAL_MEDIA_BUCKET).getPublicUrl(path).data.publicUrl
+}
+
+function parseSocialMediaPayload(mediaPath?: string | null): Array<Omit<SocialPostMediaAsset, 'url'>> {
+  if (!mediaPath) return []
+
+  try {
+    const parsed = JSON.parse(mediaPath)
+    const rawAssets = Array.isArray(parsed) ? parsed : parsed?.assets
+    if (Array.isArray(rawAssets)) {
+      return rawAssets
+        .map((asset) => ({
+          path: String(asset?.path || '').trim(),
+          type: getSocialMediaType(String(asset?.type || asset?.mime || asset?.path || 'image')),
+          name: asset?.name ? String(asset.name) : undefined,
+          size: Number(asset?.size) || undefined,
+          duration: Number(asset?.duration) || undefined,
+        }))
+        .filter((asset) => asset.path.length > 0)
+    }
+  } catch {
+    // Existing production rows store a plain storage path.
+  }
+
+  return [{
+    path: mediaPath,
+    type: getSocialMediaType(mediaPath),
+  }]
+}
+
+function normalizeSocialMediaAssets(mediaPath?: string | null): SocialPostMediaAsset[] {
+  return parseSocialMediaPayload(mediaPath).map((asset) => ({
+    ...asset,
+    url: getSocialMediaPublicUrl(asset.path),
+  }))
+}
+
+function serializeSocialMediaAssets(assets: Array<Omit<SocialPostMediaAsset, 'url'>>) {
+  if (assets.length === 1) return assets[0].path
+
+  return JSON.stringify({
+    version: 1,
+    assets: assets.map((asset) => ({
+      path: asset.path,
+      type: asset.type,
+      name: asset.name,
+      size: asset.size,
+      duration: asset.duration,
+    })),
+  })
 }
 
 async function uploadWithProgress(path: string, file: File, accessToken: string, onProgress?: (progress: number) => void) {
@@ -663,8 +731,10 @@ export async function uploadSocialMediaAsset(file: File, scope: 'posts' | 'comme
     throw new Error('File harus berupa foto atau video.')
   }
 
-  if (file.size > SOCIAL_FILE_LIMIT) {
-    throw new Error('Ukuran file maksimal 100MB.')
+  const fileLimit = getSocialFileLimit(file)
+  if (file.size > fileLimit) {
+    const kind = file.type.startsWith('video/') ? 'Video' : 'Foto'
+    throw new Error(`${kind} terlalu besar. Maksimal ${formatFileLimit(fileLimit)} agar upload stabil di Supabase.`)
   }
 
   const client = assertSupabase()
@@ -684,16 +754,43 @@ export async function uploadSocialMediaAsset(file: File, scope: 'posts' | 'comme
   }
 }
 
+async function uploadSocialMediaAssets(
+  files: File[],
+  onProgress?: (progress: number) => void,
+): Promise<Array<Omit<SocialPostMediaAsset, 'url'>>> {
+  const uploaded: Array<Omit<SocialPostMediaAsset, 'url'>> = []
+  const total = files.length || 1
+
+  for (const [index, file] of files.entries()) {
+    const upload = await uploadSocialMediaAsset(file, 'posts', (fileProgress) => {
+      const current = ((index + fileProgress / 100) / total) * 100
+      onProgress?.(Math.min(96, Math.round(current)))
+    })
+    uploaded.push({
+      path: upload.path,
+      type: upload.mediaType,
+      name: file.name,
+      size: file.size,
+    })
+  }
+
+  onProgress?.(100)
+  return uploaded
+}
+
 export async function createSocialPost(input: {
   title: string
   category: SocialCategory
   description: string
-  mediaFile: File
+  mediaFile?: File
+  mediaFiles?: File[]
   onProgress?: (progress: number) => void
 }) {
   const client = assertSupabase()
   const user = await requireSupabaseUser()
-  const upload = await uploadSocialMediaAsset(input.mediaFile, 'posts', input.onProgress)
+  const files = input.mediaFiles?.length ? input.mediaFiles : input.mediaFile ? [input.mediaFile] : []
+  if (!files.length) throw new Error('Upload foto atau video wajib diisi.')
+  const uploads = await uploadSocialMediaAssets(files, input.onProgress)
 
   const { data, error } = await client
     .from('social_posts')
@@ -702,7 +799,7 @@ export async function createSocialPost(input: {
       title: input.title.trim(),
       category: input.category,
       description: input.description.trim(),
-      media_path: upload.path,
+      media_path: serializeSocialMediaAssets(uploads),
     })
     .select('id, user_id, title, category, description, media_path, created_at, profiles(username, avatar_url, role)')
     .single()
@@ -729,15 +826,17 @@ function normalizeSocialPost(
 ): SocialPostView {
   const postLikes = likes.filter((like) => like.post_id === post.id)
   const postComments = comments.filter((comment) => comment.post_id === post.id).map(normalizeSocialComment)
-  const mediaUrl = getSocialMediaPublicUrl(post.media_path)
+  const mediaAssets = normalizeSocialMediaAssets(post.media_path)
+  const primaryMedia = mediaAssets[0]
 
   return {
     ...post,
     author_name: getProfileName(post.profiles),
     author_avatar_url: getProfileAvatar(post.profiles),
     author_role: post.profiles?.role === 'admin' ? 'Culinary Admin' : 'Home Cook',
-    media_url: mediaUrl,
-    media_type: getSocialMediaType(post.media_path),
+    media_url: primaryMedia?.url || '',
+    media_type: primaryMedia?.type || getSocialMediaType(post.media_path),
+    media_assets: mediaAssets,
     likes_count: postLikes.length,
     comments_count: postComments.length,
     liked_by_user: Boolean(currentUserId && postLikes.some((like) => like.user_id === currentUserId)),
@@ -933,7 +1032,7 @@ export async function listFavoriteItems() {
         title: post.title,
         description: post.description,
         category: post.category,
-        image_url: getSocialMediaPublicUrl(post.media_path),
+        image_url: normalizeSocialMediaAssets(post.media_path)[0]?.url || '',
         href: '/',
         created_at: favorite.created_at,
       }

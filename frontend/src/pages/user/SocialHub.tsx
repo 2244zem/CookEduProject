@@ -66,28 +66,120 @@ function compactCount(value: number) {
   return String(value)
 }
 
-function SocialMedia({ post }: { post: SocialPostView }) {
-  const src = resolveMediaUrl(post.media_url)
+const MAX_PHOTO_FILES = 6
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024
+const MAX_VIDEO_SIZE = 45 * 1024 * 1024
+const MAX_VIDEO_DURATION = 90
 
-  if (post.media_type === 'video') {
+function formatBytes(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(bytes > 20 * 1024 * 1024 ? 0 : 1)}MB`
+  return `${Math.max(1, Math.round(bytes / 1024))}KB`
+}
+
+function readVideoDuration(file: File) {
+  return new Promise<number>((resolve, reject) => {
+    const video = document.createElement('video')
+    const url = URL.createObjectURL(file)
+
+    video.preload = 'metadata'
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url)
+      resolve(video.duration || 0)
+    }
+    video.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Durasi video tidak bisa dibaca. Coba pakai file MP4/WebM yang valid.'))
+    }
+    video.src = url
+  })
+}
+
+async function validateSocialFiles(files: File[]) {
+  if (!files.length) return []
+  const imageFiles = files.filter((file) => file.type.startsWith('image/'))
+  const videoFiles = files.filter((file) => file.type.startsWith('video/'))
+  const invalidFile = files.find((file) => !file.type.startsWith('image/') && !file.type.startsWith('video/'))
+
+  if (invalidFile) throw new Error('File harus berupa foto atau video.')
+  if (videoFiles.length && files.length > 1) throw new Error('Video hanya bisa diupload satu file per post. Untuk tips bertahap, gunakan beberapa foto.')
+  if (imageFiles.length > MAX_PHOTO_FILES) throw new Error(`Maksimal ${MAX_PHOTO_FILES} foto dalam satu post tips.`)
+
+  for (const file of imageFiles) {
+    if (file.size > MAX_PHOTO_SIZE) {
+      throw new Error(`Foto "${file.name}" terlalu besar. Maksimal ${formatBytes(MAX_PHOTO_SIZE)} per foto.`)
+    }
+  }
+
+  if (videoFiles[0]) {
+    const video = videoFiles[0]
+    if (video.size > MAX_VIDEO_SIZE) {
+      throw new Error(`Video terlalu besar. Maksimal ${formatBytes(MAX_VIDEO_SIZE)} agar stabil di Supabase.`)
+    }
+    const duration = await readVideoDuration(video)
+    if (duration > MAX_VIDEO_DURATION) {
+      throw new Error(`Video terlalu panjang. Maksimal ${MAX_VIDEO_DURATION} detik, video ini sekitar ${Math.round(duration)} detik.`)
+    }
+  }
+
+  return files
+}
+
+function SocialMedia({
+  post,
+  detail = false,
+}: {
+  post: SocialPostView
+  detail?: boolean
+}) {
+  const assets = post.media_assets?.length
+    ? post.media_assets
+    : [{ url: resolveMediaUrl(post.media_url), type: post.media_type, path: post.media_url }]
+  const primary = assets[0]
+  const src = resolveMediaUrl(primary?.url)
+
+  if (primary?.type === 'video') {
     return (
       <video
         src={src}
-        controls
+        controls={detail}
+        muted={!detail}
         playsInline
         preload="metadata"
-        className="h-full w-full object-cover"
+        className={`h-full w-full ${detail ? 'object-contain bg-slate-950' : 'object-cover'}`}
       />
     )
   }
 
+  if (detail && assets.length > 1) {
+    return (
+      <div className="grid h-full gap-3 overflow-y-auto bg-slate-950 p-3 sm:grid-cols-2">
+        {assets.map((asset, index) => (
+          <img
+            key={`${asset.path}-${index}`}
+            src={resolveMediaUrl(asset.url) || avatarFallbackUrl(post.title)}
+            alt={`${post.title} ${index + 1}`}
+            loading="lazy"
+            className="min-h-56 w-full rounded-2xl bg-white/5 object-contain"
+          />
+        ))}
+      </div>
+    )
+  }
+
   return (
-    <img
-      src={src || avatarFallbackUrl(post.title)}
-      alt={post.title}
-      loading="lazy"
-      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-    />
+    <div className="relative h-full w-full">
+      <img
+        src={src || avatarFallbackUrl(post.title)}
+        alt={post.title}
+        loading="lazy"
+        className={`h-full w-full ${detail ? 'object-contain bg-slate-950' : 'object-cover transition duration-700 group-hover:scale-105'}`}
+      />
+      {!detail && assets.length > 1 && (
+        <span className="absolute bottom-4 right-4 rounded-2xl bg-white/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-800 shadow-sm">
+          {assets.length} foto
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -95,27 +187,38 @@ function PostCard({
   post,
   onLike,
   onFavorite,
-  onOpenComments,
+  onOpenDetail,
   isBusy,
 }: {
   post: SocialPostView
   onLike: (post: SocialPostView) => void
   onFavorite: (post: SocialPostView) => void
-  onOpenComments: (post: SocialPostView) => void
+  onOpenDetail: (post: SocialPostView) => void
   isBusy: boolean
 }) {
   return (
     <article className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-        <SocialMedia post={post} />
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/70 to-transparent" />
-        <span className={`absolute left-4 top-4 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wide ${categoryTone[post.category] || categoryTone['Ingredient Guide']}`}>
-          {post.category}
-        </span>
+        <button
+          type="button"
+          onClick={() => onOpenDetail(post)}
+          className="block h-full w-full text-left"
+        >
+          <SocialMedia post={post} />
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/70 to-transparent" />
+          <span className={`absolute left-4 top-4 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wide ${categoryTone[post.category] || categoryTone['Ingredient Guide']}`}>
+            {post.category}
+          </span>
+          {post.media_type === 'video' && (
+            <span className="absolute bottom-4 left-4 rounded-2xl bg-slate-950/80 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+              Tap untuk detail video
+            </span>
+          )}
+        </button>
         <button
           onClick={() => onFavorite(post)}
           disabled={isBusy}
-          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/40 bg-white/90 text-slate-700 shadow-sm transition hover:bg-white disabled:opacity-60"
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/40 bg-white/90 text-slate-700 shadow-sm transition hover:bg-white disabled:opacity-60"
           title="Simpan favorit"
         >
           <Bookmark className={`h-5 w-5 ${post.favorited_by_user ? 'fill-cyan-600 text-cyan-600' : ''}`} />
@@ -138,7 +241,9 @@ function PostCard({
         </div>
 
         <div className="text-left">
-          <h2 className="text-xl font-black leading-tight tracking-tight text-slate-950">{post.title}</h2>
+          <button type="button" onClick={() => onOpenDetail(post)} className="block text-left">
+            <h2 className="text-xl font-black leading-tight tracking-tight text-slate-950 transition hover:text-cyan-700">{post.title}</h2>
+          </button>
           <p className="mt-2 line-clamp-3 text-sm font-semibold leading-6 text-slate-600">{post.description}</p>
         </div>
 
@@ -155,7 +260,7 @@ function PostCard({
               {compactCount(post.likes_count)}
             </button>
             <button
-              onClick={() => onOpenComments(post)}
+              onClick={() => onOpenDetail(post)}
               className="flex h-10 items-center gap-2 rounded-2xl bg-slate-50 px-3 text-sm font-black text-slate-600 transition hover:bg-cyan-50 hover:text-cyan-700"
             >
               <MessageCircle className="h-4 w-4" />
@@ -164,10 +269,10 @@ function PostCard({
           </div>
 
           <button
-            onClick={() => onOpenComments(post)}
+            onClick={() => onOpenDetail(post)}
             className="rounded-2xl bg-slate-950 px-4 py-2 text-xs font-black uppercase tracking-widest text-white transition hover:bg-cyan-700"
           >
-            Diskusi
+            Detail
           </button>
         </div>
       </div>
@@ -186,26 +291,47 @@ function Composer({
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<SocialCategory>('Cooking Technique')
   const [description, setDescription] = useState('')
-  const [mediaFile, setMediaFile] = useState<File | null>(null)
+  const [mediaFiles, setMediaFiles] = useState<File[]>([])
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
   const pushToast = useToastStore((state) => state.pushToast)
-  const previewUrl = useMemo(() => mediaFile ? URL.createObjectURL(mediaFile) : '', [mediaFile])
+  const previewItems = useMemo(() => mediaFiles.map((file) => ({
+    file,
+    url: URL.createObjectURL(file),
+  })), [mediaFiles])
 
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
+      previewItems.forEach((item) => URL.revokeObjectURL(item.url))
     }
-  }, [previewUrl])
+  }, [previewItems])
+
+  const handleMediaSelect = async (files: FileList | null) => {
+    setError('')
+    const nextFiles = Array.from(files || [])
+    try {
+      const validFiles = await validateSocialFiles(nextFiles)
+      setMediaFiles(validFiles)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Media tidak valid.'
+      setMediaFiles([])
+      setError(message)
+      pushToast({ tone: 'warning', title: 'Media belum bisa dipakai', message })
+    }
+  }
+
+  const removeMediaFile = (index: number) => {
+    setMediaFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))
+  }
 
   const createMutation = useMutation({
     mutationFn: () => {
-      if (!mediaFile) throw new Error('Upload foto atau video wajib diisi.')
+      if (!mediaFiles.length) throw new Error('Upload foto atau video wajib diisi.')
       return createSocialPost({
         title,
         category,
         description,
-        mediaFile,
+        mediaFiles,
         onProgress: setProgress,
       })
     },
@@ -213,7 +339,7 @@ function Composer({
       queryClient.invalidateQueries({ queryKey: ['social-posts'] })
       setTitle('')
       setDescription('')
-      setMediaFile(null)
+      setMediaFiles([])
       setProgress(0)
       setError('')
       pushToast({ tone: 'success', title: 'Post berhasil diterbitkan', message: 'Feed CookShare sudah diperbarui.' })
@@ -232,9 +358,11 @@ function Composer({
     setError('')
     if (!title.trim()) return setError('Judul post wajib diisi.')
     if (!description.trim()) return setError('Deskripsi wajib diisi.')
-    if (!mediaFile) return setError('Pilih foto atau video dari perangkat.')
+    if (!mediaFiles.length) return setError('Pilih foto atau video dari perangkat.')
     createMutation.mutate()
   }
+
+  const hasVideo = mediaFiles.some((file) => file.type.startsWith('video/'))
 
   return (
     <form
@@ -292,38 +420,53 @@ function Composer({
           <input
             type="file"
             accept="image/*,video/*"
+            multiple
             className="sr-only"
-            onChange={(event) => setMediaFile(event.target.files?.[0] || null)}
+            onChange={(event) => handleMediaSelect(event.target.files)}
           />
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-cyan-700 shadow-sm">
-              {mediaFile?.type.startsWith('video/') ? <Video className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
+              {hasVideo ? <Video className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-black text-slate-950">{mediaFile?.name || 'Upload foto atau video HD'}</p>
-              <p className="text-xs font-semibold text-slate-500">File lokal langsung dikirim ke Supabase Storage.</p>
+              <p className="truncate text-sm font-black text-slate-950">
+                {mediaFiles.length ? `${mediaFiles.length} media dipilih` : 'Upload foto tips atau video pendek'}
+              </p>
+              <p className="text-xs font-semibold text-slate-500">
+                Sampai {MAX_PHOTO_FILES} foto, atau 1 video max {MAX_VIDEO_DURATION} detik dan {formatBytes(MAX_VIDEO_SIZE)}.
+              </p>
             </div>
           </div>
         </label>
 
-        {previewUrl && (
+        {previewItems.length > 0 && (
           <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
-            <div className="relative aspect-video bg-slate-100">
-              {mediaFile?.type.startsWith('video/') ? (
-                <video src={previewUrl} controls playsInline className="h-full w-full object-cover" />
-              ) : (
-                <img src={previewUrl} alt="Preview media post" className="h-full w-full object-cover" />
-              )}
-              <button
-                type="button"
-                onClick={() => setMediaFile(null)}
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-2xl bg-white/90 text-rose-600 shadow-sm transition hover:bg-rose-50"
-                title="Hapus media"
-              >
-                <X className="h-4 w-4" />
-              </button>
+            <div className={`grid gap-2 bg-slate-100 p-2 ${previewItems.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {previewItems.map((item, index) => (
+                <div key={`${item.file.name}-${index}`} className="relative aspect-video overflow-hidden rounded-2xl bg-slate-200">
+                  {item.file.type.startsWith('video/') ? (
+                    <video src={item.url} controls playsInline className="h-full w-full object-cover" />
+                  ) : (
+                    <img src={item.url} alt={`Preview media post ${index + 1}`} className="h-full w-full object-cover" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeMediaFile(index)}
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 text-rose-600 shadow-sm transition hover:bg-rose-50"
+                    title="Hapus media"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
             </div>
-            <p className="truncate px-4 py-3 text-xs font-black uppercase tracking-wide text-slate-500">{mediaFile?.name}</p>
+            <div className="space-y-1 px-4 py-3">
+              {mediaFiles.map((file, index) => (
+                <p key={`${file.name}-${index}`} className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500">
+                  {file.name} - {formatBytes(file.size)}
+                </p>
+              ))}
+            </div>
           </div>
         )}
 
@@ -356,12 +499,18 @@ function Composer({
   )
 }
 
-function CommentsDrawer({
+function PostDetailDrawer({
   post,
   onClose,
+  onLike,
+  onFavorite,
+  isBusy,
 }: {
   post: SocialPostView
   onClose: () => void
+  onLike: (post: SocialPostView) => void
+  onFavorite: (post: SocialPostView) => void
+  isBusy: boolean
 }) {
   const queryClient = useQueryClient()
   const [content, setContent] = useState('')
@@ -415,11 +564,11 @@ function CommentsDrawer({
         initial={{ y: 80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 80, opacity: 0 }}
-        className="relative flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-[32px] border border-slate-200 bg-white shadow-2xl lg:rounded-[32px]"
+        className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-[32px] border border-slate-200 bg-white shadow-2xl lg:rounded-[32px]"
       >
         <header className="flex items-center justify-between border-b border-slate-100 p-5">
           <div className="text-left">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-700">Thread</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-700">Post Detail</p>
             <h2 className="line-clamp-1 text-xl font-black text-slate-950">{post.title}</h2>
           </div>
           <button onClick={onClose} className="rounded-2xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700">
@@ -427,29 +576,85 @@ function CommentsDrawer({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-          {post.comments.length ? post.comments.map((comment) => (
-            <article key={comment.id} className={`flex gap-3 rounded-3xl border border-slate-100 bg-slate-50/70 p-4 ${comment.parent_id ? 'ml-8' : ''}`}>
-              <img src={comment.author_avatar_url} alt={comment.author_name} className="h-10 w-10 rounded-2xl object-cover" />
-              <div className="min-w-0 flex-1 text-left">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-sm font-black text-slate-950">{comment.author_name}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{formatTime(comment.created_at)}</p>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_420px]">
+            <section className="min-h-[320px] bg-slate-950 lg:min-h-[620px]">
+              <SocialMedia post={post} detail />
+            </section>
+
+            <section className="min-w-0 space-y-5 p-5">
+              <div className="flex items-center gap-3">
+                <img src={post.author_avatar_url} alt={post.author_name} className="h-12 w-12 rounded-2xl object-cover" />
+                <div className="min-w-0 text-left">
+                  <p className="truncate text-sm font-black text-slate-950">{post.author_name}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{post.author_role} | {formatTime(post.created_at)}</p>
                 </div>
-                <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{comment.content}</p>
-                {comment.attachment_url && (
-                  <a href={comment.attachment_url} target="_blank" rel="noreferrer" className="mt-3 block overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                    <img src={comment.attachment_url} alt="Lampiran komentar" className="max-h-64 w-full object-cover" />
-                  </a>
+              </div>
+
+              <div className="text-left">
+                <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wide ${categoryTone[post.category] || categoryTone['Ingredient Guide']}`}>
+                  {post.category}
+                </span>
+                <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight text-slate-950">{post.title}</h3>
+                <p className="mt-3 whitespace-pre-line text-sm font-semibold leading-7 text-slate-600">{post.description}</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => onLike(post)}
+                  disabled={isBusy}
+                  className={`flex h-12 items-center justify-center gap-2 rounded-2xl text-sm font-black transition disabled:opacity-60 ${
+                    post.liked_by_user ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-600 hover:bg-rose-50 hover:text-rose-600'
+                  }`}
+                >
+                  <Heart className={`h-4 w-4 ${post.liked_by_user ? 'fill-current' : ''}`} />
+                  {compactCount(post.likes_count)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onFavorite(post)}
+                  disabled={isBusy}
+                  className={`flex h-12 items-center justify-center gap-2 rounded-2xl text-sm font-black transition disabled:opacity-60 ${
+                    post.favorited_by_user ? 'bg-cyan-50 text-cyan-700' : 'bg-slate-50 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700'
+                  }`}
+                >
+                  <Bookmark className={`h-4 w-4 ${post.favorited_by_user ? 'fill-current' : ''}`} />
+                  Save
+                </button>
+                <div className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-50 text-sm font-black text-slate-600">
+                  <MessageCircle className="h-4 w-4" />
+                  {compactCount(post.comments_count)}
+                </div>
+              </div>
+
+              <div className="space-y-4 border-t border-slate-100 pt-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-700">Komentar</p>
+                {post.comments.length ? post.comments.map((comment) => (
+                  <article key={comment.id} className={`flex gap-3 rounded-3xl border border-slate-100 bg-slate-50/70 p-4 ${comment.parent_id ? 'ml-8' : ''}`}>
+                    <img src={comment.author_avatar_url} alt={comment.author_name} className="h-10 w-10 rounded-2xl object-cover" />
+                    <div className="min-w-0 flex-1 text-left">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-sm font-black text-slate-950">{comment.author_name}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{formatTime(comment.created_at)}</p>
+                      </div>
+                      <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{comment.content}</p>
+                      {comment.attachment_url && (
+                        <a href={comment.attachment_url} target="_blank" rel="noreferrer" className="mt-3 block overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                          <img src={comment.attachment_url} alt="Lampiran komentar" className="max-h-64 w-full object-cover" />
+                        </a>
+                      )}
+                    </div>
+                  </article>
+                )) : (
+                  <div className="rounded-3xl border border-dashed border-slate-200 p-10 text-center">
+                    <MessageCircle className="mx-auto h-10 w-10 text-slate-300" />
+                    <p className="mt-3 text-sm font-black text-slate-500">Belum ada komentar.</p>
+                  </div>
                 )}
               </div>
-            </article>
-          )) : (
-            <div className="rounded-3xl border border-dashed border-slate-200 p-10 text-center">
-              <MessageCircle className="mx-auto h-10 w-10 text-slate-300" />
-              <p className="mt-3 text-sm font-black text-slate-500">Belum ada komentar.</p>
-            </div>
-          )}
+            </section>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 p-4 pb-safe-bottom">
@@ -735,7 +940,7 @@ export default function SocialHub() {
                   post={post}
                   onLike={(item) => likeMutation.mutate(item)}
                   onFavorite={(item) => favoriteMutation.mutate(item)}
-                  onOpenComments={(item) => setSelectedPostId(item.id)}
+                  onOpenDetail={(item) => setSelectedPostId(item.id)}
                   isBusy={busyPostId === post.id}
                 />
               ))}
@@ -767,7 +972,15 @@ export default function SocialHub() {
             </motion.div>
           </div>
         )}
-        {selectedPost && <CommentsDrawer post={selectedPost} onClose={() => setSelectedPostId(null)} />}
+        {selectedPost && (
+          <PostDetailDrawer
+            post={selectedPost}
+            onClose={() => setSelectedPostId(null)}
+            onLike={(item) => likeMutation.mutate(item)}
+            onFavorite={(item) => favoriteMutation.mutate(item)}
+            isBusy={busyPostId === selectedPost.id}
+          />
+        )}
       </AnimatePresence>
     </div>
   )
