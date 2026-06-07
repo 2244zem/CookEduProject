@@ -69,9 +69,9 @@ function RecipeCard({
   const category = recipe.category?.name || recipe.category || 'Recipe'
 
   return (
-    <article className="group overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl sm:rounded-[26px]">
+    <article className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
       <Link to={`/recipes/${recipe.id}`} className="block text-left">
-        <div className="relative h-44 overflow-hidden bg-slate-100 sm:h-48 lg:h-auto lg:aspect-[4/3]">
+        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
           <img
             src={imageUrl}
             onError={(event) => { event.currentTarget.src = avatarFallbackUrl(recipe.title || 'CookEdu') }}
@@ -79,20 +79,21 @@ function RecipeCard({
             loading="lazy"
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           />
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/55 to-transparent" />
-          <span className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full border border-white/60 bg-white/90 px-3 py-1 text-[9px] font-black uppercase tracking-wide text-cyan-700">
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/70 to-transparent" />
+          <span className="absolute left-4 top-4 max-w-[calc(100%-2rem)] truncate rounded-full border border-white/60 bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-slate-700">
             {category}
           </span>
         </div>
       </Link>
 
-      <div className="space-y-3 p-4 text-left sm:p-5">
+      <div className="space-y-4 p-5 text-left">
         <div>
-          <h2 className="line-clamp-2 min-h-[42px] text-base font-black leading-snug text-slate-950 sm:min-h-[48px] sm:text-lg">{recipe.title || 'Resep CookEdu'}</h2>
-          <p className="mt-2 hidden text-sm font-semibold leading-6 text-slate-600 sm:line-clamp-2">{recipe.description || 'Resep komunitas CookEdu.'}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">{category}</p>
+          <h2 className="mt-2 line-clamp-2 text-xl font-black leading-tight text-slate-950">{recipe.title || 'Resep CookEdu'}</h2>
+          <p className="mt-2 line-clamp-3 text-sm font-semibold leading-6 text-slate-600">{recipe.description || 'Resep komunitas CookEdu.'}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-[11px] font-black text-slate-500">
+        <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-wide text-slate-500">
           <span className="flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1">
             <Clock className="h-3.5 w-3.5 text-cyan-700" />
             {recipe.cooking_time || recipe.prepTime || 20}m
@@ -105,10 +106,10 @@ function RecipeCard({
           </span>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+        <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
           <button
             onClick={onAdd}
-            className="flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-cyan-700 sm:flex-none sm:px-4"
+            className="flex h-10 items-center gap-2 rounded-2xl bg-slate-950 px-4 text-xs font-black uppercase tracking-widest text-white transition hover:bg-cyan-700"
           >
             <ShoppingCart className="h-4 w-4 shrink-0" />
             Belanja
@@ -522,34 +523,36 @@ export default function RecipeList() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-3 py-4 pb-[11rem] text-slate-950 sm:px-4 lg:px-8 lg:py-8 lg:pb-8">
-      <div className="mx-auto max-w-[1480px] space-y-4 sm:space-y-6">
-        <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[30px] sm:p-6">
+    <div className="min-h-screen bg-slate-50 px-4 py-5 text-slate-950 lg:px-8 lg:py-8">
+      <div className="mx-auto max-w-[1480px] space-y-6">
+        <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div className="text-left">
               <div className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">
                 <ChefHat className="h-3.5 w-3.5" />
                 Recipe Catalog
               </div>
-              <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl md:text-6xl">CookEdu Recipes</h1>
-              <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-600 sm:mt-3 sm:leading-7">
+              <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 md:text-6xl">CookEdu Recipes</h1>
+              <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-slate-600">
                 Browse, save, and prepare recipes from Supabase in a focused kitchen catalog.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:w-80">
-              <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-3 text-left sm:p-4">
-                <p className="text-2xl font-black text-slate-950 sm:text-3xl">{filteredRecipes.length}</p>
+            <div className="grid grid-cols-2 gap-3 md:w-72">
+              <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-left">
+                <ChefHat className="h-5 w-5 text-cyan-700" />
+                <p className="mt-3 text-3xl font-black text-slate-950">{filteredRecipes.length}</p>
                 <p className="text-xs font-black uppercase tracking-wide text-slate-500">Resep siap</p>
               </div>
-              <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-left sm:p-4">
-                <p className="text-2xl font-black text-slate-950 sm:text-3xl">{groups.length}</p>
+              <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-left">
+                <ShoppingCart className="h-5 w-5 text-amber-700" />
+                <p className="mt-3 text-3xl font-black text-slate-950">{groups.length}</p>
                 <p className="text-xs font-black uppercase tracking-wide text-slate-500">Daftar belanja</p>
               </div>
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 md:flex-row">
+          <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan-700" />
               <input
@@ -561,7 +564,7 @@ export default function RecipeList() {
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex h-[52px] items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition hover:bg-cyan-700 md:h-14 md:text-sm"
+              className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black uppercase tracking-widest text-white shadow-sm transition hover:bg-cyan-700"
             >
               <Plus className="h-5 w-5 text-cyan-300" />
               Tambah Resep
@@ -569,53 +572,70 @@ export default function RecipeList() {
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
-          <aside className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[28px]">
-            <h2 className="px-2 text-left text-sm font-black uppercase tracking-[0.2em] text-slate-500">Kategori</h2>
-            <div className="mt-4 flex gap-2 overflow-x-auto lg:block lg:space-y-2">
-              {categories.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => setActiveCategory(item)}
-                  className={`h-11 shrink-0 rounded-2xl px-4 text-left text-xs font-black transition lg:flex lg:w-full lg:items-center lg:justify-between ${
-                    activeCategory === item ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700'
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </aside>
+        <div className="flex overflow-x-auto rounded-[24px] border border-slate-200 bg-white p-2 shadow-sm">
+          {categories.map((item) => {
+            const count = item === 'SEMUA'
+              ? recipes.length
+              : recipes.filter((recipe: any) => String(recipe.category || '').toUpperCase() === item).length
 
-          <div className="min-w-0">
-            {recipesQuery.isLoading ? (
-              <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-12 text-center">
-                <Loader2 className="mx-auto h-10 w-10 animate-spin text-cyan-700" />
-                <p className="mt-3 text-sm font-black text-slate-500">Memuat resep...</p>
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setActiveCategory(item)}
+                className={`h-11 min-w-28 flex-1 shrink-0 rounded-2xl px-4 text-xs font-black uppercase tracking-widest transition ${
+                  activeCategory === item
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                {item === 'SEMUA' ? 'All' : item} <span className="opacity-70">({count})</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {recipesQuery.isError ? (
+          <div className="rounded-[30px] border border-amber-200 bg-amber-50 p-8 text-left">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                <ChefHat className="h-6 w-6" />
               </div>
-            ) : filteredRecipes.length ? (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {filteredRecipes.map((recipe: any, index: number) => (
-                  <RecipeCard
-                    key={`${recipe.id || recipe.title}-${index}`}
-                    recipe={recipe}
-                    canFavorite={isUuid(recipe.id)}
-                    isFavorite={favoriteSet.has(recipe.id)}
-                    canDelete={user?.role === 'admin' && isUuid(recipe.id)}
-                    onFavorite={() => isUuid(recipe.id) && favoriteMutation.mutate(recipe.id)}
-                    onDelete={() => recipe.id && deleteMutation.mutate(recipe.id)}
-                    onAdd={() => handleAddRecipeToShopping(recipe)}
-                  />
-                ))}
+              <div>
+                <h2 className="text-lg font-black text-slate-950">Recipes belum tersambung ke Supabase.</h2>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+                  Cek koneksi Supabase dan pastikan tabel recipes dapat dibaca oleh aplikasi.
+                </p>
               </div>
-            ) : (
-              <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-12 text-center">
-                <ChefHat className="mx-auto h-12 w-12 text-slate-300" />
-                <p className="mt-3 text-base font-black text-slate-600">Resep tidak ditemukan.</p>
-              </div>
-            )}
+            </div>
           </div>
-        </section>
+        ) : recipesQuery.isLoading ? (
+          <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-12 text-center">
+            <Loader2 className="mx-auto h-10 w-10 animate-spin text-cyan-700" />
+            <p className="mt-3 text-sm font-black text-slate-500">Memuat resep...</p>
+          </div>
+        ) : filteredRecipes.length ? (
+          <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {filteredRecipes.map((recipe: any, index: number) => (
+              <RecipeCard
+                key={`${recipe.id || recipe.title}-${index}`}
+                recipe={recipe}
+                canFavorite={isUuid(recipe.id)}
+                isFavorite={favoriteSet.has(recipe.id)}
+                canDelete={user?.role === 'admin' && isUuid(recipe.id)}
+                onFavorite={() => isUuid(recipe.id) && favoriteMutation.mutate(recipe.id)}
+                onDelete={() => recipe.id && deleteMutation.mutate(recipe.id)}
+                onAdd={() => handleAddRecipeToShopping(recipe)}
+              />
+            ))}
+          </section>
+        ) : (
+          <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-12 text-center">
+            <ChefHat className="mx-auto h-12 w-12 text-slate-300" />
+            <h2 className="mt-4 text-xl font-black text-slate-700">Resep tidak ditemukan.</h2>
+            <p className="mt-2 text-sm font-semibold text-slate-500">Coba kata kunci atau kategori lain.</p>
+          </div>
+        )}
       </div>
 
       <RecipeCreateModal
