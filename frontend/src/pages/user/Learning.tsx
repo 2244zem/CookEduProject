@@ -10,6 +10,109 @@ import { lessonApi, categoryApi } from '../../lib/api'
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
 
+const fallbackCategories = [
+  { id: 'fundamental', name: 'Dasar Memasak' },
+  { id: 'technique', name: 'Teknik Dapur' },
+  { id: 'plating', name: 'Plating Rumahan' },
+]
+
+const fallbackLessons = [
+  {
+    id: 'knife-basics',
+    title: 'Knife Skills untuk Pemula',
+    summary: 'Cara memegang pisau, memotong bahan dengan aman, dan menjaga ritme prep di dapur.',
+    content: 'Mulai dari posisi tangan yang aman, gunakan talenan stabil, lalu potong bahan dari ukuran besar ke kecil. Fokus pada kontrol, bukan kecepatan.',
+    duration: 12,
+    level: 'beginner',
+    level_label: 'Beginner',
+    order_index: 1,
+    category: fallbackCategories[0],
+    is_completed: false,
+  },
+  {
+    id: 'heat-control',
+    title: 'Kontrol Api dan Panas',
+    summary: 'Mengenali kapan memakai api kecil, sedang, dan besar agar masakan tidak cepat gosong.',
+    content: 'Gunakan api besar untuk memanaskan awal, api sedang untuk menumis stabil, dan api kecil untuk saus atau masakan yang perlu matang perlahan.',
+    duration: 15,
+    level: 'beginner',
+    level_label: 'Beginner',
+    order_index: 2,
+    category: fallbackCategories[1],
+    is_completed: false,
+  },
+  {
+    id: 'home-plating',
+    title: 'Plating Natural di Rumah',
+    summary: 'Membuat makanan terlihat rapi tanpa garnish berlebihan dan tanpa alat restoran.',
+    content: 'Pilih piring bersih, taruh komponen utama sedikit off-center, tambah warna dari sayur atau saus, lalu sisakan ruang kosong agar makanan terlihat lebih tenang.',
+    duration: 10,
+    level: 'intermediate',
+    level_label: 'Intermediate',
+    order_index: 3,
+    category: fallbackCategories[2],
+    is_completed: false,
+  },
+]
+
+function unwrapArray(payload: any, keys: string[] = []) {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.data?.data)) return payload.data.data
+  if (Array.isArray(payload?.data)) return payload.data
+
+  for (const key of keys) {
+    if (Array.isArray(payload?.[key])) return payload[key]
+    if (Array.isArray(payload?.data?.[key])) return payload.data[key]
+  }
+
+  return []
+}
+
+function getCategoryId(category: any) {
+  return String(category?.id ?? category?.slug ?? category?.name ?? 'uncategorized')
+}
+
+function normalizeCategory(category: any, index: number) {
+  const id = getCategoryId(category)
+  return {
+    ...category,
+    id,
+    name: category?.name || category?.title || `Modul ${index + 1}`,
+  }
+}
+
+function normalizeLesson(lesson: any, index: number, categories: any[]) {
+  const rawCategory = lesson?.category || lesson?.categories || lesson?.category_name || categories[index % Math.max(categories.length, 1)] || fallbackCategories[0]
+  const category = typeof rawCategory === 'string'
+    ? { id: rawCategory.toLowerCase().replace(/\s+/g, '-'), name: rawCategory }
+    : normalizeCategory(rawCategory, index)
+
+  return {
+    ...lesson,
+    id: lesson?.id || `lesson-${index}`,
+    title: lesson?.title || `Modul CookEdu ${index + 1}`,
+    summary: lesson?.summary || lesson?.description || 'Pelajari teknik kuliner praktis dengan langkah yang mudah diikuti.',
+    content: lesson?.content || lesson?.description || 'Konten pembelajaran sedang disiapkan.',
+    duration: Number(lesson?.duration) || 10,
+    level: lesson?.level || lesson?.difficulty || 'beginner',
+    level_label: lesson?.level_label || lesson?.level || lesson?.difficulty || 'Beginner',
+    order_index: lesson?.order_index ?? index + 1,
+    thumbnail: lesson?.thumbnail || lesson?.thumbnail_url || lesson?.image_url || '',
+    category,
+    is_completed: Boolean(lesson?.is_completed),
+  }
+}
+
+function deriveCategories(lessons: any[]) {
+  const map = new Map<string, any>()
+  lessons.forEach((lesson, index) => {
+    const category = normalizeCategory(lesson.category || fallbackCategories[index % fallbackCategories.length], index)
+    map.set(getCategoryId(category), category)
+  })
+
+  return Array.from(map.values())
+}
+
 export default function Learning() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -31,10 +134,16 @@ export default function Learning() {
         lessonApi.list(),
         categoryApi.list()
       ])
-      setLessons(lessonsRes.data.data)
-      setCategories(categoriesRes.data.data)
+      const apiCategories = unwrapArray(categoriesRes.data, ['categories']).map(normalizeCategory)
+      const normalizedLessons = unwrapArray(lessonsRes.data, ['lessons']).map((lesson, index) => normalizeLesson(lesson, index, apiCategories))
+      const nextLessons = normalizedLessons.length ? normalizedLessons : fallbackLessons
+      const nextCategories = apiCategories.length ? apiCategories : deriveCategories(nextLessons)
+      setLessons(nextLessons)
+      setCategories(nextCategories.length ? nextCategories : fallbackCategories)
     } catch (err) {
-      console.error(err)
+      console.warn('CookEdu learning fallback active:', err)
+      setLessons(fallbackLessons)
+      setCategories(fallbackCategories)
     } finally {
       setLoading(false)
     }
@@ -58,6 +167,9 @@ export default function Learning() {
     }
     return url
   }
+
+  const safeCategories = Array.isArray(categories) ? categories : fallbackCategories
+  const safeLessons = Array.isArray(lessons) ? lessons : fallbackLessons
 
   return (
     <div className="min-h-screen relative font-sans overflow-x-hidden bg-transparent text-slate-800 pb-40">
@@ -94,18 +206,19 @@ export default function Learning() {
             </div>
           ) : (
             <div className="space-y-16">
-              {categories.map((category) => {
-                const categoryLessons = lessons.filter(l => l.category?.id === category.id)
+              {safeCategories.map((category) => {
+                const categoryId = getCategoryId(category)
+                const categoryLessons = safeLessons.filter(l => getCategoryId(l.category) === categoryId)
                 if (categoryLessons.length === 0) return null
 
                 return (
                   <section key={category.id} className="space-y-6">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-2xl bg-cyan-600 text-white flex items-center justify-center text-lg font-black shadow-lg">
-                        {category.id}
+                        {String(category.name || category.id).slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">{category.name}</h2>
+                        <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">{category.name || 'Modul CookEdu'}</h2>
                         <p className="text-[9px] font-black text-cyan-600 uppercase tracking-widest">Modul Pembelajaran</p>
                       </div>
                     </div>
@@ -174,21 +287,21 @@ export default function Learning() {
               <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                 <div className="flex items-center gap-4 mb-6">
                   <span className="px-4 py-1.5 rounded-full bg-cyan-100 text-cyan-600 text-[9px] font-black uppercase tracking-widest border border-cyan-200">
-                    {selectedLesson.level}
+                    {selectedLesson.level || 'beginner'}
                   </span>
                   <div className="flex items-center gap-2 text-slate-400 text-[9px] font-black uppercase tracking-widest">
                     <Clock className="w-4 h-4" />
-                    {selectedLesson.duration} Menit
+                    {selectedLesson.duration || 10} Menit
                   </div>
                 </div>
 
                 <h2 className="text-3xl font-black text-slate-900 mb-6 leading-tight tracking-tight">
-                  {selectedLesson.title}
+                  {selectedLesson.title || 'Modul CookEdu'}
                 </h2>
 
                 <div 
                   className="prose prose-slate max-w-none text-slate-600 leading-relaxed mb-12 text-sm font-medium"
-                  dangerouslySetInnerHTML={{ __html: selectedLesson.content }}
+                  dangerouslySetInnerHTML={{ __html: String(selectedLesson.content || 'Konten pembelajaran sedang disiapkan.') }}
                 />
 
                 <button 
