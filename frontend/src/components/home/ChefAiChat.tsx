@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Bot, RotateCcw, Send } from 'lucide-react'
 import { useToastStore } from '../../store/toastStore'
 import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
+import { buildLocalChefReply } from '../../lib/chefLocalBrain'
 
 interface Message {
   id: string
@@ -26,6 +27,11 @@ export default function ChefAiChat() {
   const [retryMessage, setRetryMessage] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pushToast = useToastStore((state) => state.pushToast)
+  const quickPrompts = [
+    'Ide menu dari telur',
+    'Ganti santan',
+    'Tips plating cepat',
+  ]
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -59,17 +65,20 @@ export default function ChefAiChat() {
         timestamp: new Date(),
       }])
       setRetryMessage(null)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Chef AI gagal dipanggil.'
+    } catch {
+      const message = buildLocalChefReply(prompt)
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         type: 'ai',
         text: message,
         timestamp: new Date(),
-        error: true,
       }])
       setRetryMessage(prompt)
-      pushToast({ tone: 'error', title: 'Chef AI gagal', message })
+      pushToast({
+        tone: 'warning',
+        title: 'Chef AI memakai mode lokal',
+        message: 'Koneksi AI utama sedang tidak stabil, jadi CookEdu menjawab dari otak lokal dulu.',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -88,7 +97,7 @@ export default function ChefAiChat() {
           </div>
           <div>
             <h2 className="text-sm font-bold text-white">Chef AI Assistant</h2>
-            <p className="text-xs text-white/75">Gemini via Supabase</p>
+            <p className="text-xs text-white/75">Gemini plus CookEdu Local Brain</p>
           </div>
         </div>
       </div>
@@ -147,19 +156,34 @@ export default function ChefAiChat() {
       )}
 
       <div className="flex gap-2 border-t border-slate-200 bg-white p-3">
-        <input
-          type="text"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={(event) => event.key === 'Enter' && handleSendMessage()}
-          placeholder="Tanya Chef AI..."
-          disabled={isLoading}
-          className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#7C94B8]"
-        />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex gap-2 overflow-x-auto">
+            {quickPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => handleSendMessage(prompt)}
+                disabled={isLoading}
+                className="h-8 shrink-0 rounded-full bg-slate-50 px-3 text-[11px] font-black text-[#2A4D88] transition hover:bg-[#B1BBC8]/25 disabled:opacity-60"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSendMessage()}
+            placeholder="Tanya Chef AI..."
+            disabled={isLoading}
+            className="w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#7C94B8]"
+          />
+        </div>
         <button
           onClick={() => handleSendMessage()}
           disabled={isLoading || !input.trim()}
-          className="rounded-full bg-[#2A4D88] p-3 text-white shadow-md transition hover:bg-[#1f3f73] disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-end rounded-full bg-[#2A4D88] p-3 text-white shadow-md transition hover:bg-[#1f3f73] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Send className="h-5 w-5" />
         </button>

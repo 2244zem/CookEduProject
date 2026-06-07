@@ -5,5 +5,6 @@ backend/node_modules
 frontend/node_modules
 frontend/dist
 frontend/.env
+supabase/.temp/
 mingit.zip
 git-portable/

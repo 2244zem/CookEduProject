@@ -6,6 +6,7 @@ import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 import { useToastStore } from '../../store/toastStore'
 import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
 import { getPreferredIdentityName } from '../../lib/supabaseClient'
+import { buildLocalChefReply } from '../../lib/chefLocalBrain'
 
 type Message = {
   id: string
@@ -58,8 +59,14 @@ export default function AiAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: shouldReduceMotion ? 'auto' : 'smooth' })
   }, [messages, isOpen, shouldReduceMotion])
 
-  const handleSend = async () => {
-    const prompt = input.trim()
+  const quickPrompts = [
+    'Bantu ide menu dari telur dan nasi',
+    'Ganti santan pakai bahan lain',
+    'Bikin plating rumahan lebih cantik',
+  ]
+
+  const handleSend = async (nextPrompt?: string) => {
+    const prompt = (nextPrompt || input).trim()
     if (!prompt || isLoading) return
 
     setInput('')
@@ -85,14 +92,18 @@ export default function AiAssistant() {
         role: 'model',
         content: response.data.reply || 'Maaf, Chef AI belum punya jawaban untuk pertanyaan itu.',
       }])
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Chef AI gagal dipanggil.'
+    } catch {
+      const message = buildLocalChefReply(prompt, displayName)
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
-        role: 'system',
+        role: 'model',
         content: message,
       }])
-      pushToast({ tone: 'error', title: 'Chef AI gagal', message })
+      pushToast({
+        tone: 'warning',
+        title: 'Chef AI memakai mode lokal',
+        message: 'Koneksi AI utama sedang tidak stabil, jadi CookEdu menjawab dari otak lokal dulu.',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -148,6 +159,19 @@ export default function AiAssistant() {
             </main>
 
             <footer className="border-t border-slate-100 p-3">
+              <div className="mb-3 flex gap-2 overflow-x-auto">
+                {quickPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => handleSend(prompt)}
+                    disabled={isLoading}
+                    className="h-9 shrink-0 rounded-full border border-cyan-100 bg-cyan-50 px-3 text-[11px] font-black text-cyan-800 transition hover:border-cyan-200 hover:bg-cyan-100 disabled:opacity-60"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center gap-2">
                 <input
                   value={input}

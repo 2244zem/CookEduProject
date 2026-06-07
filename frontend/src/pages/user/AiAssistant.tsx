@@ -4,6 +4,9 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Bot, ChefHat, Loader2, Send, Utensils, Zap } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import { getPreferredIdentityName } from '../../lib/supabaseClient'
+import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
+import { buildLocalChefReply } from '../../lib/chefLocalBrain'
+import { useToastStore } from '../../store/toastStore'
 
 type Message = {
   id: string
@@ -14,6 +17,7 @@ type Message = {
 export default function AiAssistantPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const pushToast = useToastStore((state) => state.pushToast)
   const displayName = getPreferredIdentityName({
     username: user?.username,
     name: user?.name,
@@ -32,34 +36,39 @@ export default function AiAssistantPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const getChefResponse = (input: string) => {
-    const query = input.toLowerCase()
-
-    if (query.includes('substitusi') || query.includes('ganti') || query.includes('bahan')) {
-      return 'Untuk substitusi bahan, cari fungsi utamanya dulu: lemak, cairan, asam, aroma, atau tekstur. Contoh: cooking cream bisa diganti susu cair plus sedikit butter; parmesan bisa diganti cheddar parut halus; kecap asin bisa diganti garam plus sedikit kaldu jamur.'
-    }
-
-    if (query.includes('langkah') || query.includes('pandu') || query.includes('cara')) {
-      return 'Mulai dari mise en place: timbang bahan, potong seragam, panaskan alat, lalu masak dari bahan yang butuh waktu paling lama. Setelah matang, koreksi rasa di akhir agar garam dan asam tidak berlebihan.'
-    }
-
-    if (query.includes('plating')) {
-      return 'Untuk plating cepat: pilih satu titik fokus, gunakan kontras warna, beri ruang kosong, lalu tambahkan tekstur renyah terakhir agar tidak lembek. Saus sebaiknya dituang tipis, bukan menenggelamkan bahan utama.'
-    }
-
-    return 'Pertanyaan bagus. Kirim nama bahan atau resep yang kamu pegang, nanti Chef bantu pecah menjadi bahan, langkah, risiko gagal, dan opsi pengganti yang masuk akal.'
-  }
-
-  const handleSend = (textToSend = inputValue) => {
+  const handleSend = async (textToSend = inputValue) => {
     if (!textToSend.trim()) return
-    const userMessage = { id: crypto.randomUUID(), text: textToSend.trim(), sender: 'user' as const }
+    const prompt = textToSend.trim()
+    const history: ChefAiHistoryItem[] = messages.map((message) => ({
+      role: message.sender === 'ai' ? 'model' : 'user',
+      content: message.text,
+    }))
+    const userMessage = { id: crypto.randomUUID(), text: prompt, sender: 'user' as const }
     setMessages((prev) => [...prev, userMessage])
     setInputValue('')
     setIsTyping(true)
-    window.setTimeout(() => {
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), text: getChefResponse(textToSend), sender: 'ai' }])
+
+    try {
+      const response = await chefAiApi.chat({ prompt, history, user_name: displayName })
+      setMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        text: response.data.reply || buildLocalChefReply(prompt, displayName),
+        sender: 'ai',
+      }])
+    } catch {
+      setMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        text: buildLocalChefReply(prompt, displayName),
+        sender: 'ai',
+      }])
+      pushToast({
+        tone: 'warning',
+        title: 'Chef AI memakai mode lokal',
+        message: 'Koneksi AI utama sedang tidak stabil, jadi CookEdu menjawab dari otak lokal dulu.',
+      })
+    } finally {
       setIsTyping(false)
-    }, 650)
+    }
   }
 
   const suggestions = [
@@ -85,7 +94,7 @@ export default function AiAssistantPage() {
               </div>
               <div>
                 <p className="text-sm font-black text-slate-950">Chef AI Sous-Chef</p>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">Focused cooking assistant</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">Gemini plus CookEdu Local Brain</p>
               </div>
             </div>
           </div>
