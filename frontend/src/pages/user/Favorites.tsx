@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, Bookmark, ChefHat, ExternalLink, Heart, Loader2, Trash2 } from 'lucide-react'
@@ -51,6 +52,7 @@ function FavoriteCard({ item, onRemove, isRemoving }: {
 
 export default function Favorites() {
   const queryClient = useQueryClient()
+  const [filter, setFilter] = useState<'all' | 'recipe' | 'post'>('all')
   const favoritesQuery = useQuery({
     queryKey: ['favorite-items'],
     queryFn: listFavoriteItems,
@@ -65,8 +67,14 @@ export default function Favorites() {
   })
 
   const items = favoritesQuery.data || []
+  const filteredItems = filter === 'all' ? items : items.filter((item) => item.item_type === filter)
   const recipeCount = items.filter((item) => item.item_type === 'recipe').length
   const postCount = items.filter((item) => item.item_type === 'post').length
+  const filters = [
+    { id: 'all', label: 'All', count: items.length },
+    { id: 'recipe', label: 'Recipes', count: recipeCount },
+    { id: 'post', label: 'Posts', count: postCount },
+  ] as const
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-5 text-slate-950 lg:px-8 lg:py-8">
@@ -99,6 +107,23 @@ export default function Favorites() {
           </div>
         </section>
 
+        <div className="flex overflow-x-auto rounded-[24px] border border-slate-200 bg-white p-2 shadow-sm">
+          {filters.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilter(item.id)}
+              className={`h-11 min-w-28 flex-1 rounded-2xl px-4 text-xs font-black uppercase tracking-widest transition ${
+                filter === item.id
+                  ? 'bg-cyan-600 text-white shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+              }`}
+            >
+              {item.label} <span className="opacity-70">({item.count})</span>
+            </button>
+          ))}
+        </div>
+
         {favoritesQuery.isError ? (
           <div className="rounded-[30px] border border-amber-200 bg-amber-50 p-8 text-left">
             <div className="flex items-start gap-4">
@@ -118,9 +143,9 @@ export default function Favorites() {
             <Loader2 className="mx-auto h-10 w-10 animate-spin text-cyan-700" />
             <p className="mt-3 text-sm font-black text-slate-500">Loading favorites...</p>
           </div>
-        ) : items.length ? (
+        ) : filteredItems.length ? (
           <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <FavoriteCard
                 key={item.favorite_id}
                 item={item}
@@ -132,8 +157,12 @@ export default function Favorites() {
         ) : (
           <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-12 text-center">
             <Bookmark className="mx-auto h-12 w-12 text-slate-300" />
-            <h2 className="mt-4 text-xl font-black text-slate-700">Belum ada favorit.</h2>
-            <p className="mt-2 text-sm font-semibold text-slate-500">Simpan resep atau social post dari feed untuk mulai mengisi halaman ini.</p>
+            <h2 className="mt-4 text-xl font-black text-slate-700">
+              {items.length ? 'Tidak ada item di filter ini.' : 'Belum ada favorit.'}
+            </h2>
+            <p className="mt-2 text-sm font-semibold text-slate-500">
+              {items.length ? 'Pilih filter lain untuk melihat simpananmu.' : 'Simpan resep atau social post dari feed untuk mulai mengisi halaman ini.'}
+            </p>
           </div>
         )}
       </div>

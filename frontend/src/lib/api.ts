@@ -109,15 +109,24 @@ type CoinCheckoutPayload = {
 async function getFunctionErrorMessage(error: unknown) {
   const functionError = error as { message?: string; context?: Response } | null;
   const context = functionError?.context;
+  const status = context?.status || 0;
 
   if (context) {
     try {
       const payload = await context.clone().json();
       if (payload?.message) return String(payload.message);
+      if (payload?.error) return String(payload.error);
+      if (payload?.details) return String(payload.details);
     } catch {
       // Keep the original Supabase Functions message below.
     }
   }
+
+  if (status === 401) return 'Sesi kamu sudah habis. Silakan login ulang.';
+  if (status === 403) return 'Akses ditolak untuk fitur wallet ini.';
+  if (status === 404) return 'Endpoint coins atau data transaksi tidak ditemukan.';
+  if (status === 429) return 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.';
+  if (status >= 500) return 'Supabase Edge Function coins gagal. Periksa deployment function, tabel wallet, dan secret Midtrans.';
 
   return functionError?.message || 'Supabase Function gagal dipanggil.';
 }

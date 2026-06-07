@@ -226,7 +226,7 @@ function Composer({
   return (
     <form
       onSubmit={handleSubmit}
-      className={`rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm ${compact ? '' : 'sticky top-28'}`}
+      className={`rounded-[28px] border border-slate-200 bg-white p-5 pb-safe-bottom shadow-sm ${compact ? '' : 'sticky top-28'}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="text-left">
@@ -306,9 +306,9 @@ function Composer({
         <button
           type="submit"
           disabled={createMutation.isPending}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 text-sm font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-cyan-700 disabled:opacity-60"
+          className={`flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-cyan-600 text-sm font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-cyan-700 disabled:opacity-60 ${compact ? 'sticky bottom-0 z-10' : ''}`}
         >
-          {createMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5 text-cyan-300" />}
+          {createMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5 text-white" />}
           {createMutation.isPending ? 'Uploading...' : 'Publish Post'}
         </button>
       </div>
@@ -357,7 +357,7 @@ function CommentsDrawer({
   }
 
   return (
-    <div className="fixed inset-0 z-[130] flex items-end justify-center lg:items-center">
+    <div className="fixed inset-0 z-[1300] flex items-end justify-center lg:items-center">
       <motion.button
         type="button"
         initial={{ opacity: 0 }}
@@ -408,7 +408,7 @@ function CommentsDrawer({
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 p-4">
+        <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 p-4 pb-safe-bottom">
           {error && <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</p>}
           {progress > 0 && (
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
@@ -447,6 +447,7 @@ export default function SocialHub() {
   const [activeCategory, setActiveCategory] = useState<'All' | SocialCategory>('All')
   const [showMobileComposer, setShowMobileComposer] = useState(false)
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
+  const [socialActionError, setSocialActionError] = useState('')
 
   const displayName = user?.name || user?.username || 'Koki CookEdu'
   const avatarUrl = resolveMediaUrl(user?.avatar_url || user?.avatar) || avatarFallbackUrl(displayName)
@@ -465,15 +466,19 @@ export default function SocialHub() {
 
   const likeMutation = useMutation({
     mutationFn: (post: SocialPostView) => toggleSocialPostLike(post.id),
+    onMutate: () => setSocialActionError(''),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['social-posts'] }),
+    onError: (err: any) => setSocialActionError(err?.message || 'Like gagal diproses. Silakan login ulang jika sesi habis.'),
   })
 
   const favoriteMutation = useMutation({
     mutationFn: (post: SocialPostView) => toggleFavoriteItem(post.id, 'post'),
+    onMutate: () => setSocialActionError(''),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['social-posts'] })
       queryClient.invalidateQueries({ queryKey: ['favorite-items'] })
     },
+    onError: (err: any) => setSocialActionError(err?.message || 'Favorit gagal diproses. Silakan login ulang jika sesi habis.'),
   })
 
   const posts = postsQuery.data || []
@@ -568,6 +573,13 @@ export default function SocialHub() {
             </div>
           </section>
 
+          {socialActionError && (
+            <div className="flex items-start gap-3 rounded-[24px] border border-rose-100 bg-rose-50 px-5 py-4 text-left text-sm font-bold text-rose-700">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+              <span>{socialActionError}</span>
+            </div>
+          )}
+
           {postsQuery.isError ? (
             <div className="rounded-[30px] border border-amber-200 bg-amber-50 p-8 text-left">
               <div className="flex items-start gap-4">
@@ -616,12 +628,12 @@ export default function SocialHub() {
 
       <AnimatePresence>
         {showMobileComposer && (
-          <div className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[1200] flex items-end justify-center bg-slate-950/60 p-3 pb-safe-bottom backdrop-blur-sm sm:p-4">
             <motion.div
               initial={{ y: 80, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
-              className="max-h-[92vh] w-full max-w-lg overflow-y-auto"
+              className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-[28px]"
             >
               <Composer compact onClose={() => setShowMobileComposer(false)} />
             </motion.div>

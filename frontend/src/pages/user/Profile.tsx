@@ -38,6 +38,30 @@ type WalletTransaction = {
   created_at: string
 }
 
+function getWalletErrorMessage(error: any, fallback: string) {
+  const rawMessage = String(error?.response?.data?.message || error?.message || fallback)
+  const lowerMessage = rawMessage.toLowerCase()
+  const status = Number(error?.response?.status || 0)
+
+  if (status === 401 || lowerMessage.includes('session') || lowerMessage.includes('sesi')) {
+    return 'Sesi kamu sudah habis. Silakan login ulang.'
+  }
+  if (status === 403 || lowerMessage.includes('forbidden') || lowerMessage.includes('akses')) {
+    return 'Akses ditolak. Fitur ini membutuhkan izin akun yang sesuai.'
+  }
+  if (status === 404 || lowerMessage.includes('not found') || lowerMessage.includes('tidak ditemukan')) {
+    return 'Data transaksi belum ditemukan. Coba refresh wallet atau buat QRIS baru.'
+  }
+  if (status === 429 || lowerMessage.includes('rate limit') || lowerMessage.includes('too many')) {
+    return 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.'
+  }
+  if (status >= 500 || lowerMessage.includes('edge function') || lowerMessage.includes('function')) {
+    return 'Sistem pembayaran belum siap. Periksa Supabase Edge Function coins dan secret Midtrans.'
+  }
+
+  return rawMessage || fallback
+}
+
 export default function Profile() {
   const { user, setAuth, logout } = useAuthStore()
   const navigate = useNavigate()
@@ -59,6 +83,7 @@ export default function Profile() {
   const [walletHistoryLoading, setWalletHistoryLoading] = useState(false)
   const [walletActionLoading, setWalletActionLoading] = useState('')
   const [walletNotice, setWalletNotice] = useState('')
+  const isDevelopment = import.meta.env.DEV
   
   const [form, setForm] = useState({
     name: '',
@@ -187,7 +212,9 @@ export default function Profile() {
       const imageUrl = response.data.qris_image_url
       if (!imageUrl) throw new Error('Supabase belum mengembalikan qris_image_url.')
 
-      console.log('TESTING_URL:', imageUrl)
+      if (isDevelopment) {
+        console.log('TESTING_URL:', imageUrl)
+      }
       setQrisImageUrl(imageUrl)
       setQrisOrderId(response.data.order_id || '')
       await loadWalletHistory()
@@ -195,7 +222,7 @@ export default function Profile() {
       console.error('QRIS checkout failed:', err)
       setQrisImageUrl('')
       setQrisOrderId('')
-      setCoinError(err.response?.data?.message || err.message || 'Gagal membuat QRIS Midtrans.')
+      setCoinError(getWalletErrorMessage(err, 'Gagal membuat QRIS Midtrans.'))
     } finally {
       setCoinLoading(false)
     }
@@ -219,7 +246,7 @@ export default function Profile() {
       )
     } catch (err: any) {
       console.error('QRIS bypass failed:', err)
-      setCoinError(err.response?.data?.message || err.message || 'Gagal menjalankan sandbox bypass.')
+      setCoinError(getWalletErrorMessage(err, 'Gagal menjalankan sandbox bypass.'))
     } finally {
       setBypassLoading(false)
     }
@@ -236,7 +263,7 @@ export default function Profile() {
       await loadWalletHistory()
       setWalletNotice(response.data.message || 'Bonus harian berhasil diproses.')
     } catch (err: any) {
-      setCoinError(err.message || 'Gagal klaim bonus harian.')
+      setCoinError(getWalletErrorMessage(err, 'Gagal klaim bonus harian.'))
     } finally {
       setWalletActionLoading('')
     }
@@ -253,7 +280,7 @@ export default function Profile() {
       await loadWalletHistory()
       setWalletNotice(response.data.message || 'Koin berhasil dipakai.')
     } catch (err: any) {
-      setCoinError(err.message || 'Gagal memakai koin.')
+      setCoinError(getWalletErrorMessage(err, 'Gagal memakai koin.'))
     } finally {
       setWalletActionLoading('')
     }
@@ -419,9 +446,9 @@ export default function Profile() {
                   type="button"
                   onClick={handleBuyCoins}
                   disabled={coinLoading}
-                  className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black uppercase tracking-widest text-white transition hover:bg-cyan-700 disabled:opacity-60"
+                  className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-cyan-600 px-5 text-sm font-black uppercase tracking-widest text-white shadow-sm transition hover:bg-cyan-700 disabled:opacity-60"
                 >
-                  {coinLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <QrCode className="h-5 w-5 text-cyan-300" />}
+                  {coinLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <QrCode className="h-5 w-5 text-white" />}
                   Generate Sandbox QRIS
                 </button>
               </div>
@@ -447,15 +474,17 @@ export default function Profile() {
                       <p className="mt-4 break-all text-[10px] font-black uppercase tracking-wide text-slate-400">
                         {qrisOrderId || 'COOKEDU-QRIS'}
                       </p>
-                      <button
-                        type="button"
-                        onClick={handleBypassSuccess}
-                        disabled={bypassLoading || !qrisOrderId}
-                        className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 text-xs font-black uppercase tracking-wide text-white transition hover:bg-emerald-700 disabled:opacity-60"
-                      >
-                        {bypassLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                        {'\uD83E\uDDEA Debug: Simulate Success Payment'}
-                      </button>
+                      {isDevelopment && (
+                        <button
+                          type="button"
+                          onClick={handleBypassSuccess}
+                          disabled={bypassLoading || !qrisOrderId}
+                          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-yellow-400 px-4 text-xs font-black uppercase tracking-wide text-slate-950 transition hover:bg-yellow-300 disabled:opacity-60"
+                        >
+                          {bypassLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertCircle className="h-4 w-4" />}
+                          Debug: Simulate Success Payment
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="max-w-xs text-center">
@@ -493,7 +522,7 @@ export default function Profile() {
                   type="button"
                   onClick={handleClaimDailyReward}
                   disabled={walletActionLoading === 'daily'}
-                  className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-cyan-600 text-xs font-black uppercase tracking-widest text-white transition hover:bg-cyan-700 disabled:opacity-60"
+                  className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-green-600 text-xs font-black uppercase tracking-widest text-white transition hover:bg-green-700 disabled:opacity-60"
                 >
                   {walletActionLoading === 'daily' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   Klaim Bonus

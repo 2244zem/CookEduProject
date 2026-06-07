@@ -158,7 +158,7 @@ function normalizeRecipeForDetail(source: any): DetailRecipeView {
     title: textValue(source.title, 'Resep CookEdu'),
     category: textValue(source.category, 'Recipe'),
     description: textValue(source.description, 'Resep komunitas CookEdu.'),
-    image_url: resolveMediaUrl(source.image_url || source.imageUrl) || '',
+    image_url: resolveMediaUrl(source.image_url) || '',
     cooking_time: numberValue(source.cooking_time, numberValue(String(source.prepTime).replace(/\D/g, ''), 25)),
     prep_time: numberValue(source.prep_time, 0),
     servings: numberValue(source.servings, 1),
@@ -196,7 +196,10 @@ export default function RecipeDetail() {
 
   const username = user?.username || user?.name || user?.email?.split('@')[0] || 'Koki CookEdu'
   const staticRecipe = recipes.find((item) => item.id === Number(id))
-  const rawRecipe = staticRecipe || remoteRecipe
+  const staticRecipeForSchema = staticRecipe
+    ? { ...staticRecipe, image_url: (staticRecipe as any).image_url || staticRecipe.imageUrl }
+    : null
+  const rawRecipe = staticRecipeForSchema || remoteRecipe
   const recipe = useMemo(() => rawRecipe ? normalizeRecipeForDetail(rawRecipe) : null, [rawRecipe])
   const isSupabaseRecipe = Boolean(!staticRecipe && id && isSupabaseConfigured)
   const canFavoriteRecipe = Boolean(isSupabaseRecipe && id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))
@@ -470,7 +473,7 @@ export default function RecipeDetail() {
         <motion.img
           initial={{ scale: 1.08 }}
           animate={{ scale: 1 }}
-          src={recipe.image_url || withImageFallback(recipe.title)}
+          src={recipe.image_url}
           onError={(event) => { event.currentTarget.src = withImageFallback(recipe.title) }}
           alt={recipe.title}
           className="h-full w-full object-cover"
