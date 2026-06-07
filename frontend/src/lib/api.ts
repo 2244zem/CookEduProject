@@ -295,7 +295,7 @@ export async function invokeChefAi(payload: {
     throw new Error(await getFunctionErrorMessage(error))
   }
 
-  const result = data as { status?: string; reply?: string; response?: string; message?: string; model?: string; mode?: 'gemini' | 'local_fallback' }
+  const result = data as { status?: string; reply?: string; response?: string; message?: string; model?: string; mode?: 'gemini' | 'local_fallback' | 'cookedu_brain' }
   if (result.status === 'error') {
     throw new Error(result.message || 'Chef AI gagal memproses request.')
   }

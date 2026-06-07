@@ -184,30 +184,93 @@ function isLimitOrProviderError(status: number, payload: any) {
     message.includes('rate')
 }
 
-function buildLocalChefReply(prompt: string, userName: string, recipes: RecipeHint[], reason = 'mode lokal') {
+function detectPromptIngredients(prompt: string) {
+  const normalized = normalizeText(prompt)
+  const ingredients = [
+    'telur',
+    'nasi',
+    'ayam',
+    'sapi',
+    'ikan',
+    'udang',
+    'tahu',
+    'tempe',
+    'jamur',
+    'bayam',
+    'kangkung',
+    'wortel',
+    'kentang',
+    'tomat',
+    'cabai',
+    'bawang putih',
+    'bawang merah',
+    'santan',
+    'susu',
+    'keju',
+    'tepung',
+    'mie',
+    'pasta',
+    'roti',
+  ]
+
+  return ingredients.filter((ingredient) => normalized.includes(ingredient)).slice(0, 6)
+}
+
+function buildCookingRoute(prompt: string, ingredients: string[]) {
+  const normalized = normalizeText(prompt)
+
+  if (normalized.includes('plating') || normalized.includes('hias') || normalized.includes('cantik')) {
+    return 'Arah terbaiknya adalah bikin satu titik fokus, sisakan ruang kosong, lalu beri warna kontras kecil. Saus cukup tipis supaya makanan tetap terlihat sebagai pemeran utama.'
+  }
+
+  if (normalized.includes('gagal') || normalized.includes('gosong') || normalized.includes('lembek') || normalized.includes('keras')) {
+    return 'Aku akan baca ini seperti troubleshooting dapur. Cek panas, ukuran potongan, dan waktu masuk cairan. Tiga titik itu paling sering membuat masakan terasa gagal.'
+  }
+
+  if (ingredients.includes('telur') || ingredients.includes('nasi')) {
+    return 'Jalur paling aman adalah tumis cepat. Mulai dari aroma bawang, masukkan bahan utama, bumbui ringan, lalu koreksi rasa di akhir.'
+  }
+
+  if (ingredients.includes('ayam') || ingredients.includes('sapi') || ingredients.includes('ikan') || ingredients.includes('udang')) {
+    return 'Mulai dari protein sebagai pusat rasa. Keringkan permukaannya dulu, beri panas cukup, lalu masukkan bumbu agar aroma tidak mentah.'
+  }
+
+  if (ingredients.includes('bayam') || ingredients.includes('kangkung') || ingredients.includes('jamur')) {
+    return 'Masak cepat dengan panas stabil. Bahan lembut seperti sayur dan jamur sebaiknya masuk belakangan supaya teksturnya tetap segar.'
+  }
+
+  return 'Aku akan pakai pola dapur aman: pilih bahan utama, bangun aroma, tambah rasa gurih, lalu tutup dengan tekstur atau kesegaran.'
+}
+
+function buildLocalChefReply(prompt: string, userName: string, recipes: RecipeHint[], reason = 'CookEdu Brain') {
   const normalized = normalizeText(prompt)
   const matched = rankRecipes(prompt, recipes)
+  const ingredients = detectPromptIngredients(prompt)
+  const ingredientLine = ingredients.length
+    ? `Aku menangkap bahan utama: ${ingredients.join(', ')}.`
+    : 'Aku belum menangkap bahan spesifik, jadi aku mulai dari prinsip masak yang paling aman.'
+  const cookingRoute = buildCookingRoute(prompt, ingredients)
   const recipeLine = matched.length
-    ? `Aku juga melihat yang paling dekat di database CookEdu: ${matched.map((recipe) => recipe.title).filter(Boolean).slice(0, 3).join(', ')}.`
+    ? `Database CookEdu yang paling dekat: ${matched.map((recipe) => recipe.title).filter(Boolean).slice(0, 3).join(', ')}.`
     : 'Aku belum menemukan resep database yang benar benar cocok, jadi aku pakai prinsip dapur dasar dulu.'
 
   if (normalized.includes('substitusi') || normalized.includes('ganti') || normalized.includes('pengganti')) {
-    return cleanChefReply(`Aku pakai ${reason} dulu, ${userName}. Untuk substitusi, lihat fungsi bahannya. Kalau bahan itu memberi lemak, pakai susu plus sedikit butter. Kalau memberi asin, pakai garam sedikit demi sedikit. Kalau memberi aroma, pakai bawang, daun jeruk, jahe, atau lada sesuai arah rasanya. ${recipeLine} Kirim bahan yang hilang dan resepnya, nanti aku bantu pilih pengganti yang paling dekat.`)
+    return cleanChefReply(`Aku jalankan ${reason}, ${userName}. ${ingredientLine} Untuk substitusi, lihat fungsi bahannya. Kalau bahan itu memberi lemak, pakai susu plus sedikit butter. Kalau memberi asin, pakai garam sedikit demi sedikit. Kalau memberi aroma, pakai bawang, daun jeruk, jahe, atau lada sesuai arah rasanya. ${recipeLine} Kirim bahan yang hilang dan resepnya, nanti aku pilihkan pengganti yang paling dekat.`)
   }
 
   if (normalized.includes('plating') || normalized.includes('hias') || normalized.includes('cantik')) {
-    return cleanChefReply(`Aku pakai ${reason} dulu, ${userName}. Untuk plating, pilih satu titik fokus di piring, jangan penuhi semua ruang. Taruh bahan utama sedikit ke samping, beri saus tipis, lalu tambahkan tekstur renyah paling akhir. Warna hijau kecil seperti daun bawang atau seledri sering cukup membuat piring terlihat hidup. ${recipeLine}`)
+    return cleanChefReply(`Aku jalankan ${reason}, ${userName}. ${cookingRoute} Taruh bahan utama sedikit ke samping, beri saus tipis, lalu tambahkan tekstur renyah paling akhir. Warna hijau kecil seperti daun bawang atau seledri sering cukup membuat piring terlihat hidup. ${recipeLine}`)
   }
 
   if (normalized.includes('bahan') || normalized.includes('kulkas') || normalized.includes('scan') || normalized.includes('telur') || normalized.includes('ayam') || normalized.includes('nasi')) {
-    return cleanChefReply(`Aku pakai ${reason} dulu, ${userName}. Dari bahan yang kamu sebut, mulai dengan tiga keputusan: bahan utama, bumbu dasar, dan tekstur akhir. Kalau ada telur, nasi, atau ayam, jalur paling aman adalah tumis cepat dengan bawang, sedikit garam, lada, lalu koreksi rasa di akhir. ${recipeLine} Kalau kamu kirim daftar bahan yang ada di kulkas, aku bisa ubah jadi saran menu yang lebih tepat.`)
+    return cleanChefReply(`Aku jalankan ${reason}, ${userName}. ${ingredientLine} ${cookingRoute} Setelah itu pilih satu sentuhan akhir: jeruk nipis untuk segar, bawang goreng untuk renyah, atau saus ringan untuk lebih gurih. ${recipeLine} Kalau kamu kirim daftar isi kulkas yang lebih lengkap, aku bisa ubah jadi saran menu yang lebih presisi.`)
   }
 
   if (normalized.includes('gagal') || normalized.includes('kenapa') || normalized.includes('keras') || normalized.includes('gosong') || normalized.includes('lembek')) {
-    return cleanChefReply(`Aku pakai ${reason} dulu, ${userName}. Cek tiga titik dulu: panas terlalu tinggi, potongan bahan tidak seragam, atau cairan masuk terlalu cepat. Kalau gosong di luar tapi mentah di dalam, turunkan api dan beri waktu. Kalau lembek, biasanya air terlalu banyak atau bahan terlalu lama di panas. Ceritakan bahan dan tahap gagalnya, aku bantu bedah pelan pelan.`)
+    return cleanChefReply(`Aku jalankan ${reason}, ${userName}. ${cookingRoute} Kalau gosong di luar tapi mentah di dalam, turunkan api dan beri waktu. Kalau lembek, biasanya air terlalu banyak atau bahan terlalu lama di panas. Ceritakan bahan dan tahap gagalnya, aku bantu bedah pelan pelan.`)
   }
 
-  return cleanChefReply(`Aku pakai ${reason} dulu, ${userName}. Jawaban cepatku: mulai dari bahan yang kamu punya, pilih teknik paling aman, lalu koreksi rasa di akhir. Untuk masakan rumahan, alur yang rapi adalah siapkan bahan, panaskan alat, masak bahan yang paling lama dulu, baru masukkan bahan cepat matang. ${recipeLine} Kirim nama bahan atau target resepnya, nanti aku arahkan lebih spesifik.`)
+  return cleanChefReply(`Aku jalankan ${reason}, ${userName}. ${ingredientLine} ${cookingRoute} Untuk masakan rumahan, alur yang rapi adalah siapkan bahan, panaskan alat, masak bahan yang paling lama dulu, baru masukkan bahan cepat matang. ${recipeLine} Kirim nama bahan atau target resepnya, nanti aku arahkan lebih spesifik.`)
 }
 
 Deno.serve(async (request) => {
@@ -223,10 +286,10 @@ Deno.serve(async (request) => {
   let fallbackUserName = 'Koki CookEdu'
 
   try {
+    const body = await request.json()
+    const aiMode = String(Deno.env.get('COOKEDU_AI_MODE') || body.mode || 'cookedu-brain').toLowerCase()
     const apiKey = Deno.env.get('GEMINI_API_KEY')
     const model = Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash'
-
-    const body = await request.json()
     const prompt = String(body.prompt || body.question || '').trim()
     const userName = String(body.user_name || 'Koki CookEdu').trim()
     const recipeHints = await fetchRecipeHints(request.headers.get('Authorization') || '')
@@ -237,9 +300,14 @@ Deno.serve(async (request) => {
       return jsonResponse({ status: 'error', message: 'Prompt tidak boleh kosong.' }, 400)
     }
 
+    if (aiMode !== 'gemini' && aiMode !== 'hybrid') {
+      const reply = buildLocalChefReply(prompt, userName, recipeHints)
+      return jsonResponse({ status: 'success', reply, response: reply, mode: 'cookedu_brain', model: 'cookedu-brain-v1' })
+    }
+
     if (!apiKey) {
-      const reply = buildLocalChefReply(prompt, userName, recipeHints, 'mode lokal karena API key belum aktif')
-      return jsonResponse({ status: 'success', reply, response: reply, mode: 'local_fallback', model: 'cookedu-local-brain' })
+      const reply = buildLocalChefReply(prompt, userName, recipeHints, 'CookEdu Brain')
+      return jsonResponse({ status: 'success', reply, response: reply, mode: 'cookedu_brain', model: 'cookedu-brain-v1' })
     }
 
     const systemPrompt = [
@@ -294,8 +362,8 @@ Deno.serve(async (request) => {
 
     if (!geminiResponse.ok) {
       if (isLimitOrProviderError(geminiResponse.status, payload)) {
-        const reply = buildLocalChefReply(prompt, userName, recipeHints, 'mode lokal karena kuota AI utama sedang penuh')
-        return jsonResponse({ status: 'success', reply, response: reply, mode: 'local_fallback', model: 'cookedu-local-brain' })
+        const reply = buildLocalChefReply(prompt, userName, recipeHints, 'CookEdu Brain')
+        return jsonResponse({ status: 'success', reply, response: reply, mode: 'cookedu_brain', model: 'cookedu-brain-v1' })
       }
 
       return jsonResponse({
@@ -306,8 +374,8 @@ Deno.serve(async (request) => {
 
     const reply = cleanChefReply(extractGeminiText(payload))
     if (!reply) {
-      const fallbackReply = buildLocalChefReply(prompt, userName, recipeHints, 'mode lokal karena AI utama tidak memberi jawaban')
-      return jsonResponse({ status: 'success', reply: fallbackReply, response: fallbackReply, mode: 'local_fallback', model: 'cookedu-local-brain' })
+      const fallbackReply = buildLocalChefReply(prompt, userName, recipeHints, 'CookEdu Brain')
+      return jsonResponse({ status: 'success', reply: fallbackReply, response: fallbackReply, mode: 'cookedu_brain', model: 'cookedu-brain-v1' })
     }
 
     return jsonResponse({
@@ -319,8 +387,8 @@ Deno.serve(async (request) => {
     })
   } catch (error) {
     if (fallbackPrompt) {
-      const reply = buildLocalChefReply(fallbackPrompt, fallbackUserName, [], 'mode lokal karena koneksi AI utama sedang terganggu')
-      return jsonResponse({ status: 'success', reply, response: reply, mode: 'local_fallback', model: 'cookedu-local-brain' })
+      const reply = buildLocalChefReply(fallbackPrompt, fallbackUserName, [], 'CookEdu Brain')
+      return jsonResponse({ status: 'success', reply, response: reply, mode: 'cookedu_brain', model: 'cookedu-brain-v1' })
     }
 
     return jsonResponse({

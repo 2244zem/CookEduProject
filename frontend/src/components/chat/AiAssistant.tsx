@@ -101,8 +101,8 @@ export default function AiAssistant() {
       }])
       pushToast({
         tone: 'warning',
-        title: 'Chef AI memakai mode lokal',
-        message: 'Koneksi AI utama sedang tidak stabil, jadi CookEdu menjawab dari otak lokal dulu.',
+        title: 'CookEdu Brain aktif',
+        message: 'Jawaban dibuat dari mesin kuliner CookEdu tanpa menunggu API eksternal.',
       })
     } finally {
       setIsLoading(false)
@@ -126,7 +126,7 @@ export default function AiAssistant() {
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-black text-slate-950">Chef AI</p>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-700">Gemini via Supabase</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-700">CookEdu Brain</p>
                 </div>
               </div>
               <button onClick={() => setIsOpen(false)} className="rounded-2xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700">

@@ -63,8 +63,8 @@ export default function AiAssistantPage() {
       }])
       pushToast({
         tone: 'warning',
-        title: 'Chef AI memakai mode lokal',
-        message: 'Koneksi AI utama sedang tidak stabil, jadi CookEdu menjawab dari otak lokal dulu.',
+        title: 'CookEdu Brain aktif',
+        message: 'Jawaban dibuat dari mesin kuliner CookEdu tanpa menunggu API eksternal.',
       })
     } finally {
       setIsTyping(false)
@@ -94,7 +94,7 @@ export default function AiAssistantPage() {
               </div>
               <div>
                 <p className="text-sm font-black text-slate-950">Chef AI Sous-Chef</p>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">Gemini plus CookEdu Local Brain</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">CookEdu Brain</p>
               </div>
             </div>
           </div>

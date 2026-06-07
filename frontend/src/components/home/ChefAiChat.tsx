@@ -76,8 +76,8 @@ export default function ChefAiChat() {
       setRetryMessage(prompt)
       pushToast({
         tone: 'warning',
-        title: 'Chef AI memakai mode lokal',
-        message: 'Koneksi AI utama sedang tidak stabil, jadi CookEdu menjawab dari otak lokal dulu.',
+        title: 'CookEdu Brain aktif',
+        message: 'Jawaban dibuat dari mesin kuliner CookEdu tanpa menunggu API eksternal.',
       })
     } finally {
       setIsLoading(false)
@@ -97,7 +97,7 @@ export default function ChefAiChat() {
           </div>
           <div>
             <h2 className="text-sm font-bold text-white">Chef AI Assistant</h2>
-            <p className="text-xs text-white/75">Gemini plus CookEdu Local Brain</p>
+            <p className="text-xs text-white/75">CookEdu Brain</p>
           </div>
         </div>
       </div>
