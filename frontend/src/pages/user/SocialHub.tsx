@@ -31,6 +31,7 @@ import {
   type SocialCategory,
   type SocialPostView,
 } from '../../lib/supabaseData'
+import { useToastStore } from '../../store/toastStore'
 
 const SOCIAL_CATEGORIES: SocialCategory[] = [
   'Cooking Technique',
@@ -187,6 +188,14 @@ function Composer({
   const [mediaFile, setMediaFile] = useState<File | null>(null)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
+  const pushToast = useToastStore((state) => state.pushToast)
+  const previewUrl = useMemo(() => mediaFile ? URL.createObjectURL(mediaFile) : '', [mediaFile])
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
 
   const createMutation = useMutation({
     mutationFn: () => {
@@ -206,11 +215,14 @@ function Composer({
       setMediaFile(null)
       setProgress(0)
       setError('')
+      pushToast({ tone: 'success', title: 'Post berhasil diterbitkan', message: 'Feed CookShare sudah diperbarui.' })
       onClose?.()
     },
     onError: (err: any) => {
-      setError(err?.message || 'Gagal menerbitkan post.')
+      const message = err?.message || 'Gagal menerbitkan post.'
+      setError(message)
       setProgress(0)
+      pushToast({ tone: 'error', title: 'Post gagal diterbitkan', message })
     },
   })
 
@@ -293,9 +305,36 @@ function Composer({
           </div>
         </label>
 
-        {progress > 0 && (
-          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full rounded-full bg-cyan-600 transition-all" style={{ width: `${progress}%` }} />
+        {previewUrl && (
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
+            <div className="relative aspect-video bg-slate-100">
+              {mediaFile?.type.startsWith('video/') ? (
+                <video src={previewUrl} controls playsInline className="h-full w-full object-cover" />
+              ) : (
+                <img src={previewUrl} alt="Preview media post" className="h-full w-full object-cover" />
+              )}
+              <button
+                type="button"
+                onClick={() => setMediaFile(null)}
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-2xl bg-white/90 text-rose-600 shadow-sm transition hover:bg-rose-50"
+                title="Hapus media"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="truncate px-4 py-3 text-xs font-black uppercase tracking-wide text-slate-500">{mediaFile?.name}</p>
+          </div>
+        )}
+
+        {(progress > 0 || createMutation.isPending) && (
+          <div className="space-y-2 rounded-2xl bg-slate-50 p-3">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <span>{progress >= 100 ? 'Finishing post' : 'Uploading media'}</span>
+              <span>{Math.max(progress, createMutation.isPending ? 8 : 0)}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-full rounded-full bg-cyan-600 transition-all" style={{ width: `${Math.max(progress, createMutation.isPending ? 8 : 0)}%` }} />
+            </div>
           </div>
         )}
 
@@ -328,6 +367,7 @@ function CommentsDrawer({
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
+  const pushToast = useToastStore((state) => state.pushToast)
 
   const commentMutation = useMutation({
     mutationFn: () => createSocialComment({
@@ -342,10 +382,13 @@ function CommentsDrawer({
       setProgress(0)
       setError('')
       queryClient.invalidateQueries({ queryKey: ['social-posts'] })
+      pushToast({ tone: 'success', title: 'Komentar terkirim', message: 'Thread sudah diperbarui.' })
     },
     onError: (err: any) => {
-      setError(err?.message || 'Gagal mengirim komentar.')
+      const message = err?.message || 'Gagal mengirim komentar.'
+      setError(message)
       setProgress(0)
+      pushToast({ tone: 'error', title: 'Komentar gagal', message })
     },
   })
 
@@ -443,6 +486,7 @@ function CommentsDrawer({
 export default function SocialHub() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
+  const pushToast = useToastStore((state) => state.pushToast)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<'All' | SocialCategory>('All')
   const [showMobileComposer, setShowMobileComposer] = useState(false)
@@ -468,7 +512,11 @@ export default function SocialHub() {
     mutationFn: (post: SocialPostView) => toggleSocialPostLike(post.id),
     onMutate: () => setSocialActionError(''),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['social-posts'] }),
-    onError: (err: any) => setSocialActionError(err?.message || 'Like gagal diproses. Silakan login ulang jika sesi habis.'),
+    onError: (err: any) => {
+      const message = err?.message || 'Like gagal diproses. Silakan login ulang jika sesi habis.'
+      setSocialActionError(message)
+      pushToast({ tone: 'error', title: 'Like gagal', message })
+    },
   })
 
   const favoriteMutation = useMutation({
@@ -478,7 +526,11 @@ export default function SocialHub() {
       queryClient.invalidateQueries({ queryKey: ['social-posts'] })
       queryClient.invalidateQueries({ queryKey: ['favorite-items'] })
     },
-    onError: (err: any) => setSocialActionError(err?.message || 'Favorit gagal diproses. Silakan login ulang jika sesi habis.'),
+    onError: (err: any) => {
+      const message = err?.message || 'Favorit gagal diproses. Silakan login ulang jika sesi habis.'
+      setSocialActionError(message)
+      pushToast({ tone: 'error', title: 'Favorit gagal', message })
+    },
   })
 
   const posts = postsQuery.data || []
@@ -496,7 +548,7 @@ export default function SocialHub() {
   const busyPostId = likeMutation.variables?.id || favoriteMutation.variables?.id
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
+    <div className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-950">
       <div className="mx-auto grid w-full max-w-[1480px] gap-6 px-4 py-5 lg:grid-cols-[280px_minmax(0,1fr)_360px] lg:px-8 lg:py-8">
         <aside className="hidden rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm lg:block">
           <div className="flex items-center gap-3">
@@ -523,16 +575,18 @@ export default function SocialHub() {
           </div>
         </aside>
 
-        <main className="min-w-0 space-y-5">
-          <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
+        <main className="min-w-0 w-full max-w-[calc(100vw-2rem)] space-y-5 overflow-hidden lg:max-w-none">
+          <section className="w-full max-w-[calc(100vw-2rem)] overflow-hidden rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm lg:max-w-none">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="text-left">
                 <div className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">
                   <Sparkles className="h-3.5 w-3.5" />
                   Live creator feed
                 </div>
-                <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
-                  Halo, {displayName}. Share what works in your kitchen.
+                <h1 className="mt-3 max-w-full whitespace-normal text-[22px] font-black leading-tight tracking-tight text-slate-950 [overflow-wrap:anywhere] sm:text-3xl md:text-5xl">
+                  <span>Halo, {displayName}.</span>
+                  <span className="block sm:inline"> Share what works</span>
+                  <span className="block sm:inline"> in your kitchen.</span>
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm font-semibold leading-7 text-slate-600">
                   Upload teknik, plating, eksperimen baking, dan trik dapur dengan media asli dari perangkatmu.

@@ -6,6 +6,7 @@ import {
   ChefHat,
   Clock,
   Flame,
+  Image as ImageIcon,
   Loader2,
   Plus,
   PlusCircle,
@@ -28,6 +29,7 @@ import {
   subscribeToCookEduRealtime,
   toggleFavoriteItem,
 } from '../../lib/supabaseData'
+import { useToastStore } from '../../store/toastStore'
 
 type IngredientInput = {
   item: string
@@ -152,6 +154,9 @@ function RecipeCreateModal({
   setDifficulty,
   ingredients,
   setIngredients,
+  mediaFile,
+  setMediaFile,
+  mediaPreviewUrl,
   categories,
   error,
   isSaving,
@@ -160,8 +165,8 @@ function RecipeCreateModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[30px] border border-slate-200 bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[1200] flex items-end justify-center bg-slate-950/60 p-3 pb-safe-bottom backdrop-blur-sm md:items-center md:p-4">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-[30px] border border-slate-200 bg-white p-6 pb-safe-bottom shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div className="text-left">
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-700">Recipe Studio</p>
@@ -287,15 +292,48 @@ function RecipeCreateModal({
           </div>
         </div>
 
+        <label className="mt-4 block cursor-pointer rounded-3xl border border-dashed border-cyan-200 bg-cyan-50/70 p-4 text-left transition hover:border-cyan-400">
+          <input
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={(event) => setMediaFile(event.target.files?.[0] || null)}
+          />
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-cyan-700 shadow-sm">
+              <ImageIcon className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black text-slate-950">{mediaFile?.name || 'Upload foto resep'}</p>
+              <p className="text-xs font-semibold text-slate-500">Gambar dikirim ke Supabase Storage dan disimpan sebagai image_url.</p>
+            </div>
+          </div>
+        </label>
+
+        {mediaPreviewUrl && (
+          <div className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
+            <div className="relative aspect-video">
+              <img src={mediaPreviewUrl} alt="Preview resep" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setMediaFile(null)}
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-2xl bg-white/90 text-rose-600 shadow-sm transition hover:bg-rose-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {error && <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</p>}
 
         <button
           type="button"
           disabled={isSaving}
           onClick={onSave}
-          className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 text-sm font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-cyan-700 disabled:opacity-60"
+          className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-cyan-600 text-sm font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-cyan-700 disabled:opacity-60"
         >
-          {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <PlusCircle className="h-5 w-5 text-cyan-300" />}
+          {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <PlusCircle className="h-5 w-5 text-white" />}
           {isSaving ? 'Menyimpan...' : 'Simpan Resep'}
         </button>
       </div>
@@ -307,6 +345,7 @@ export default function RecipeList() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
+  const pushToast = useToastStore((state) => state.pushToast)
   const { addGroup, groups } = useShoppingStore()
   const [activeCategory, setActiveCategory] = useState('SEMUA')
   const [searchQuery, setSearchQuery] = useState('')
@@ -318,6 +357,14 @@ export default function RecipeList() {
   const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner')
   const [cookingTime, setCookingTime] = useState(20)
   const [ingredients, setIngredients] = useState<IngredientInput[]>([{ ...emptyIngredient }])
+  const [mediaFile, setMediaFile] = useState<File | null>(null)
+  const mediaPreviewUrl = useMemo(() => mediaFile ? URL.createObjectURL(mediaFile) : '', [mediaFile])
+
+  useEffect(() => {
+    return () => {
+      if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl)
+    }
+  }, [mediaPreviewUrl])
 
   useEffect(() => {
     return subscribeToCookEduRealtime(() => {
@@ -403,6 +450,7 @@ export default function RecipeList() {
           cookingTime,
           prepTime: 0,
           servings: 1,
+          mediaFile,
         })
       }
       const formData = new FormData()
@@ -412,6 +460,7 @@ export default function RecipeList() {
       formData.append('difficulty', difficulty)
       formData.append('cooking_time', String(cookingTime))
       formData.append('ingredients', JSON.stringify(cleanIngredients))
+      if (mediaFile) formData.append('image', mediaFile)
       return recipeApi.create(formData)
     },
     onSuccess: () => {
@@ -423,8 +472,14 @@ export default function RecipeList() {
       setDifficulty('beginner')
       setCookingTime(20)
       setIngredients([{ ...emptyIngredient }])
+      setMediaFile(null)
+      pushToast({ tone: 'success', title: 'Resep berhasil ditambahkan', message: 'Resep baru sudah masuk ke katalog CookEdu.' })
     },
-    onError: (error: any) => setCreateError(error?.message || error?.response?.data?.message || 'Gagal menyimpan resep.'),
+    onError: (error: any) => {
+      const message = error?.message || error?.response?.data?.message || 'Gagal menyimpan resep.'
+      setCreateError(message)
+      pushToast({ tone: 'error', title: 'Resep gagal disimpan', message })
+    },
   })
 
   const deleteMutation = useMutation({
@@ -567,6 +622,9 @@ export default function RecipeList() {
         setDifficulty={setDifficulty}
         ingredients={ingredients}
         setIngredients={setIngredients}
+        mediaFile={mediaFile}
+        setMediaFile={setMediaFile}
+        mediaPreviewUrl={mediaPreviewUrl}
         categories={selectedCategoryNames}
         error={createError}
         isSaving={createMutation.isPending}

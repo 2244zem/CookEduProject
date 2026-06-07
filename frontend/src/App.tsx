@@ -6,6 +6,7 @@ import SplashScreen from './components/layout/SplashScreen'
 import Onboarding from './components/layout/Onboarding'
 import { useDeviceProfile } from './hooks/useDeviceProfile'
 import { isSupabaseConfigured, supabase } from './lib/supabaseClient'
+import ToastViewport from './components/ui/ToastViewport'
 
 const AdminLayout = lazy(() => import('./components/layout/AdminLayout'))
 const UserLayout = lazy(() => import('./components/layout/UserLayout'))
@@ -166,6 +167,7 @@ export default function App() {
             <Route path="/cook/:id" element={<ProtectedRoute><CookingMode /></ProtectedRoute>} />
           </Routes>
         </Suspense>
+        <ToastViewport />
       </motion.div>
     </AnimatePresence>
   )

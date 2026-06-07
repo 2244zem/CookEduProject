@@ -1,14 +1,18 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Search, Filter, Check, Trash2, 
   Edit3, BarChart3, AlertCircle, FileText,
   ArrowRight, User, Clock, Flame, XCircle,
-  TrendingUp, ShieldCheck, ChefHat
+  TrendingUp, ShieldCheck, ChefHat, Coins, Heart, ShoppingBag, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { recipeApi, dashboardApi, auditApi } from '../../lib/api';
 import { recipes as initialRecipes } from '../../data/recipes';
+import BackendStatusChecker from '../../components/debug/BackendStatusChecker';
+import { isSupabaseConfigured } from '../../lib/supabaseClient';
+import { listSupabaseAdminRecipes } from '../../lib/supabaseData';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, Cell 
@@ -39,7 +43,7 @@ export default function AdminDashboard() {
   // REAL DATA FETCHING
   const { data: recipesData, isLoading } = useQuery({
     queryKey: ['admin-recipes'],
-    queryFn: () => recipeApi.adminList(),
+    queryFn: () => isSupabaseConfigured ? listSupabaseAdminRecipes() : recipeApi.adminList(),
   });
 
   // Data Transformation Layer
@@ -148,6 +152,12 @@ export default function AdminDashboard() {
   const auditLogs = auditLogsData?.data?.data || [];
 
   const pendingCount = allRecipes.filter(r => r.status === 'pending').length;
+  const shortcutCards = [
+    { to: '/', label: 'Social Hub', icon: Heart, tone: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
+    { to: '/admin/recipes', label: 'Recipes CRUD', icon: ChefHat, tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { to: '/admin/wallet', label: 'Admin Wallet', icon: Coins, tone: 'bg-yellow-50 text-yellow-900 border-yellow-100' },
+    { to: '/favorites', label: 'Favorites', icon: ShoppingBag, tone: 'bg-rose-50 text-rose-700 border-rose-100' },
+  ];
 
   return (
     <div className="min-h-screen bg-concepto p-4 md:p-10 font-sans text-slate-700">
@@ -169,11 +179,39 @@ export default function AdminDashboard() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
              </div>
-             <button className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all">
-                Sync Engine
+             <button
+              type="button"
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: ['admin-recipes'] });
+                queryClient.invalidateQueries({ queryKey: ['recipes'] });
+                queryClient.invalidateQueries({ queryKey: ['backend-status-checks'] });
+              }}
+              className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all"
+             >
+                <RefreshCw className="h-4 w-4" />
+                Refresh Data
              </button>
           </div>
         </header>
+
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {shortcutCards.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center justify-between rounded-[28px] border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl ${item.tone}`}
+              >
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70">Shortcut</p>
+                  <p className="mt-2 text-sm font-black text-slate-950">{item.label}</p>
+                </div>
+                <item.icon className="h-6 w-6" />
+              </Link>
+            ))}
+          </div>
+          <BackendStatusChecker compact />
+        </section>
 
         {/* BENTO ANALYTICS GRID */}
         <section className="grid grid-cols-1 lg:grid-cols-4 gap-6">

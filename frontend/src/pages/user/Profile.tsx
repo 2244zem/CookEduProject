@@ -12,6 +12,8 @@ import { isSupabaseConfigured, supabase, uploadPublicMedia, upsertProfileForUser
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 import { notifyWalletRefresh, useRealtimeWallet } from '../../hooks/useRealtimeWallet'
 import HumanSignalButtons from '../../components/ui/HumanSignalButtons'
+import BackendStatusChecker from '../../components/debug/BackendStatusChecker'
+import { useToastStore } from '../../store/toastStore'
 
 // Asset Imports
 import bgPattern from '../../assets/food_drawing.jpg'
@@ -26,6 +28,14 @@ const SPEND_OPTIONS = [
   { id: 'premium_recipe', label: 'Unlock Resep Premium', cost: 25, icon: LockKeyhole },
   { id: 'ai_boost', label: 'Chef AI Boost', cost: 15, icon: Bot },
   { id: 'badge', label: 'Badge Kolektor', cost: 40, icon: Trophy },
+] as const
+
+const WALLET_TABS = [
+  { id: 'balance', label: 'Balance' },
+  { id: 'buy', label: 'Buy Coins' },
+  { id: 'daily', label: 'Reward' },
+  { id: 'spend', label: 'Spend' },
+  { id: 'history', label: 'History' },
 ] as const
 
 type WalletTransaction = {
@@ -64,6 +74,7 @@ function getWalletErrorMessage(error: any, fallback: string) {
 
 export default function Profile() {
   const { user, setAuth, logout } = useAuthStore()
+  const pushToast = useToastStore((state) => state.pushToast)
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { balance: walletBalance, loading: walletLoading, refresh: refreshWallet } = useRealtimeWallet(user?.id)
@@ -83,6 +94,7 @@ export default function Profile() {
   const [walletHistoryLoading, setWalletHistoryLoading] = useState(false)
   const [walletActionLoading, setWalletActionLoading] = useState('')
   const [walletNotice, setWalletNotice] = useState('')
+  const [walletTab, setWalletTab] = useState<typeof WALLET_TABS[number]['id']>('buy')
   const isDevelopment = import.meta.env.DEV
   
   const [form, setForm] = useState({
@@ -165,6 +177,7 @@ export default function Profile() {
         setAuth(updatedUser as any, sessionData.session?.access_token || localStorage.getItem('cookedu_token') || '')
         setPreview(resolveMediaUrl(updatedUser.avatar_url) || avatarFallbackUrl(updatedUser.name))
         setIsEditing(false)
+        pushToast({ tone: 'success', title: 'Profil tersimpan', message: 'Data profil dan avatar sudah sinkron ke Supabase.' })
         return
       }
 
@@ -186,6 +199,7 @@ export default function Profile() {
         setPreview(updatedUser.avatar_url || updatedUser.avatar || null)
       }
       setIsEditing(false)
+      pushToast({ tone: 'success', title: 'Profil tersimpan', message: 'Perubahan profil berhasil disimpan.' })
     } catch (err) {
       console.error('Update profile failed:', err)
       setError(err instanceof Error ? err.message : 'Gagal memperbarui profil.')
@@ -218,11 +232,14 @@ export default function Profile() {
       setQrisImageUrl(imageUrl)
       setQrisOrderId(response.data.order_id || '')
       await loadWalletHistory()
+      pushToast({ tone: 'success', title: 'QRIS siap', message: 'QR sandbox berhasil dibuat untuk paket koin yang dipilih.' })
     } catch (err: any) {
       console.error('QRIS checkout failed:', err)
       setQrisImageUrl('')
       setQrisOrderId('')
-      setCoinError(getWalletErrorMessage(err, 'Gagal membuat QRIS Midtrans.'))
+      const message = getWalletErrorMessage(err, 'Gagal membuat QRIS Midtrans.')
+      setCoinError(message)
+      pushToast({ tone: 'error', title: 'QRIS gagal dibuat', message })
     } finally {
       setCoinLoading(false)
     }
@@ -244,9 +261,12 @@ export default function Profile() {
         ? `Sandbox sukses. +${coinsAdded} koin masuk ke wallet.`
         : 'Order ini sudah pernah diproses, saldo sudah sinkron.'
       )
+      pushToast({ tone: 'success', title: 'Pembayaran disimulasikan', message: `${coinsAdded} koin diproses ke wallet.` })
     } catch (err: any) {
       console.error('QRIS bypass failed:', err)
-      setCoinError(getWalletErrorMessage(err, 'Gagal menjalankan sandbox bypass.'))
+      const message = getWalletErrorMessage(err, 'Gagal menjalankan sandbox bypass.')
+      setCoinError(message)
+      pushToast({ tone: 'error', title: 'Debug payment gagal', message })
     } finally {
       setBypassLoading(false)
     }
@@ -262,8 +282,11 @@ export default function Profile() {
       await refreshWallet()
       await loadWalletHistory()
       setWalletNotice(response.data.message || 'Bonus harian berhasil diproses.')
+      pushToast({ tone: 'success', title: 'Bonus harian diproses', message: response.data.message || 'Koin reward sudah masuk ke wallet.' })
     } catch (err: any) {
-      setCoinError(getWalletErrorMessage(err, 'Gagal klaim bonus harian.'))
+      const message = getWalletErrorMessage(err, 'Gagal klaim bonus harian.')
+      setCoinError(message)
+      pushToast({ tone: 'warning', title: 'Bonus belum bisa diklaim', message })
     } finally {
       setWalletActionLoading('')
     }
@@ -279,8 +302,11 @@ export default function Profile() {
       await refreshWallet()
       await loadWalletHistory()
       setWalletNotice(response.data.message || 'Koin berhasil dipakai.')
+      pushToast({ tone: 'success', title: 'Koin dipakai', message: response.data.message || 'Saldo wallet sudah diperbarui.' })
     } catch (err: any) {
-      setCoinError(getWalletErrorMessage(err, 'Gagal memakai koin.'))
+      const message = getWalletErrorMessage(err, 'Gagal memakai koin.')
+      setCoinError(message)
+      pushToast({ tone: 'error', title: 'Koin gagal dipakai', message })
     } finally {
       setWalletActionLoading('')
     }
@@ -374,6 +400,26 @@ export default function Profile() {
 
         <main className="px-6 space-y-6 lg:px-0 lg:py-12">
           <HumanSignalButtons />
+          <BackendStatusChecker compact />
+
+          <section className="rounded-[28px] border border-slate-200 bg-white p-2 shadow-sm">
+            <div className="flex gap-2 overflow-x-auto">
+              {WALLET_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setWalletTab(tab.id)}
+                  className={`h-11 min-w-28 flex-1 rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest transition ${
+                    walletTab === tab.id
+                      ? 'bg-cyan-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </section>
 
           {/* STATS GRID */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -390,7 +436,29 @@ export default function Profile() {
             </div>
           </div>
 
-          <section className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+          {walletTab === 'balance' && (
+            <section className="rounded-[32px] border border-cyan-100 bg-white p-6 shadow-sm">
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-center">
+                <div className="text-left">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">Saldo Wallet</p>
+                  <h2 className="mt-2 text-4xl font-black tracking-tight text-slate-950">{walletLoading ? '...' : walletBalance} Koin</h2>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">
+                    Saldo ini diambil dari Supabase Edge Function dan tersinkron saat transaksi berubah.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void refreshWallet()}
+                  className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-cyan-600 text-xs font-black uppercase tracking-widest text-white transition hover:bg-cyan-700"
+                >
+                  <WalletCards className="h-4 w-4" />
+                  Refresh Saldo
+                </button>
+              </div>
+            </section>
+          )}
+
+          <section className={`relative overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm ${walletTab === 'buy' ? '' : 'hidden'}`}>
             <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
               <div className="space-y-5 p-5 lg:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -500,9 +568,9 @@ export default function Profile() {
             </div>
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-            <div className="space-y-6">
-              <div className="rounded-[32px] border border-cyan-100 bg-white p-6 shadow-sm">
+          <section className={`grid gap-6 ${walletTab === 'history' ? 'lg:grid-cols-1' : 'lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]'} ${walletTab === 'daily' || walletTab === 'spend' || walletTab === 'history' ? '' : 'hidden'}`}>
+            <div className={`space-y-6 ${walletTab === 'history' ? 'hidden' : ''}`}>
+              <div className={`rounded-[32px] border border-cyan-100 bg-white p-6 shadow-sm ${walletTab === 'daily' ? '' : 'hidden'}`}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
@@ -529,7 +597,7 @@ export default function Profile() {
                 </button>
               </div>
 
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div className={`rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm ${walletTab === 'spend' ? '' : 'hidden'}`}>
                 <div className="mb-4 flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-cyan-300">
                     <WalletCards className="h-6 w-6" />
@@ -570,7 +638,7 @@ export default function Profile() {
               )}
             </div>
 
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className={`rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm ${walletTab === 'history' ? '' : 'hidden'}`}>
               <div className="mb-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-700">

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, Bookmark, ChefHat, ExternalLink, Heart, Loader2, Trash2 } from 'lucide-react'
 import { listFavoriteItems, toggleFavoriteItem, type FavoriteItemView } from '../../lib/supabaseData'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
+import { useToastStore } from '../../store/toastStore'
 
 function FavoriteCard({ item, onRemove, isRemoving }: {
   item: FavoriteItemView
@@ -52,6 +53,7 @@ function FavoriteCard({ item, onRemove, isRemoving }: {
 
 export default function Favorites() {
   const queryClient = useQueryClient()
+  const pushToast = useToastStore((state) => state.pushToast)
   const [filter, setFilter] = useState<'all' | 'recipe' | 'post'>('all')
   const favoritesQuery = useQuery({
     queryKey: ['favorite-items'],
@@ -63,6 +65,10 @@ export default function Favorites() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorite-items'] })
       queryClient.invalidateQueries({ queryKey: ['social-posts'] })
+      pushToast({ tone: 'success', title: 'Favorit dihapus', message: 'Item sudah keluar dari daftar favorit.' })
+    },
+    onError: (error: any) => {
+      pushToast({ tone: 'error', title: 'Gagal menghapus favorit', message: error?.message || 'Coba lagi setelah sesi Supabase aktif.' })
     },
   })
 

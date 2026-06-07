@@ -1,4 +1,4 @@
-import { Home, User, Wand2, Bookmark, ShoppingBag, BookOpen, ChefHat, Coins } from 'lucide-react'
+import { Home, User, Wand2, Bookmark, ShoppingBag, BookOpen, ChefHat, Coins, ShieldCheck } from 'lucide-react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../../store'
 import { useRealtimeWallet } from '../../hooks/useRealtimeWallet'
@@ -6,7 +6,7 @@ import { useRealtimeWallet } from '../../hooks/useRealtimeWallet'
 const TopNav = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, isAdmin, user } = useAuthStore()
   const { balance: walletBalance, loading: walletLoading } = useRealtimeWallet(user?.id)
 
   const navItems = [
@@ -54,6 +54,15 @@ const TopNav = () => {
               <Coins className="h-4 w-4" />
               <span className="text-xs font-black uppercase tracking-wide">{walletLoading ? '...' : walletBalance} Koin</span>
             </div>
+          )}
+          {isAuthenticated && isAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="hidden h-11 items-center gap-2 rounded-2xl bg-yellow-400 px-4 text-xs font-black uppercase tracking-wide text-slate-950 transition hover:bg-yellow-300 md:flex"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Admin
+            </button>
           )}
           <button
             onClick={() => navigate(isAuthenticated ? '/profile' : '/login')}
