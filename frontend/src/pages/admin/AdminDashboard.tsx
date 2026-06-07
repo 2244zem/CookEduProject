@@ -8,18 +8,17 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { recipeApi, dashboardApi, auditApi } from '../../lib/api';
+import { coinApi } from '../../lib/api';
 import { recipes as initialRecipes } from '../../data/recipes';
 import BackendStatusChecker from '../../components/debug/BackendStatusChecker';
-import { isSupabaseConfigured } from '../../lib/supabaseClient';
-import { listSupabaseAdminRecipes } from '../../lib/supabaseData';
+import { listSupabaseAdminRecipes, saveSupabaseAdminRecipe, setSupabaseRecipePublished } from '../../lib/supabaseData';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, Cell 
 } from 'recharts';
 
 interface RecipeNormalized {
-  id: number;
+  id: number | string;
   title: string;
   category: string;
   createdBy: string;
@@ -43,7 +42,7 @@ export default function AdminDashboard() {
   // REAL DATA FETCHING
   const { data: recipesData, isLoading } = useQuery({
     queryKey: ['admin-recipes'],
-    queryFn: () => isSupabaseConfigured ? listSupabaseAdminRecipes() : recipeApi.adminList(),
+    queryFn: () => listSupabaseAdminRecipes(),
   });
 
   // Data Transformation Layer
@@ -89,19 +88,19 @@ export default function AdminDashboard() {
 
   // ACTIONS
   const moderateMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number, status: string }) => recipeApi.moderate(id, status),
+    mutationFn: ({ id, status }: { id: number | string, status: string }) => setSupabaseRecipePublished(String(id), status === 'approved'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-recipes'] });
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
     }
   });
 
-  const handleModeration = (id: number, status: string) => {
+  const handleModeration = (id: number | string, status: string) => {
     moderateMutation.mutate({ id, status });
   };
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => recipeApi.delete(id),
+    mutationFn: (id: number | string) => setSupabaseRecipePublished(String(id), false),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-recipes'] }),
   });
 
@@ -111,12 +110,27 @@ export default function AdminDashboard() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const saveMutation = useMutation({
-    mutationFn: (data: FormData) => editingRecipe 
-      ? recipeApi.update(editingRecipe.id, data) 
-      : recipeApi.create(data),
+    mutationFn: () => saveSupabaseAdminRecipe({
+      id: editingRecipe ? String(editingRecipe.id) : null,
+      title: form.title,
+      description: form.description || 'Resep official CookEdu.',
+      difficulty: form.difficulty as 'beginner' | 'intermediate' | 'advanced',
+      cooking_time: Number(form.cooking_time) || 30,
+      prep_time: 0,
+      servings: 1,
+      category: 'Community',
+      category_id: null,
+      ingredients: [{ item: 'Bahan', amount: '1', unit: 'pcs' }],
+      steps: [{ instruction: 'Langkah', duration: 5 }],
+      image: selectedFile,
+      is_published: true,
+      isOfficial: true,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-recipes'] });
+      queryClient.invalidateQueries({ queryKey: ['recipes'] });
       setIsModalOpen(false);
+      setSelectedFile(null);
     }
   });
 
@@ -127,15 +141,7 @@ export default function AdminDashboard() {
   };
 
   const handleSave = () => {
-    const formData = new FormData();
-    formData.append('title', form.title);
-    formData.append('category_id', form.category_id);
-    formData.append('cooking_time', form.cooking_time.toString());
-    formData.append('difficulty', form.difficulty);
-    if (selectedFile) formData.append('image', selectedFile);
-    formData.append('ingredients', JSON.stringify([{ item: 'Bahan', amount: '1', unit: 'pcs' }]));
-    formData.append('steps', JSON.stringify([{ instruction: 'Langkah', duration: 5 }]));
-    saveMutation.mutate(formData);
+    saveMutation.mutate();
   };
 
   const filteredRecipes = allRecipes.filter(r => {
@@ -147,9 +153,9 @@ export default function AdminDashboard() {
 
   const { data: auditLogsData } = useQuery({
     queryKey: ['audit-logs'],
-    queryFn: () => auditApi.list(),
+    queryFn: () => coinApi.adminWalletAudit({ limit: 10 }),
   });
-  const auditLogs = auditLogsData?.data?.data || [];
+  const auditLogs = auditLogsData?.data?.logs || [];
 
   const pendingCount = allRecipes.filter(r => r.status === 'pending').length;
   const shortcutCards = [
@@ -234,25 +240,31 @@ export default function AdminDashboard() {
            </div>
 
            {/* Trend Chart */}
-           <div className="lg:col-span-2 bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm relative overflow-hidden h-64 lg:h-auto">
+           <div className="lg:col-span-2 bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm relative overflow-hidden min-h-[260px] h-64 lg:h-auto">
               <div className="flex items-center justify-between mb-6">
                  <h4 className="text-sm font-black uppercase tracking-tighter flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-emerald-500" /> User Interaction Trends
                  </h4>
               </div>
-              <div className="h-40 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                  <AreaChart data={trendData}>
-                    <defs>
-                      <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2A4D88" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#2A4D88" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <Area type="monotone" dataKey="count" stroke="#2A4D88" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
-                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div className="h-40 min-h-[160px] min-w-[1px] w-full">
+                {trendData.length ? (
+                  <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                    <AreaChart data={trendData}>
+                      <defs>
+                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#2A4D88" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="#2A4D88" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="count" stroke="#2A4D88" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+                      <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center rounded-[24px] bg-slate-50 text-xs font-black uppercase tracking-widest text-slate-400">
+                    No trend data
+                  </div>
+                )}
               </div>
            </div>
 

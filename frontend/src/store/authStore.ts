@@ -20,7 +20,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isAdmin: boolean;
   setAuth: (user: User, token: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
   hydrateSupabaseSession: () => Promise<void>;
 }

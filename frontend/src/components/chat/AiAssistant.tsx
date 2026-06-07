@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Bot, Loader2, Send, Sparkles, X } from 'lucide-react'
-import api from '../../lib/api'
 import { useAuthStore } from '../../store/authStore'
 import { useDeviceProfile } from '../../hooks/useDeviceProfile'
+import { useToastStore } from '../../store/toastStore'
 
 type Message = {
   id: string
@@ -14,6 +14,7 @@ type Message = {
 export default function AiAssistant() {
   const { user } = useAuthStore()
   const { isDesktop, shouldReduceMotion } = useDeviceProfile()
+  const pushToast = useToastStore((state) => state.pushToast)
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -60,24 +61,17 @@ export default function AiAssistant() {
     setIsLoading(true)
 
     try {
-      const history = messages
-        .filter((message) => message.role !== 'system')
-        .map((message) => ({
-          role: message.role === 'model' ? 'model' : 'user',
-          parts: [{ text: message.content }],
-        }))
-      const response = await api.post('/chef-ai', { prompt, history })
-      setMessages((prev) => [...prev, {
-        id: crypto.randomUUID(),
-        role: 'model',
-        content: response?.data?.reply || 'Maaf, dapur AI sedang sibuk. Coba lagi sebentar.',
-      }])
-    } catch (error: any) {
+      await new Promise((resolve) => window.setTimeout(resolve, 250))
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: 'system',
-        content: `Koneksi Chef AI gagal: ${error?.response?.status === 401 ? 'silakan login ulang.' : error?.message || 'tidak diketahui.'}`,
+        content: 'Chef AI sedang dinonaktifkan sementara sampai Supabase Edge Function AI siap. Tidak ada request ke backend lama.',
       }])
+      pushToast({
+        tone: 'warning',
+        title: 'Chef AI belum aktif',
+        message: 'Endpoint lama sudah dimatikan. Siapkan Supabase Edge Function AI untuk mengaktifkan fitur ini.',
+      })
     } finally {
       setIsLoading(false)
     }

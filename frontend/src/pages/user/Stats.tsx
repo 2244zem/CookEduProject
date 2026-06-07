@@ -113,29 +113,35 @@ export default function Stats() {
                 </div>
               </div>
               
-              <div className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data}>
-                    <defs>
-                      <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2A4D88" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#2A4D88" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#B1BBC855" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#7C94B8', fontSize: 12, fontWeight: 700}} dy={10} />
-                    <YAxis hide />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#fff', 
-                        border: 'none', 
-                        borderRadius: '20px', 
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
-                      }} 
-                    />
-                    <Area type="monotone" dataKey="xp" stroke="#2A4D88" strokeWidth={4} fillOpacity={1} fill="url(#colorXp)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div className="h-[350px] min-h-[240px] min-w-[1px] w-full">
+                {data.length ? (
+                  <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                    <AreaChart data={data}>
+                      <defs>
+                        <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#2A4D88" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#2A4D88" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#B1BBC855" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#7C94B8', fontSize: 12, fontWeight: 700}} dy={10} />
+                      <YAxis hide />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#fff',
+                          border: 'none',
+                          borderRadius: '20px',
+                          boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <Area type="monotone" dataKey="xp" stroke="#2A4D88" strokeWidth={4} fillOpacity={1} fill="url(#colorXp)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center rounded-[28px] bg-slate-50 text-sm font-bold text-slate-400">
+                    Belum ada data XP.
+                  </div>
+                )}
               </div>
             </motion.div>
 

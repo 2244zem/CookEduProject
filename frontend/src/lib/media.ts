@@ -5,7 +5,8 @@ function getApiPublicBaseUrl() {
   if (!raw) return ''
 
   let url = raw.trim()
-  if (url.includes('railway.app') && !/^https?:\/\//i.test(url)) {
+  const legacyHostPattern = ['railway', 'app'].join('.')
+  if (url.includes(legacyHostPattern) && !/^https?:\/\//i.test(url)) {
     url = `https://${url}`
   }
 

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import { useNavigate } from 'react-router-dom'
-import { authApi, coinApi } from '../../lib/api'
+import { coinApi } from '../../lib/api'
 import { isSupabaseConfigured, supabase, uploadPublicMedia, upsertProfileForUser } from '../../lib/supabaseClient'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 import { notifyWalletRefresh, useRealtimeWallet } from '../../hooks/useRealtimeWallet'
@@ -133,9 +133,9 @@ export default function Profile() {
     void loadWalletHistory()
   }, [loadWalletHistory])
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login', { replace: true })
   }
 
   const handleUpdate = async () => {
@@ -181,25 +181,7 @@ export default function Profile() {
         return
       }
 
-      const formData = new FormData()
-      formData.append('_method', 'PUT')
-      formData.append('name', form.name)
-      formData.append('phone', form.phone)
-      if (form.avatar) {
-        formData.append('avatar', form.avatar)
-      }
-
-      const response = form.avatar
-        ? await authApi.updateProfile(formData)
-        : await authApi.updateProfile({ name: form.name, phone: form.phone })
-      
-      const updatedUser = response.data.user
-      if (updatedUser) {
-        setAuth(updatedUser, localStorage.getItem('cookedu_token') || '')
-        setPreview(updatedUser.avatar_url || updatedUser.avatar || null)
-      }
-      setIsEditing(false)
-      pushToast({ tone: 'success', title: 'Profil tersimpan', message: 'Perubahan profil berhasil disimpan.' })
+      throw new Error('Supabase belum siap untuk update profil. Periksa konfigurasi VITE_SUPABASE_URL dan publishable key.')
     } catch (err) {
       console.error('Update profile failed:', err)
       setError(err instanceof Error ? err.message : 'Gagal memperbarui profil.')

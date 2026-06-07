@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { recipeApi, categoryApi } from '../../lib/api'
-import { isSupabaseConfigured } from '../../lib/supabaseClient'
 import {
   listSupabaseAdminRecipes,
   listSupabaseCategories,
@@ -55,12 +53,12 @@ export default function RecipesCRUD() {
 
   const { data: recipesData, isLoading } = useQuery({
     queryKey: ['admin-recipes'],
-    queryFn: () => isSupabaseConfigured ? listSupabaseAdminRecipes() : recipeApi.adminList(),
+    queryFn: () => listSupabaseAdminRecipes(),
   })
 
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => isSupabaseConfigured ? listSupabaseCategories() : categoryApi.list(),
+    queryFn: () => listSupabaseCategories(),
   })
 
   const allRecipes = recipesData?.data?.data || []
@@ -82,10 +80,7 @@ export default function RecipesCRUD() {
   })
 
   const saveMutation = useMutation({
-    mutationFn: (data: any) => {
-      if (isSupabaseConfigured) return saveSupabaseAdminRecipe({ ...data, id: editId })
-      return editId ? recipeApi.update(Number(editId), data) : recipeApi.create(data)
-    },
+    mutationFn: (data: any) => saveSupabaseAdminRecipe({ ...data, id: editId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-recipes'] })
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
@@ -95,7 +90,7 @@ export default function RecipesCRUD() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => isSupabaseConfigured ? setSupabaseRecipePublished(id, false) : recipeApi.delete(Number(id)),
+    mutationFn: (id: string) => setSupabaseRecipePublished(id, false),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-recipes'] })
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
@@ -104,7 +99,7 @@ export default function RecipesCRUD() {
   })
 
   const restoreMutation = useMutation({
-    mutationFn: (id: string) => isSupabaseConfigured ? setSupabaseRecipePublished(id, true) : recipeApi.restore(Number(id)),
+    mutationFn: (id: string) => setSupabaseRecipePublished(id, true),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-recipes'] })
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
@@ -165,37 +160,21 @@ export default function RecipesCRUD() {
       return
     }
 
-    if (isSupabaseConfigured) {
-      saveMutation.mutate({
-        title: form.title,
-        description: form.description,
-        difficulty: form.difficulty,
-        cooking_time: form.cooking_time,
-        prep_time: form.prep_time,
-        servings: form.servings,
-        category_id: form.category_id || null,
-        ingredients: cleanIngredients,
-        steps: cleanSteps,
-        image: form.image,
-        existingImageUrl: form.imageUrl,
-        videoUrl: form.videoUrl,
-        is_published: form.is_published,
-      })
-      return
-    }
-    
-    const formData = new FormData()
-    Object.keys(form).forEach(key => {
-      if (key === 'ingredients' || key === 'steps') {
-        formData.append(key, JSON.stringify(key === 'ingredients' ? cleanIngredients : cleanSteps))
-      } else if ((key === 'image' && !(form as any)[key]) || key === 'imageUrl' || key === 'is_published') {
-        // Skip
-      } else {
-        formData.append(key, (form as any)[key])
-      }
+    saveMutation.mutate({
+      title: form.title,
+      description: form.description,
+      difficulty: form.difficulty,
+      cooking_time: form.cooking_time,
+      prep_time: form.prep_time,
+      servings: form.servings,
+      category_id: form.category_id || null,
+      ingredients: cleanIngredients,
+      steps: cleanSteps,
+      image: form.image,
+      existingImageUrl: form.imageUrl,
+      videoUrl: form.videoUrl,
+      is_published: form.is_published,
     })
-
-    saveMutation.mutate(formData)
   }
 
   const updateIngredient = (i: number, key: string, value: any) => {

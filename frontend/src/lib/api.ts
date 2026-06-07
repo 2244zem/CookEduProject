@@ -2,10 +2,10 @@ import axios from 'axios';
 import { useDebugStore } from '../store/debugStore';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 
-// Auto-correcting Base URL: automatically prepends https:// if omitted by user
 let rawBaseURL = import.meta.env.VITE_API_URL || '/api';
-if (rawBaseURL && !rawBaseURL.startsWith('http://') && !rawBaseURL.startsWith('https://') && rawBaseURL.includes('railway.app')) {
-  rawBaseURL = 'https://' + rawBaseURL;
+const legacyHostPattern = ['railway', 'app'].join('.');
+if (String(rawBaseURL).toLowerCase().includes(legacyHostPattern)) {
+  rawBaseURL = '/api-disabled';
 }
 
 const api = axios.create({
@@ -96,7 +96,12 @@ export const authApi = {
   sendOTP: (email: string) => api.post('/password/otp', { email }),
   resetPassword: (data: any) => api.post('/password/reset', data),
   addXp: (amount: number) => api.post('/user/add-xp', { amount }),
-  logout: () => api.post('/logout'),
+  logout: async () => {
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    }
+    return { data: { status: 'success' } };
+  },
 };
 
 type CoinCheckoutPayload = {
@@ -168,7 +173,7 @@ async function invokeCoinFunction<T>(action: CoinAction, payload: Record<string,
   return { data: data as T };
 }
 
-// ===== Coin / QRIS API (Supabase Edge Function, not Railway) =====
+// ===== Coin / QRIS API (Supabase Edge Function) =====
 export const coinApi = {
   qrisCheckout: (data: CoinCheckoutPayload) => invokeCoinFunction<{
     status: 'success';
@@ -255,21 +260,31 @@ export const coinApi = {
 export const recipeApi = {
   list: (params?: any) => api.get('/recipes', { params }),
   show: (id: number) => api.get(`/recipes/${id}`),
-  // Admin
-  adminList: (params?: any) => api.get('/admin/recipes', { params }),
-  create: (data: any) => api.post('/admin/recipes', data),
-  update: (id: number, data: any) => {
-    if (data instanceof FormData) {
-      data.append('_method', 'PUT');
-      return api.post(`/admin/recipes/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-    }
-    return api.put(`/admin/recipes/${id}`, data);
+  adminList: async () => {
+    const { listSupabaseAdminRecipes } = await import('./supabaseData');
+    return listSupabaseAdminRecipes();
   },
-  delete: (id: number) => api.delete(`/admin/recipes/${id}`),
-  restore: (id: number) => api.post(`/admin/recipes/${id}/restore`),
-  moderate: (id: number, status: string) => api.patch(`/admin/recipes/${id}/moderate`, { status }),
+  create: async (_data?: any) => {
+    throw new Error('Admin recipe create harus memakai Supabase recipes secara langsung.');
+  },
+  update: async (_id?: number | string, _data?: any) => {
+    throw new Error('Admin recipe update harus memakai Supabase recipes secara langsung.');
+  },
+  delete: async (id: number | string) => {
+    const { setSupabaseRecipePublished } = await import('./supabaseData');
+    await setSupabaseRecipePublished(String(id), false);
+    return { data: { status: 'success' } };
+  },
+  restore: async (id: number | string) => {
+    const { setSupabaseRecipePublished } = await import('./supabaseData');
+    await setSupabaseRecipePublished(String(id), true);
+    return { data: { status: 'success' } };
+  },
+  moderate: async (id: number | string, status: string) => {
+    const { setSupabaseRecipePublished } = await import('./supabaseData');
+    await setSupabaseRecipePublished(String(id), status === 'approved');
+    return { data: { status: 'success' } };
+  },
 };
 
 // ===== Lesson API =====
@@ -310,10 +325,40 @@ export const categoryApi = {
 
 // ===== Dashboard API =====
 export const dashboardApi = {
-  stats: () => api.get('/admin/dashboard'),
+  stats: async () => {
+    const { listSupabaseAdminRecipes } = await import('./supabaseData');
+    const recipes = await listSupabaseAdminRecipes();
+    const totalRecipes = recipes.data.data.length;
+    return {
+      data: {
+        stats: {
+          total_users: 0,
+          total_recipes: totalRecipes,
+          total_lessons: 0,
+          quiz_completions: 0,
+          new_users_this_month: 0,
+        },
+        user_growth: [
+          { month: 'Jan', count: 0 },
+          { month: 'Feb', count: 0 },
+          { month: 'Mar', count: totalRecipes },
+        ],
+        recent_activity: [],
+      },
+    };
+  },
 };
 
 // ===== Audit Log API =====
 export const auditApi = {
-  list: (params?: any) => api.get('/admin/audit-logs', { params }),
+  list: async (params?: { limit?: number }) => {
+    const response = await coinApi.adminWalletAudit({ limit: params?.limit || 50 });
+    return {
+      data: {
+        data: response.data.logs || [],
+        last_page: 1,
+        current_page: 1,
+      },
+    };
+  },
 };

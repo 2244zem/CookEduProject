@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
-import { authApi } from '../../lib/api'
+import { useToastStore } from '../../store/toastStore'
 import { 
   LayoutDashboard, ChefHat, BookOpen, FileText, 
   LogOut, Menu, X, Bell, Activity,
@@ -19,19 +19,31 @@ const navItems = [
 ]
 
 export default function AdminLayout() {
-  const { user, logout } = useAuthStore()
+  const { user, isAdmin, logout } = useAuthStore()
+  const pushToast = useToastStore((state) => state.pushToast)
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
    
   const handleLogout = async () => {
-    try { await authApi.logout() } catch {}
-    logout()
-    navigate('/login')
+    await logout()
+    navigate('/login', { replace: true })
   }
 
   // Close sidebar on navigation
   useEffect(() => { setSidebarOpen(false) }, [location.pathname])
+
+  useEffect(() => {
+    if (!user) return
+    if (!isAdmin) {
+      pushToast({
+        tone: 'error',
+        title: 'Akses admin ditolak',
+        message: 'Menu admin hanya tersedia untuk akun dengan role admin.',
+      })
+      navigate('/', { replace: true })
+    }
+  }, [isAdmin, navigate, pushToast, user])
 
   return (
     <div className="min-h-screen flex bg-slate-50 font-sans selection:bg-primary selection:text-white">

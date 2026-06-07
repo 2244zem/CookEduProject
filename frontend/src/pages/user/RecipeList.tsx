@@ -15,16 +15,15 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { recipeApi, categoryApi } from '../../lib/api'
 import { recipes as initialRecipes } from '../../data/recipes'
 import { useAuthStore } from '../../store'
 import { useShoppingStore } from '../../store/shoppingStore'
 import { avatarFallbackUrl, resolveMediaUrl, withImageFallback } from '../../lib/media'
-import { isSupabaseConfigured } from '../../lib/supabaseClient'
 import {
   createSupabaseRecipe,
   deleteSupabaseRecipe,
   listFavoriteKeys,
+  listSupabaseCategories,
   listSupabaseRecipes,
   subscribeToCookEduRealtime,
   toggleFavoriteItem,
@@ -376,24 +375,17 @@ export default function RecipeList() {
 
   const recipesQuery = useQuery({
     queryKey: ['recipes'],
-    queryFn: async () => {
-      if (isSupabaseConfigured) return { data: { data: await listSupabaseRecipes() } }
-      return recipeApi.list()
-    },
+    queryFn: async () => ({ data: { data: await listSupabaseRecipes() } }),
   })
 
   const categoriesQuery = useQuery({
     queryKey: ['categories'],
-    queryFn: async () => {
-      if (isSupabaseConfigured) return { data: { data: [] } }
-      return categoryApi.list()
-    },
+    queryFn: async () => ({ data: { data: await listSupabaseCategories() } }),
   })
 
   const favoritesQuery = useQuery({
     queryKey: ['favorite-keys'],
     queryFn: listFavoriteKeys,
-    enabled: isSupabaseConfigured,
   })
 
   const apiRecipes = (recipesQuery.data?.data?.data || []).filter(Boolean)
@@ -439,29 +431,18 @@ export default function RecipeList() {
   const createMutation = useMutation({
     mutationFn: async () => {
       const cleanIngredients = ingredients.filter((ingredient) => ingredient.item.trim())
-      if (isSupabaseConfigured) {
-        return createSupabaseRecipe({
-          title,
-          category,
-          description: description || 'Resep baru dari komunitas CookEdu',
-          difficulty,
-          ingredients: cleanIngredients,
-          steps: [{ instruction: 'Siapkan bahan dan masak sesuai langkah resep.', duration: cookingTime }],
-          cookingTime,
-          prepTime: 0,
-          servings: 1,
-          mediaFile,
-        })
-      }
-      const formData = new FormData()
-      formData.append('title', title)
-      formData.append('category', category)
-      formData.append('description', description)
-      formData.append('difficulty', difficulty)
-      formData.append('cooking_time', String(cookingTime))
-      formData.append('ingredients', JSON.stringify(cleanIngredients))
-      if (mediaFile) formData.append('image', mediaFile)
-      return recipeApi.create(formData)
+      return createSupabaseRecipe({
+        title,
+        category,
+        description: description || 'Resep baru dari komunitas CookEdu',
+        difficulty,
+        ingredients: cleanIngredients,
+        steps: [{ instruction: 'Siapkan bahan dan masak sesuai langkah resep.', duration: cookingTime }],
+        cookingTime,
+        prepTime: 0,
+        servings: 1,
+        mediaFile,
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
@@ -483,7 +464,7 @@ export default function RecipeList() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string | number) => isSupabaseConfigured ? deleteSupabaseRecipe(String(id)) : recipeApi.delete(Number(id)),
+    mutationFn: (id: string | number) => deleteSupabaseRecipe(String(id)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recipes'] }),
   })
 
@@ -588,9 +569,9 @@ export default function RecipeList() {
                   <RecipeCard
                     key={`${recipe.id || recipe.title}-${index}`}
                     recipe={recipe}
-                    canFavorite={isSupabaseConfigured && isUuid(recipe.id)}
+                    canFavorite={isUuid(recipe.id)}
                     isFavorite={favoriteSet.has(recipe.id)}
-                    canDelete={user?.role === 'admin' && isSupabaseConfigured && isUuid(recipe.id)}
+                    canDelete={user?.role === 'admin' && isUuid(recipe.id)}
                     onFavorite={() => isUuid(recipe.id) && favoriteMutation.mutate(recipe.id)}
                     onDelete={() => recipe.id && deleteMutation.mutate(recipe.id)}
                     onAdd={() => handleAddRecipeToShopping(recipe)}

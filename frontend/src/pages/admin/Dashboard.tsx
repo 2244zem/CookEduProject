@@ -115,24 +115,30 @@ export default function Dashboard() {
                   <option>Year</option>
                </select>
             </div>
-            <div className="h-[250px] md:h-[350px] w-full">
-               <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={userGrowth}>
-                     <defs>
-                        <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
-                           <stop offset="5%" stopColor="#2A4D88" stopOpacity={0.3}/>
-                           <stop offset="95%" stopColor="#2A4D88" stopOpacity={0}/>
-                        </linearGradient>
-                     </defs>
-                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#7C94B8', fontSize: 10, fontWeight: 700}} dy={10} />
-                     <YAxis hide />
-                     <Tooltip 
-                        contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '15px', color: '#fff', fontSize: '10px' }} 
-                        itemStyle={{ color: '#2A4D88' }}
-                     />
-                     <Area type="monotone" dataKey="count" stroke="#2A4D88" strokeWidth={4} fill="url(#growthGrad)" />
-                  </AreaChart>
-               </ResponsiveContainer>
+            <div className="h-[250px] min-h-[240px] min-w-[1px] w-full md:h-[350px]">
+               {userGrowth.length ? (
+                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                    <AreaChart data={userGrowth}>
+                       <defs>
+                          <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
+                             <stop offset="5%" stopColor="#2A4D88" stopOpacity={0.3}/>
+                             <stop offset="95%" stopColor="#2A4D88" stopOpacity={0}/>
+                          </linearGradient>
+                       </defs>
+                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#7C94B8', fontSize: 10, fontWeight: 700}} dy={10} />
+                       <YAxis hide />
+                       <Tooltip
+                          contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '15px', color: '#fff', fontSize: '10px' }}
+                          itemStyle={{ color: '#2A4D88' }}
+                       />
+                       <Area type="monotone" dataKey="count" stroke="#2A4D88" strokeWidth={4} fill="url(#growthGrad)" />
+                    </AreaChart>
+                 </ResponsiveContainer>
+               ) : (
+                 <div className="flex h-full items-center justify-center rounded-[28px] bg-slate-50 text-xs font-black uppercase tracking-widest text-slate-400">
+                   No analytics data
+                 </div>
+               )}
             </div>
          </div>
 

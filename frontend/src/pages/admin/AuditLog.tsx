@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { auditApi } from '../../lib/api'
+import { coinApi } from '../../lib/api'
 import { TableSkeleton } from '../../components/ui/Skeleton'
 import { 
   FileText, User, Activity, Calendar, Search, 
@@ -7,26 +7,45 @@ import {
   ChevronRight, ArrowRight, Database
 } from 'lucide-react'
 import { useState } from 'react'
+import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useToastStore } from '../../store/toastStore'
 
 export default function AuditLog() {
   const [page, setPage] = useState(1)
   const [action, setAction] = useState('')
+  const pushToast = useToastStore((state) => state.pushToast)
 
-  const { data: auditData, isLoading } = useQuery({
+  const { data: auditData, isLoading, error } = useQuery({
     queryKey: ['audit-logs', page, action],
-    queryFn: () => auditApi.list({ page, action: action || undefined }),
+    queryFn: () => coinApi.adminWalletAudit({ limit: 80 }),
   })
 
-  const logs = auditData?.data?.data || []
-  const pagination = auditData?.data
+  useEffect(() => {
+    if (!error) return
+    pushToast({
+      tone: 'error',
+      title: 'Audit log gagal dimuat',
+      message: error instanceof Error ? error.message : 'Periksa Supabase Edge Function coins.',
+    })
+  }, [error, pushToast])
+
+  const allLogs = auditData?.data?.logs || []
+  const filteredLogs = action ? allLogs.filter((log: any) => log.action === action) : allLogs
+  const pageSize = 10
+  const logs = filteredLogs.slice((page - 1) * pageSize, page * pageSize)
+  const pagination = {
+    current_page: page,
+    last_page: Math.max(1, Math.ceil(filteredLogs.length / pageSize)),
+  }
 
   const getActionColor = (action: string) => {
     switch (action) {
-      case 'created': return 'bg-emerald-50 text-emerald-600 border-emerald-100'
-      case 'updated': return 'bg-amber-50 text-amber-600 border-amber-100'
-      case 'deleted': return 'bg-rose-50 text-rose-600 border-rose-100'
-      case 'restored': return 'bg-indigo-50 text-indigo-600 border-indigo-100'
+      case 'admin-give-coins': return 'bg-emerald-50 text-emerald-600 border-emerald-100'
+      case 'qris-checkout': return 'bg-cyan-50 text-cyan-600 border-cyan-100'
+      case 'bypass-success': return 'bg-amber-50 text-amber-700 border-amber-100'
+      case 'spend-coins': return 'bg-rose-50 text-rose-600 border-rose-100'
+      case 'claim-daily-reward': return 'bg-indigo-50 text-indigo-600 border-indigo-100'
       default: return 'bg-slate-50 text-slate-600 border-slate-100'
     }
   }
@@ -59,10 +78,11 @@ export default function AuditLog() {
              className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest px-6 py-2 outline-none cursor-pointer"
            >
               <option value="">All Filtered Events</option>
-              <option value="created">Creations Only</option>
-              <option value="updated">Modifications Only</option>
-              <option value="deleted">Deletions Only</option>
-              <option value="restored">Restorations Only</option>
+              <option value="admin-give-coins">Admin Give Coins</option>
+              <option value="qris-checkout">QRIS Checkout</option>
+              <option value="bypass-success">Sandbox Settlement</option>
+              <option value="spend-coins">Spend Coins</option>
+              <option value="claim-daily-reward">Daily Reward</option>
            </select>
         </div>
       </header>
@@ -118,11 +138,11 @@ export default function AuditLog() {
                     <td className="py-6 px-10">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center text-[10px] font-black shadow-lg shadow-black/10">
-                                {log.user?.name?.charAt(0) || 'S'}
+                                {(log.admin_username || 'S').charAt(0)}
                             </div>
                             <div>
-                               <p className="text-[13px] font-black text-slate-800 leading-tight">{log.user?.name || 'System'}</p>
-                               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{log.user?.role || 'Admin'}</p>
+                               <p className="text-[13px] font-black text-slate-800 leading-tight">{log.admin_username || 'System'}</p>
+                               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{log.admin_user_id ? 'Admin' : 'System'}</p>
                             </div>
                         </div>
                     </td>
@@ -135,16 +155,16 @@ export default function AuditLog() {
                     </td>
                     <td className="py-6 px-10">
                         <div className="flex flex-col">
-                           <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">{log.model_type.split('\\').pop()}</span>
-                           <span className="text-[10px] font-bold text-slate-400 mt-1 flex items-center gap-1"><Hash className="w-3 h-3" /> UID: {log.model_id}</span>
+                           <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">{log.target_username || log.target_email || 'Wallet Event'}</span>
+                           <span className="text-[10px] font-bold text-slate-400 mt-1 flex items-center gap-1"><Hash className="w-3 h-3" /> {log.target_user_id || log.id}</span>
                         </div>
                     </td>
                     <td className="py-6 px-10 text-right">
                         <button 
                           className="px-5 py-2.5 bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm flex items-center gap-2 ml-auto" 
-                          onClick={() => console.log(log.new_values || log.old_values)}
+                          onClick={() => console.log(log.metadata || log.reason || log)}
                         >
-                           <Activity className="w-4 h-4" /> Trace
+                           <Activity className="w-4 h-4" /> {log.amount ? `${log.amount} koin` : 'Trace'}
                         </button>
                     </td>
                   </motion.tr>

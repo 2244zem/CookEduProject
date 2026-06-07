@@ -24,6 +24,12 @@ export function useRealtimeWallet(userId?: string | number | null) {
       return 0
     }
 
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      setLoading(false)
+      return 0
+    }
+
     setLoading(true)
     try {
       const response = await coinApi.walletBalance()
@@ -45,30 +51,41 @@ export function useRealtimeWallet(userId?: string | number | null) {
   useEffect(() => {
     if (!walletUserId || !isSupabaseConfigured || !supabase) return
 
-    const channelName = `wallet_realtime_${walletUserId}_${channelInstanceId.current}`
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_wallets', filter: `user_id=eq.${walletUserId}` },
-        (payload) => {
-          const nextBalance = (payload.new as { coin_balance?: number } | null)?.coin_balance
-          if (typeof nextBalance === 'number') {
-            setBalance(nextBalance)
-            return
-          }
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    let cancelled = false
 
-          void refresh()
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          console.warn('CookEdu wallet realtime unavailable; falling back to manual refresh.')
-        }
-      })
+    const subscribe = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (cancelled || !session?.access_token) return
+
+      const channelName = `wallet_realtime_${walletUserId}_${channelInstanceId.current}`
+      channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'user_wallets', filter: `user_id=eq.${walletUserId}` },
+          (payload) => {
+            const nextBalance = (payload.new as { coin_balance?: number } | null)?.coin_balance
+            if (typeof nextBalance === 'number') {
+              setBalance(nextBalance)
+              return
+            }
+
+            void refresh()
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR') {
+            console.warn('CookEdu wallet realtime unavailable; falling back to manual refresh.')
+          }
+        })
+    }
+
+    void subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      cancelled = true
+      if (channel) supabase.removeChannel(channel)
     }
   }, [refresh, walletUserId])
 
