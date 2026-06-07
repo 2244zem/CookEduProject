@@ -605,10 +605,23 @@ export async function deleteSupabaseRecipe(id: string) {
 const SOCIAL_MEDIA_BUCKET = 'social-media-assets'
 const SOCIAL_IMAGE_FILE_LIMIT = 10 * 1024 * 1024
 const SOCIAL_VIDEO_FILE_LIMIT = 45 * 1024 * 1024
+const SOCIAL_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'])
+const SOCIAL_VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov', 'm4v'])
 
 function getSocialMediaType(pathOrMime: string): 'image' | 'video' {
   const value = pathOrMime.toLowerCase()
   return value.includes('video/') || /\.(mp4|mov|webm|m4v|avi)$/i.test(value) ? 'video' : 'image'
+}
+
+function getFileExtension(file: File) {
+  return file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || ''
+}
+
+function getSocialFileKind(file: File): 'image' | 'video' | null {
+  const extension = getFileExtension(file)
+  if (file.type.startsWith('image/') || SOCIAL_IMAGE_EXTENSIONS.has(extension)) return 'image'
+  if (file.type.startsWith('video/') || SOCIAL_VIDEO_EXTENSIONS.has(extension)) return 'video'
+  return null
 }
 
 function formatFileLimit(bytes: number) {
@@ -616,11 +629,11 @@ function formatFileLimit(bytes: number) {
 }
 
 function getSocialFileLimit(file: File) {
-  return file.type.startsWith('video/') ? SOCIAL_VIDEO_FILE_LIMIT : SOCIAL_IMAGE_FILE_LIMIT
+  return getSocialFileKind(file) === 'video' ? SOCIAL_VIDEO_FILE_LIMIT : SOCIAL_IMAGE_FILE_LIMIT
 }
 
 function safeStorageFileName(file: File) {
-  const extension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+  const extension = getFileExtension(file) || 'jpg'
   return `${Date.now()}-${crypto.randomUUID()}.${extension}`
 }
 
@@ -684,7 +697,7 @@ async function uploadWithProgress(path: string, file: File, accessToken: string,
     const { error } = await client.storage.from(SOCIAL_MEDIA_BUCKET).upload(path, file, {
       cacheControl: '3600',
       upsert: false,
-      contentType: file.type || undefined,
+      contentType: file.type && file.type !== 'application/octet-stream' ? file.type : undefined,
     })
     if (error) throw error
     onProgress?.(100)
@@ -700,7 +713,7 @@ async function uploadWithProgress(path: string, file: File, accessToken: string,
     request.setRequestHeader('Authorization', `Bearer ${accessToken}`)
     request.setRequestHeader('apikey', supabaseAnonKey)
     request.setRequestHeader('x-upsert', 'false')
-    if (file.type) request.setRequestHeader('content-type', file.type)
+    if (file.type && file.type !== 'application/octet-stream') request.setRequestHeader('content-type', file.type)
 
     request.upload.onprogress = (event) => {
       if (!event.lengthComputable) return
@@ -727,13 +740,14 @@ async function uploadWithProgress(path: string, file: File, accessToken: string,
 }
 
 export async function uploadSocialMediaAsset(file: File, scope: 'posts' | 'comments', onProgress?: (progress: number) => void) {
-  if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-    throw new Error('File harus berupa foto atau video.')
+  const fileKind = getSocialFileKind(file)
+  if (!fileKind) {
+    throw new Error('File harus berupa foto JPG, PNG, WebP, GIF, HEIC, atau video MP4, WebM, MOV.')
   }
 
   const fileLimit = getSocialFileLimit(file)
   if (file.size > fileLimit) {
-    const kind = file.type.startsWith('video/') ? 'Video' : 'Foto'
+    const kind = fileKind === 'video' ? 'Video' : 'Foto'
     throw new Error(`${kind} terlalu besar. Maksimal ${formatFileLimit(fileLimit)} agar upload stabil di Supabase.`)
   }
 
@@ -768,7 +782,7 @@ async function uploadSocialMediaAssets(
     })
     uploaded.push({
       path: upload.path,
-      type: upload.mediaType,
+      type: getSocialFileKind(file) || upload.mediaType,
       name: file.name,
       size: file.size,
     })
