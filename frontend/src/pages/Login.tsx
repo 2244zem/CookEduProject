@@ -36,10 +36,11 @@ export default function Login() {
         if (!data.session?.user) throw new Error('Supabase belum mengembalikan sesi. Coba login ulang.')
 
         const profile = await upsertProfileForUser(data.session.user)
+        const displayName = getSupabaseUserName(data.session.user, profile)
         const user = {
           id: data.session.user.id,
-          name: getSupabaseUserName(data.session.user, profile),
-          username: profile?.username,
+          name: displayName,
+          username: displayName,
           email: data.session.user.email || email,
           role: profile?.role || 'user',
           phone: profile?.phone || undefined,

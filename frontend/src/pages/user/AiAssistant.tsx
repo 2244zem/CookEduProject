@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Bot, ChefHat, Loader2, Send, Utensils, Zap } from 'lucide-react'
 import { useAuthStore } from '../../store'
+import { getPreferredIdentityName } from '../../lib/supabaseClient'
 
 type Message = {
   id: string
@@ -13,7 +14,11 @@ type Message = {
 export default function AiAssistantPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const displayName = user?.name || user?.username || 'Koki CookEdu'
+  const displayName = getPreferredIdentityName({
+    username: user?.username,
+    name: user?.name,
+    email: user?.email,
+  })
   const [messages, setMessages] = useState<Message[]>([{
     id: 'welcome',
     sender: 'ai',

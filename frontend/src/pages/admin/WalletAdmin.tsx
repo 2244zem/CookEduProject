@@ -140,7 +140,7 @@ export default function WalletAdmin() {
                   {item.avatar_url ? <img src={item.avatar_url} alt="" className="h-full w-full object-cover" /> : (item.username || item.email || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-slate-950">{item.username || 'User CookEdu'}</p>
+                  <p className="truncate text-sm font-black text-slate-950">{item.username || item.email || 'Username belum ada'}</p>
                   <p className="truncate text-xs font-bold text-slate-400">{item.email || item.id}</p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 px-4 py-2 text-right">

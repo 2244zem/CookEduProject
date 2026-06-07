@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getProfileForSession, getSupabaseUserName, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { getPreferredIdentityName, getProfileForSession, getSupabaseUserName, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 
 interface User {
   id: number | string;
@@ -31,12 +31,20 @@ function hasStoredSupabaseSession() {
 }
 
 function normalizeUser(user: Partial<User>): User {
-  const displayName = user.name || user.username || user.email?.split('@')[0] || 'Koki CookEdu';
+  const displayName = getPreferredIdentityName({
+    username: user.username,
+    name: user.name,
+    email: user.email,
+  });
 
   return {
     id: user.id || '',
     name: displayName,
-    username: user.username || displayName,
+    username: getPreferredIdentityName({
+      username: user.username,
+      name: displayName,
+      email: user.email,
+    }),
     email: user.email || '',
     role: (user.role as User['role']) || 'user',
     phone: user.phone,
@@ -47,15 +55,26 @@ function normalizeUser(user: Partial<User>): User {
   };
 }
 
+function readStoredUser() {
+  try {
+    const raw = localStorage.getItem('cookedu_user');
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed ? normalizeUser(parsed) : null;
+  } catch {
+    localStorage.removeItem('cookedu_user');
+    return null;
+  }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: isSupabaseConfigured && !hasStoredSupabaseSession() ? null : JSON.parse(localStorage.getItem('cookedu_user') || 'null'),
+  user: isSupabaseConfigured && !hasStoredSupabaseSession() ? null : readStoredUser(),
   token: isSupabaseConfigured && !hasStoredSupabaseSession() ? null : localStorage.getItem('cookedu_token'),
   isAuthenticated: isSupabaseConfigured
     ? Boolean(localStorage.getItem('cookedu_token') && hasStoredSupabaseSession())
     : !!localStorage.getItem('cookedu_token'),
   isAdmin: isSupabaseConfigured && !hasStoredSupabaseSession()
     ? false
-    : JSON.parse(localStorage.getItem('cookedu_user') || '{}')?.role === 'admin',
+    : readStoredUser()?.role === 'admin',
 
   setAuth: (user, token) => {
     const normalized = normalizeUser(user);
@@ -113,7 +132,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const normalized = normalizeUser({
       id: session.user.id,
       name: getSupabaseUserName(session.user, profile),
-      username: profile?.username || session.user.user_metadata?.username,
+      username: getSupabaseUserName(session.user, profile),
       email: session.user.email || '',
       role: profile?.role || 'user',
       phone: profile?.phone || undefined,

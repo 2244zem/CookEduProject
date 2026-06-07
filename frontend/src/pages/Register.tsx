@@ -54,10 +54,11 @@ export default function Register() {
           username: form.name,
           phone: form.phone || null,
         })
+        const displayName = getSupabaseUserName(data.user, profile)
         const user = {
           id: data.user.id,
-          name: getSupabaseUserName(data.user, profile),
-          username: profile?.username,
+          name: displayName,
+          username: displayName,
           email: data.user.email || form.email,
           role: profile?.role || 'user',
           phone: profile?.phone || form.phone || undefined,
@@ -93,7 +94,7 @@ export default function Register() {
   }
 
   const fields = [
-    { key: 'name', label: 'Nama Lengkap', type: 'text', icon: User, placeholder: 'John Doe' },
+    { key: 'name', label: 'Username', type: 'text', icon: User, placeholder: 'zem_cooks' },
     { key: 'email', label: 'Email Address', type: 'email', icon: Mail, placeholder: 'nama@email.com' },
     { key: 'phone', label: 'Phone Number', type: 'tel', icon: Phone, placeholder: '08xxxxxxxxxx' },
   ]

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store'
+import { getPreferredIdentityName } from '../../lib/supabaseClient'
 import { recipeData } from '../../data/catatanIbuRecipes'
 
 // Asset Imports
@@ -16,14 +17,18 @@ import imgDefault from '../../assets/download (1).jpg'
 
 export default function CatatanIbu() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [username, setUsername] = useState('User')
+  const [username, setUsername] = useState('Koki CookEdu')
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuthStore()
 
   useEffect(() => {
-    if (user?.name) {
-      setUsername(user.name)
+    if (user) {
+      setUsername(getPreferredIdentityName({
+        username: user.username,
+        name: user.name,
+        email: user.email,
+      }))
     }
   }, [user])
 

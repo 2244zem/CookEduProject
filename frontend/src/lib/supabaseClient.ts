@@ -53,16 +53,44 @@ export function getSupabaseAuthMessage(error: unknown, fallback: string) {
   return message || fallback
 }
 
+const PLACEHOLDER_IDENTITIES = new Set([
+  'john doe',
+  'johndoe',
+  'user',
+  'user cookedu',
+  'cookedu user',
+])
+
+export function isPlaceholderIdentity(value?: string | null) {
+  const normalized = String(value || '').trim().toLowerCase()
+  return !normalized || PLACEHOLDER_IDENTITIES.has(normalized)
+}
+
+export function getPreferredIdentityName(input: {
+  username?: string | null
+  name?: string | null
+  full_name?: string | null
+  email?: string | null
+  fallback?: string
+}) {
+  const candidates = [
+    input.username,
+    input.name,
+    input.full_name,
+    input.email?.split('@')[0],
+  ]
+
+  return candidates.find((candidate) => !isPlaceholderIdentity(candidate))?.trim() || input.fallback || 'Koki CookEdu'
+}
+
 export function getSupabaseUserName(user?: SupabaseUser | null, profile?: Partial<CookEduProfile> | null) {
   const metadata = user?.user_metadata || {}
-  return (
-    profile?.username ||
-    metadata.username ||
-    metadata.name ||
-    metadata.full_name ||
-    user?.email?.split('@')[0] ||
-    'Koki CookEdu'
-  )
+  return getPreferredIdentityName({
+    username: profile?.username || metadata.username,
+    name: metadata.name,
+    full_name: metadata.full_name,
+    email: user?.email,
+  })
 }
 
 function getSafeProfileUsername(user: SupabaseUser, profile?: Partial<CookEduProfile> | null) {

@@ -8,7 +8,7 @@ import {
 import { useAuthStore } from '../../store'
 import { useNavigate } from 'react-router-dom'
 import { coinApi } from '../../lib/api'
-import { isSupabaseConfigured, supabase, uploadPublicMedia, upsertProfileForUser } from '../../lib/supabaseClient'
+import { getPreferredIdentityName, isSupabaseConfigured, supabase, uploadPublicMedia, upsertProfileForUser } from '../../lib/supabaseClient'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 import { notifyWalletRefresh, useRealtimeWallet } from '../../hooks/useRealtimeWallet'
 import HumanSignalButtons from '../../components/ui/HumanSignalButtons'
@@ -120,12 +120,17 @@ export default function Profile() {
 
   useEffect(() => {
     if (user) {
+      const profileName = getPreferredIdentityName({
+        username: user.username,
+        name: user.name,
+        email: user.email,
+      })
       setForm({
-        name: user.name || '',
+        name: profileName,
         phone: user.phone || '',
         avatar: null
       })
-      setPreview(resolveMediaUrl(user.avatar_url || user.avatar) || avatarFallbackUrl(user.name))
+      setPreview(resolveMediaUrl(user.avatar_url || user.avatar) || avatarFallbackUrl(profileName))
     }
   }, [user])
 
@@ -163,11 +168,17 @@ export default function Profile() {
           avatar_url: avatarUrl,
         })
 
+        const profileName = getPreferredIdentityName({
+          username: profile?.username || form.name,
+          name: user?.name,
+          email: sessionUser.email || user?.email,
+        })
+
         const updatedUser = {
           ...user,
           id: sessionUser.id,
-          name: profile?.username || form.name,
-          username: profile?.username || form.name,
+          name: profileName,
+          username: profileName,
           email: sessionUser.email || user?.email || '',
           phone: profile?.phone || form.phone,
           avatar_url: profile?.avatar_url || avatarUrl || undefined,
@@ -175,7 +186,7 @@ export default function Profile() {
         }
 
         setAuth(updatedUser as any, sessionData.session?.access_token || localStorage.getItem('cookedu_token') || '')
-        setPreview(resolveMediaUrl(updatedUser.avatar_url) || avatarFallbackUrl(updatedUser.name))
+        setPreview(resolveMediaUrl(updatedUser.avatar_url) || avatarFallbackUrl(profileName))
         setIsEditing(false)
         pushToast({ tone: 'success', title: 'Profil tersimpan', message: 'Data profil dan avatar sudah sinkron ke Supabase.' })
         return
@@ -201,7 +212,7 @@ export default function Profile() {
       const response = await coinApi.qrisCheckout({
         package_id: selectedCoinPackage,
         user_id: user.id,
-        customer_name: user.username || user.name,
+        customer_name: getPreferredIdentityName({ username: user.username, name: user.name, email: user.email }),
         customer_email: user.email,
       })
 
@@ -358,7 +369,7 @@ export default function Profile() {
                   value={form.name}
                   onChange={(e) => setForm({...form, name: e.target.value})}
                   className="w-full bg-white/70 backdrop-blur-xl border-2 border-white rounded-2xl px-6 py-3 font-black text-xl text-center focus:border-cyan-500/20 transition-all outline-none shadow-premium"
-                  placeholder="Nama Lengkap"
+                  placeholder="Username"
                 />
                 <button 
                   onClick={handleUpdate}
@@ -371,7 +382,7 @@ export default function Profile() {
               </div>
             ) : (
               <>
-                <h1 className="text-3xl font-black tracking-tight">{user?.name || 'User CookEdu'}</h1>
+                <h1 className="text-3xl font-black tracking-tight">{getPreferredIdentityName({ username: user?.username, name: user?.name, email: user?.email })}</h1>
                 <div className="mt-2 inline-flex items-center gap-2 bg-cyan-100 px-4 py-1.5 rounded-full text-[9px] font-black text-cyan-600 uppercase tracking-widest">
                   Apprentice Chef
                 </div>

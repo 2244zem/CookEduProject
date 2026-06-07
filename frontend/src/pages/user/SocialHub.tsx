@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
+import { getPreferredIdentityName } from '../../lib/supabaseClient'
 import {
   createSocialComment,
   createSocialPost,
@@ -503,7 +504,11 @@ export default function SocialHub() {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
   const [socialActionError, setSocialActionError] = useState('')
 
-  const displayName = user?.name || user?.username || 'Koki CookEdu'
+  const displayName = getPreferredIdentityName({
+    username: user?.username,
+    name: user?.name,
+    email: user?.email,
+  })
   const avatarUrl = resolveMediaUrl(user?.avatar_url || user?.avatar) || avatarFallbackUrl(displayName)
 
   const postsQuery = useQuery({

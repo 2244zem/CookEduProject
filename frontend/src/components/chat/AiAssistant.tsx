@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 import { useToastStore } from '../../store/toastStore'
 import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
+import { getPreferredIdentityName } from '../../lib/supabaseClient'
 
 type Message = {
   id: string
@@ -20,7 +21,11 @@ export default function AiAssistant() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const displayName = user?.name || user?.username || 'Koki CookEdu'
+  const displayName = getPreferredIdentityName({
+    username: user?.username,
+    name: user?.name,
+    email: user?.email,
+  })
 
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem('chefAiHistory')

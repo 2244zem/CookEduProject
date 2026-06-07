@@ -122,7 +122,7 @@ async function chargeQris(body: Record<string, unknown>, user: User) {
       name: selectedPackage.name,
     }],
     customer_details: {
-      first_name: String(body.customer_name || user.user_metadata?.username || user.email || 'CookEdu User'),
+      first_name: String(isPlaceholderIdentity(String(body.customer_name || '')) ? getSafeUsername(user) : body.customer_name),
       email: String(body.customer_email || user.email || ''),
     },
     custom_field1: user.id,
@@ -778,13 +778,20 @@ function isMissingColumnError(error: unknown) {
 
 function getSafeUsername(user: User) {
   const metadata = user.user_metadata || {}
-  const candidate = String(
+  const candidate = [
     metadata.username ||
+    '',
     metadata.name ||
+    '',
     metadata.full_name ||
+    '',
     user.email?.split('@')[0] ||
     `koki-${user.id.slice(0, 8)}`,
-  )
+  ]
+    .map((item) => String(item || '').trim())
+    .find((item) => !isPlaceholderIdentity(item)) || `koki-${user.id.slice(0, 8)}`
+
+  const safeCandidate = String(candidate)
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9._-]/g, '-')
@@ -792,7 +799,12 @@ function getSafeUsername(user: User) {
     .replace(/^-|-$/g, '')
     .slice(0, 40)
 
-  return candidate.length >= 2 ? candidate : `koki-${user.id.slice(0, 8)}`
+  return safeCandidate.length >= 2 ? safeCandidate : `koki-${user.id.slice(0, 8)}`
+}
+
+function isPlaceholderIdentity(value?: string | null) {
+  const normalized = String(value || '').trim().toLowerCase()
+  return !normalized || ['john doe', 'johndoe', 'user', 'user cookedu', 'cookedu user'].includes(normalized)
 }
 
 function withUserSuffix(username: string, userId: string) {
