@@ -5,7 +5,7 @@ import {
   Edit3, BarChart3, AlertCircle, FileText,
   ArrowRight, User, Clock, Flame, XCircle,
   TrendingUp, ShieldCheck, ChefHat, Coins, Heart, ShoppingBag, RefreshCw
-} from 'lucide-react';
+} from '@icons/CookEduIcons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { coinApi } from '../../lib/api';

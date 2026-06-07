@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Bot, ChefHat, Loader2, Send, Utensils, Zap } from 'lucide-react'
+import { ArrowLeft, Bot, ChefHat, Loader2, Send, Utensils, Zap } from '@icons/CookEduIcons'
 import { useAuthStore } from '../../store'
 import { getPreferredIdentityName } from '../../lib/supabaseClient'
 import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'

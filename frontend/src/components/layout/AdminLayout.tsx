@@ -5,7 +5,7 @@ import {
   LayoutDashboard, ChefHat, BookOpen, FileText, 
   LogOut, Menu, X, Bell, Activity,
   ChevronRight, Search, Coins
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DebugOverlay from '../debug/DebugOverlay'

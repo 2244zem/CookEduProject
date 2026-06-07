@@ -20,7 +20,7 @@ import {
   Timer,
   UtensilsCrossed,
   X,
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { recipes } from '../../data/recipes'
 import { useShoppingStore } from '../../store/shoppingStore'
 import { useAuthStore } from '../../store/authStore'

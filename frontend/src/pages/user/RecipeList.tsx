@@ -14,7 +14,7 @@ import {
   ShoppingCart,
   Trash2,
   X,
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { recipes as initialRecipes } from '../../data/recipes'
 import { useAuthStore } from '../../store'
 import { useShoppingStore } from '../../store/shoppingStore'

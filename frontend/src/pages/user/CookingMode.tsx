@@ -5,7 +5,7 @@ import { recipeApi, authApi } from '../../lib/api';
 import { 
   ArrowLeft, ArrowRight, X, Play, Pause, RotateCcw, 
   Loader2, Award, Home, User, Volume2, Timer as TimerIcon, Check, Sparkles
-} from 'lucide-react';
+} from '@icons/CookEduIcons';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 

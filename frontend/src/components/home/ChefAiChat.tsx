@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bot, RotateCcw, Send } from 'lucide-react'
+import { Bot, RotateCcw, Send } from '@icons/CookEduIcons'
 import { useToastStore } from '../../store/toastStore'
 import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
 import { buildLocalChefReply } from '../../lib/chefLocalBrain'

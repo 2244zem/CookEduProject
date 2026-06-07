@@ -5,7 +5,7 @@ import {
   ChevronRight, ArrowLeft, Bookmark, 
   ShoppingCart, Snowflake, Globe, 
   User 
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store'
 import { getPreferredIdentityName } from '../../lib/supabaseClient'

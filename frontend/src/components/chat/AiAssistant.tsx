@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bot, Loader2, Send, Sparkles, X } from 'lucide-react'
+import { Bot, Loader2, Send, Sparkles, X } from '@icons/CookEduIcons'
 import { useAuthStore } from '../../store/authStore'
 import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 import { useToastStore } from '../../store/toastStore'

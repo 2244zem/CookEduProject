@@ -6,7 +6,7 @@ import {
   User, Globe, CheckCircle2,
   ChefHat, Grid, Star,
   Snowflake, Trash2, Sparkles
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useShoppingStore } from '../../store/shoppingStore'
 import { useAuthStore } from '../../store'

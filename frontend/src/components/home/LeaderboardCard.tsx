@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Medal } from 'lucide-react';
+import { Crown, Medal } from '@icons/CookEduIcons';
 
 interface LeaderboardEntry {
   rank: number;

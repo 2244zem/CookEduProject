@@ -18,7 +18,7 @@ import {
   Upload,
   Video,
   X,
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { useAuthStore } from '../../store/authStore'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 import { getPreferredIdentityName } from '../../lib/supabaseClient'

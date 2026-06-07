@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   User,
   WalletCards,
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { coinApi } from '../../lib/api'
 
 type WalletUser = {

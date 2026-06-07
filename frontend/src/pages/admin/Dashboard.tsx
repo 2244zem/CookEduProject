@@ -5,7 +5,7 @@ import {
   Users, ChefHat, BookOpen, TrendingUp, Award, 
   Activity, HeartPulse, FileWarning, Zap, 
   ArrowUpRight, Terminal 
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { motion } from 'framer-motion'
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { useDebugStore } from '../../store/debugStore'

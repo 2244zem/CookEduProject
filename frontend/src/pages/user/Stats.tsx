@@ -4,7 +4,7 @@ import {
   Award, Target, Zap, TrendingUp, BarChart, 
   Calendar, Trophy, Crown, Medal, User,
   Bookmark, BookOpen, Snowflake
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useNavigate, useLocation } from 'react-router-dom'
 

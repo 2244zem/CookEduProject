@@ -5,7 +5,7 @@ import {
   FileText, User, Activity, Calendar, Search, 
   Filter, Shield, Clock, Hash, ChevronLeft, 
   ChevronRight, ArrowRight, Database
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { useState } from 'react'
 import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'

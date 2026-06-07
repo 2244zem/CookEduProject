@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle2, Loader2, RefreshCw, TriangleAlert, XCircle } from 'lucide-react'
+import { CheckCircle2, Loader2, RefreshCw, TriangleAlert, XCircle } from '@icons/CookEduIcons'
 import { coinApi } from '../../lib/api'
 import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient'
 import { useAuthStore } from '../../store/authStore'

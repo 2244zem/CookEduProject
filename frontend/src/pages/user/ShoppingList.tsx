@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft, ShoppingCart, CheckCircle2, Circle, 
   Trash2, Plus, Snowflake, BookOpen, BarChart3, User, Bookmark
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useShoppingStore } from '../../store/shoppingStore'
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, CheckCircle2, Monitor, Smartphone, Sparkles } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Monitor, Smartphone, Sparkles } from '@icons/CookEduIcons'
 
 import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 import imgBg from '../../assets/background.png'

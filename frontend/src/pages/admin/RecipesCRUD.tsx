@@ -13,7 +13,7 @@ import {
   ChefHat, Search, Clock,
   ChevronRight, LayoutGrid, List, Sparkles,
   Camera, UtensilsCrossed, AlertCircle
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Ingredient { item: string; amount: string; unit: string; calories: number; protein: number; carbs: number; fat: number }

@@ -1,4 +1,4 @@
-import { Home, User, Wand2, Bookmark, ShoppingBag, BookOpen, ChefHat, Coins, ShieldCheck } from 'lucide-react'
+import { Home, User, Wand2, Bookmark, ShoppingBag, BookOpen, ChefHat, Coins, ShieldCheck } from '@icons/CookEduIcons'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../../store'
 import { useRealtimeWallet } from '../../hooks/useRealtimeWallet'

@@ -4,7 +4,7 @@ import {
   Camera, Save, X, Loader2, ShieldCheck,
   CheckCircle2, AlertCircle, Coins, QrCode,
   CalendarCheck, Sparkles, History, WalletCards, Bot, Trophy, LockKeyhole
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { useAuthStore } from '../../store'
 import { useNavigate } from 'react-router-dom'
 import { coinApi } from '../../lib/api'

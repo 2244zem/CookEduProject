@@ -7,7 +7,7 @@ import {
   Video, Target, Layers, Search, Filter, 
   ChevronRight, Sparkles, PlayCircle, Clock,
   Eye, GraduationCap, AlertCircle
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function LessonsManager() {

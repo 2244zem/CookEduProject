@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingBag, Trash2, CheckCircle, Check } from 'lucide-react';
+import { ShoppingBag, Trash2, CheckCircle, Check } from '@icons/CookEduIcons';
 import type { Recipe } from '../data/recipeStore';
 
 interface ShoppingListProps {

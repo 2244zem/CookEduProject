@@ -16,7 +16,7 @@ import {
   Sparkles,
   Upload,
   X,
-} from 'lucide-react'
+} from '@icons/CookEduIcons'
 import { useNavigate } from 'react-router-dom'
 import { recipes as staticRecipes } from '../../data/recipes'
 import { stapleIngredientsData } from '../../data/stapleIngredients'

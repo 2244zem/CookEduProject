@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Bookmark, ChefHat, ExternalLink, Heart, Loader2, Trash2 } from 'lucide-react'
+import { AlertCircle, Bookmark, ChefHat, ExternalLink, Heart, Loader2, Trash2 } from '@icons/CookEduIcons'
 import { listFavoriteItems, toggleFavoriteItem, type FavoriteItemView } from '../../lib/supabaseData'
 import { avatarFallbackUrl, resolveMediaUrl } from '../../lib/media'
 import { useToastStore } from '../../store/toastStore'

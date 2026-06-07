@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bug, X, Activity, Terminal, Trash2, ChevronDown, ChevronUp, Cpu, HardDrive } from 'lucide-react'
+import { Bug, X, Activity, Terminal, Trash2, ChevronDown, ChevronUp, Cpu, HardDrive } from '@icons/CookEduIcons'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDebugStore } from '../../store/debugStore'
 

@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { AlertTriangle, RotateCcw, Home, Bug } from 'lucide-react'
+import { AlertTriangle, RotateCcw, Home, Bug } from '@icons/CookEduIcons'
 import { motion } from 'framer-motion'
 
 interface Props {

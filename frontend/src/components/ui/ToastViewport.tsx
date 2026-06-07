@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertCircle, CheckCircle2, Info, TriangleAlert, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Info, TriangleAlert, X } from '@icons/CookEduIcons'
 import { useToastStore, type ToastTone } from '../../store/toastStore'
 
 const toneStyle: Record<ToastTone, {

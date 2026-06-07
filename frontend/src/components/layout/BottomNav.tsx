@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { BookOpen, ChefHat, Heart, ShoppingBag, User } from 'lucide-react'
+import { BookOpen, ChefHat, Heart, ShoppingBag, User } from '@icons/CookEduIcons'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 const BottomNav = () => {
