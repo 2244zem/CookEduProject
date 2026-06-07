@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, RotateCcw, Send } from 'lucide-react'
+import { Bot, RotateCcw, Send } from 'lucide-react'
 import { useToastStore } from '../../store/toastStore'
+import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
 
 interface Message {
   id: string
@@ -16,7 +17,7 @@ export default function ChefAiChat() {
     {
       id: '1',
       type: 'ai',
-      text: 'Halo! Chef AI sedang dipindahkan ke Supabase Edge Function agar tidak memakai backend lama.',
+      text: 'Halo! Chef AI aktif untuk bantu ide resep, teknik masak, substitusi bahan, dan plating.',
       timestamp: new Date(),
     },
   ])
@@ -30,34 +31,48 @@ export default function ChefAiChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSendMessage = (messageText: string = input) => {
+  const handleSendMessage = async (messageText: string = input) => {
     if (!messageText.trim() || isLoading) return
+
+    const prompt = messageText.trim()
+    const history: ChefAiHistoryItem[] = messages.map((msg) => ({
+      role: msg.type === 'ai' ? 'model' : 'user',
+      content: msg.text,
+    }))
 
     setMessages((prev) => [...prev, {
       id: crypto.randomUUID(),
       type: 'user',
-      text: messageText,
+      text: prompt,
       timestamp: new Date(),
     }])
     setInput('')
     setIsLoading(true)
 
-    window.setTimeout(() => {
+    try {
+      const response = await chefAiApi.chat({ prompt, history })
+
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         type: 'ai',
-        text: 'Chef AI belum aktif di Supabase. Endpoint lama sudah dimatikan supaya web tidak memanggil backend legacy. Aktifkan Edge Function AI baru untuk menghidupkan fitur ini lagi.',
+        text: response.data.reply || 'Maaf, Chef AI belum punya jawaban untuk pertanyaan itu.',
+        timestamp: new Date(),
+      }])
+      setRetryMessage(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Chef AI gagal dipanggil.'
+      setMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        type: 'ai',
+        text: message,
         timestamp: new Date(),
         error: true,
       }])
-      setRetryMessage(messageText)
+      setRetryMessage(prompt)
+      pushToast({ tone: 'error', title: 'Chef AI gagal', message })
+    } finally {
       setIsLoading(false)
-      pushToast({
-        tone: 'warning',
-        title: 'Chef AI belum aktif',
-        message: 'Tidak ada request ke backend lama. Siapkan Supabase Edge Function AI untuk mengaktifkan chat.',
-      })
-    }, 250)
+    }
   }
 
   return (
@@ -69,11 +84,11 @@ export default function ChefAiChat() {
       <div className="bg-gradient-to-r from-[#2A4D88] to-[#7C94B8] p-4 shadow-md">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 text-white">
-            <AlertTriangle className="h-5 w-5" />
+            <Bot className="h-5 w-5" />
           </div>
           <div>
             <h2 className="text-sm font-bold text-white">Chef AI Assistant</h2>
-            <p className="text-xs text-white/75">Menunggu Supabase Edge Function</p>
+            <p className="text-xs text-white/75">Gemini via Supabase</p>
           </div>
         </div>
       </div>
@@ -126,7 +141,7 @@ export default function ChefAiChat() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-500 py-2 text-sm font-semibold text-white transition hover:bg-yellow-600"
           >
             <RotateCcw className="h-4 w-4" />
-            Tampilkan Info Lagi
+            Coba Kirim Ulang
           </button>
         </div>
       )}
@@ -137,7 +152,7 @@ export default function ChefAiChat() {
           value={input}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={(event) => event.key === 'Enter' && handleSendMessage()}
-          placeholder="Chef AI belum aktif..."
+          placeholder="Tanya Chef AI..."
           disabled={isLoading}
           className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#7C94B8]"
         />

@@ -129,9 +129,9 @@ async function getFunctionErrorMessage(error: unknown) {
 
   if (status === 401) return 'Sesi kamu sudah habis. Silakan login ulang.';
   if (status === 403) return 'Akses ditolak untuk fitur wallet ini.';
-  if (status === 404) return 'Endpoint coins atau data transaksi tidak ditemukan.';
+  if (status === 404) return 'Endpoint Supabase Function atau data yang diminta tidak ditemukan.';
   if (status === 429) return 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.';
-  if (status >= 500) return 'Supabase Edge Function coins gagal. Periksa deployment function, tabel wallet, dan secret Midtrans.';
+  if (status >= 500) return 'Supabase Edge Function gagal. Periksa deployment function dan secret yang dibutuhkan.';
 
   return functionError?.message || 'Supabase Function gagal dipanggil.';
 }
@@ -255,6 +255,57 @@ export const coinApi = {
     }>;
   }>('admin-wallet-audit', data),
 };
+
+export type ChefAiHistoryItem = {
+  role: 'user' | 'model' | 'system' | 'ai'
+  content?: string
+  text?: string
+  parts?: Array<{ text: string }>
+}
+
+export async function invokeChefAi(payload: {
+  prompt: string
+  history?: ChefAiHistoryItem[]
+  user_name?: string
+}) {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase belum dikonfigurasi untuk Chef AI.')
+  }
+
+  const { data: sessionData } = await supabase.auth.getSession()
+  const accessToken = sessionData.session?.access_token
+
+  if (!accessToken) {
+    throw new Error('Sesi Supabase tidak ditemukan. Silakan login ulang.')
+  }
+
+  const { data, error } = await supabase.functions.invoke('chef-ai', {
+    body: payload,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (error) {
+    throw new Error(await getFunctionErrorMessage(error))
+  }
+
+  const result = data as { status?: string; reply?: string; response?: string; message?: string; model?: string }
+  if (result.status === 'error') {
+    throw new Error(result.message || 'Chef AI gagal memproses request.')
+  }
+
+  return {
+    data: {
+      ...result,
+      reply: result.reply || result.response || '',
+    },
+  }
+}
+
+export const chefAiApi = {
+  chat: invokeChefAi,
+}
 
 // ===== Recipe API =====
 export const recipeApi = {

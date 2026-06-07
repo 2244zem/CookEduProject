@@ -4,6 +4,7 @@ import { Bot, Loader2, Send, Sparkles, X } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useDeviceProfile } from '../../hooks/useDeviceProfile'
 import { useToastStore } from '../../store/toastStore'
+import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
 
 type Message = {
   id: string
@@ -61,17 +62,32 @@ export default function AiAssistant() {
     setIsLoading(true)
 
     try {
-      await new Promise((resolve) => window.setTimeout(resolve, 250))
+      const history: ChefAiHistoryItem[] = messages
+        .filter((message) => message.role !== 'system')
+        .map((message) => ({
+          role: message.role,
+          content: message.content,
+        }))
+
+      const response = await chefAiApi.chat({
+        prompt,
+        history,
+        user_name: displayName,
+      })
+
+      setMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        role: 'model',
+        content: response.data.reply || 'Maaf, Chef AI belum punya jawaban untuk pertanyaan itu.',
+      }])
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Chef AI gagal dipanggil.'
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: 'system',
-        content: 'Chef AI sedang dinonaktifkan sementara sampai Supabase Edge Function AI siap. Tidak ada request ke backend lama.',
+        content: message,
       }])
-      pushToast({
-        tone: 'warning',
-        title: 'Chef AI belum aktif',
-        message: 'Endpoint lama sudah dimatikan. Siapkan Supabase Edge Function AI untuk mengaktifkan fitur ini.',
-      })
+      pushToast({ tone: 'error', title: 'Chef AI gagal', message })
     } finally {
       setIsLoading(false)
     }
@@ -94,7 +110,7 @@ export default function AiAssistant() {
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-black text-slate-950">Chef AI</p>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-700">CookEdu assistant</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-700">Gemini via Supabase</p>
                 </div>
               </div>
               <button onClick={() => setIsOpen(false)} className="rounded-2xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700">
