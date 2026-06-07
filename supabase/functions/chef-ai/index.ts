@@ -22,6 +22,27 @@ type RecipeHint = {
   difficulty?: string | null
 }
 
+type GeminiPart = {
+  text?: string
+  inlineData?: {
+    mimeType: string
+    data: string
+  }
+}
+
+type DraftRecipe = {
+  title: string
+  category: string
+  description: string
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  cooking_time: number
+  prep_time: number
+  servings: number
+  ingredients: Array<{ item: string; amount?: string; unit?: string }>
+  steps: Array<{ instruction: string; duration?: number; tip?: string }>
+  nutritional_info?: Record<string, unknown>
+}
+
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -67,6 +88,35 @@ function extractGeminiText(payload: any) {
   const parts = payload?.candidates?.[0]?.content?.parts || []
   const text = parts.map((part: { text?: string }) => part.text || '').join('\n').trim()
   return text || ''
+}
+
+function extractJsonPayload(value: string) {
+  const cleaned = value
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim()
+
+  const objectStart = cleaned.indexOf('{')
+  const objectEnd = cleaned.lastIndexOf('}')
+  if (objectStart >= 0 && objectEnd > objectStart) {
+    try {
+      return JSON.parse(cleaned.slice(objectStart, objectEnd + 1))
+    } catch {
+      // Continue to array parsing below.
+    }
+  }
+
+  const arrayStart = cleaned.indexOf('[')
+  const arrayEnd = cleaned.lastIndexOf(']')
+  if (arrayStart >= 0 && arrayEnd > arrayStart) {
+    try {
+      return JSON.parse(cleaned.slice(arrayStart, arrayEnd + 1))
+    } catch {
+      return null
+    }
+  }
+
+  return null
 }
 
 function cleanChefReply(value: string) {
@@ -161,6 +211,54 @@ async function fetchRecipeHints(authHeader: string) {
   return Array.isArray(data) ? data as RecipeHint[] : []
 }
 
+async function fetchRequestUser(authHeader: string) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
+  if (!supabaseUrl || !anonKey || !authHeader) return null
+
+  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    headers: {
+      apikey: anonKey,
+      Authorization: authHeader,
+    },
+  })
+
+  if (!response.ok) return null
+  return await response.json().catch(() => null) as { id?: string; email?: string } | null
+}
+
+async function fetchProfileRole(userId: string, authHeader: string) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
+  if (!supabaseUrl || !anonKey || !authHeader) return ''
+
+  const response = await fetch(`${supabaseUrl}/rest/v1/profiles?select=role&id=eq.${encodeURIComponent(userId)}&limit=1`, {
+    headers: {
+      apikey: anonKey,
+      Authorization: authHeader,
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) return ''
+  const rows = await response.json().catch(() => [])
+  return String(rows?.[0]?.role || '')
+}
+
+async function requireAdmin(authHeader: string) {
+  const user = await fetchRequestUser(authHeader)
+  if (!user?.id) {
+    return jsonResponse({ status: 'error', message: 'Sesi Supabase tidak ditemukan. Silakan login ulang.' }, 401)
+  }
+
+  const role = await fetchProfileRole(user.id, authHeader)
+  if (role !== 'admin') {
+    return jsonResponse({ status: 'error', message: 'Akses admin diperlukan untuk AI Manager.' }, 403)
+  }
+
+  return null
+}
+
 function recipeContextForPrompt(prompt: string, recipes: RecipeHint[]) {
   const matched = rankRecipes(prompt, recipes)
   if (!matched.length) return 'Tidak ada resep database yang sangat cocok. Tetap bantu dengan prinsip masak umum.'
@@ -182,6 +280,73 @@ function isLimitOrProviderError(status: number, payload: any) {
     message.includes('resource exhausted') ||
     message.includes('overloaded') ||
     message.includes('rate')
+}
+
+function dataUrlToGeminiPart(value: unknown): GeminiPart | null {
+  const dataUrl = String(value || '').trim()
+  const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/)
+  if (!match) return null
+
+  const mimeType = match[1]
+  const data = match[2].replace(/\s/g, '')
+  if (!data || data.length > 18_000_000) return null
+
+  return {
+    inlineData: {
+      mimeType,
+      data,
+    },
+  }
+}
+
+async function callGeminiContent(options: {
+  apiKey: string
+  model: string
+  systemPrompt: string
+  parts: GeminiPart[]
+  maxOutputTokens?: number
+  temperature?: number
+}) {
+  const geminiResponse = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(options.model)}:generateContent?key=${encodeURIComponent(options.apiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: options.systemPrompt }],
+        },
+        contents: [
+          {
+            role: 'user',
+            parts: options.parts,
+          },
+        ],
+        generationConfig: {
+          temperature: options.temperature ?? 0.55,
+          topP: 0.9,
+          maxOutputTokens: options.maxOutputTokens || 900,
+        },
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        ],
+      }),
+    },
+  )
+
+  const payload = await geminiResponse.json().catch(() => ({}))
+  if (!geminiResponse.ok) {
+    if (isLimitOrProviderError(geminiResponse.status, payload)) {
+      throw new Error('Gemini sedang penuh atau limit. CookEdu Brain akan mengambil alih.')
+    }
+
+    throw new Error(payload?.error?.message || 'Gemini API gagal dipanggil.')
+  }
+
+  return cleanChefReply(extractGeminiText(payload))
 }
 
 function detectPromptIngredients(prompt: string) {
@@ -273,6 +438,294 @@ function buildLocalChefReply(prompt: string, userName: string, recipes: RecipeHi
   return cleanChefReply(`Aku jalankan ${reason}, ${userName}. ${ingredientLine} ${cookingRoute} Untuk masakan rumahan, alur yang rapi adalah siapkan bahan, panaskan alat, masak bahan yang paling lama dulu, baru masukkan bahan cepat matang. ${recipeLine} Kirim nama bahan atau target resepnya, nanti aku arahkan lebih spesifik.`)
 }
 
+function normalizedDetectedIngredients(payload: any) {
+  const raw = Array.isArray(payload?.ingredients) ? payload.ingredients : Array.isArray(payload) ? payload : []
+  return raw
+    .map((item: unknown) => {
+      if (typeof item === 'string') {
+        return { name: item.trim(), confidence: 0.76 }
+      }
+
+      const record = item as Record<string, unknown>
+      return {
+        name: String(record.name || record.item || record.ingredient || '').trim(),
+        confidence: Math.min(0.99, Math.max(0.1, Number(record.confidence || 0.76))),
+      }
+    })
+    .filter((item: { name: string }) => item.name.length > 0)
+    .slice(0, 10)
+}
+
+async function handleScanFridge(body: Record<string, unknown>, apiKey: string | undefined, model: string) {
+  const imagePart = dataUrlToGeminiPart(body.image_data_url)
+  if (!imagePart) {
+    return jsonResponse({ status: 'error', message: 'Foto kulkas tidak valid atau terlalu besar.' }, 422)
+  }
+
+  if (!apiKey) {
+    return jsonResponse({
+      status: 'success',
+      action: 'scan-fridge',
+      source: 'cookedu_brain',
+      ingredients: [],
+      note: 'Gemini Vision belum aktif di Supabase secret, jadi aplikasi akan memakai scan lokal.',
+      reply: 'Gemini Vision belum aktif, jadi CookEdu memakai scan lokal sebagai pengaman.',
+    })
+  }
+
+  const knownIngredients = Array.isArray(body.known_ingredients)
+    ? body.known_ingredients.slice(0, 120).join(', ')
+    : 'telur, nasi, ayam, tahu, tempe, tomat, cabai, bawang, wortel, bayam, kangkung, susu, keju, mie'
+
+  try {
+    const text = await callGeminiContent({
+      apiKey,
+      model,
+      systemPrompt: [
+        'Kamu adalah CookEdu Vision, mesin deteksi bahan makanan untuk aplikasi kuliner.',
+        'Balas hanya JSON valid. Jangan markdown. Jangan gunakan karakter *, #, atau bullet.',
+        'Deteksi bahan makanan yang terlihat jelas. Abaikan piring, meja, botol kosong, dan objek non makanan.',
+        'Gunakan nama bahan dalam Bahasa Indonesia yang natural.',
+      ].join('\n'),
+      parts: [
+        imagePart,
+        {
+          text: `Baca foto kulkas atau bahan makanan ini. Cocokkan dengan daftar umum ini jika relevan: ${knownIngredients}. Format JSON wajib: {"ingredients":[{"name":"Tomat","confidence":0.82}],"note":"catatan singkat kualitas foto"}`,
+        },
+      ],
+      maxOutputTokens: 620,
+      temperature: 0.25,
+    })
+
+    const payload = extractJsonPayload(text)
+    const ingredients = normalizedDetectedIngredients(payload)
+    return jsonResponse({
+      status: 'success',
+      action: 'scan-fridge',
+      source: ingredients.length ? 'gemini_vision' : 'cookedu_brain',
+      ingredients,
+      note: String(payload?.note || 'Deteksi bahan selesai memakai CookEdu Vision.'),
+      reply: text,
+    })
+  } catch (error) {
+    return jsonResponse({
+      status: 'success',
+      action: 'scan-fridge',
+      source: 'cookedu_brain',
+      ingredients: [],
+      note: error instanceof Error ? error.message : 'Gemini Vision sedang tidak stabil, aplikasi memakai scan lokal.',
+      reply: 'Vision cloud belum stabil, jadi CookEdu memakai scan lokal sebagai fallback.',
+    })
+  }
+}
+
+async function handleRecipeDoctor(body: Record<string, unknown>, apiKey: string | undefined, model: string, recipes: RecipeHint[]) {
+  const prompt = String(body.prompt || body.question || '').trim()
+  const preferences = String(body.preferences || '').trim()
+  const imagePart = dataUrlToGeminiPart(body.image_data_url)
+  if (!prompt && !imagePart) {
+    return jsonResponse({ status: 'error', message: 'Ceritakan masalah resep atau unggah foto masakan dulu.' }, 422)
+  }
+
+  if (!apiKey) {
+    const reply = buildLocalChefReply(prompt || 'masakan gagal', String(body.user_name || 'Koki CookEdu'), recipes, 'CookEdu Brain Recipe Doctor')
+    return jsonResponse({ status: 'success', action: 'recipe-doctor', reply, response: reply, mode: 'cookedu_brain', model: 'cookedu-brain-v1' })
+  }
+
+  try {
+    const text = await callGeminiContent({
+      apiKey,
+      model,
+      systemPrompt: [
+        'Kamu adalah CookEdu Recipe Doctor.',
+        'Diagnosis masalah masakan dengan bahasa Indonesia yang manusiawi, ringkas, dan praktis.',
+        'Jangan pakai markdown, bullet, karakter *, #, atau heading.',
+        'Fokus pada penyebab, cara memperbaiki saat ini, dan pencegahan untuk masak berikutnya.',
+        'Jangan memberi klaim medis.',
+      ].join('\n'),
+      parts: [
+        ...(imagePart ? [imagePart] : []),
+        {
+          text: `Masalah user: ${prompt || 'foto masakan terlampir'}\nPreferensi user: ${preferences || 'belum ada'}\nKonteks resep CookEdu:\n${recipeContextForPrompt(prompt, recipes)}\nBerikan diagnosis yang terasa seperti mentor dapur.`,
+        },
+      ],
+      maxOutputTokens: 850,
+      temperature: 0.45,
+    })
+
+    return jsonResponse({ status: 'success', action: 'recipe-doctor', reply: text, response: text, mode: 'gemini', model })
+  } catch {
+    const reply = buildLocalChefReply(prompt || 'masakan gagal', String(body.user_name || 'Koki CookEdu'), recipes, 'CookEdu Brain Recipe Doctor')
+    return jsonResponse({ status: 'success', action: 'recipe-doctor', reply, response: reply, mode: 'cookedu_brain', model: 'cookedu-brain-v1' })
+  }
+}
+
+async function handleMealPlan(body: Record<string, unknown>, apiKey: string | undefined, model: string, recipes: RecipeHint[]) {
+  const prompt = String(body.prompt || body.question || '').trim()
+  const preferences = String(body.preferences || '').trim()
+  if (!prompt && !preferences) {
+    return jsonResponse({ status: 'error', message: 'Isi target menu mingguan atau preferensi makan dulu.' }, 422)
+  }
+
+  const fallbackReply = cleanChefReply(`Aku susun meal plan sederhana dari CookEdu Brain. Hari pertama pakai menu cepat berbasis telur atau tumis. Hari kedua pilih protein seperti ayam atau tahu. Hari ketiga buat menu sayur hangat. Hari keempat gunakan resep database yang paling dekat: ${rankRecipes(prompt || preferences, recipes).map((recipe) => recipe.title).filter(Boolean).slice(0, 3).join(', ') || 'resep praktis CookEdu'}. Ulangi pola protein, sayur, dan karbohidrat agar belanja tetap ringan.`)
+
+  if (!apiKey) {
+    return jsonResponse({ status: 'success', action: 'meal-plan', reply: fallbackReply, response: fallbackReply, mode: 'cookedu_brain', model: 'cookedu-brain-v1' })
+  }
+
+  try {
+    const text = await callGeminiContent({
+      apiKey,
+      model,
+      systemPrompt: [
+        'Kamu adalah CookEdu Meal Planner.',
+        'Buat rencana menu yang realistis untuk dapur rumahan Indonesia.',
+        'Jangan pakai markdown, bullet, karakter *, #, atau heading.',
+        'Gunakan paragraf pendek dan angka hari jika perlu.',
+        'Hubungkan dengan resep CookEdu bila relevan.',
+      ].join('\n'),
+      parts: [{
+        text: `Target user: ${prompt}\nPreferensi dan batasan: ${preferences || 'belum ada'}\nKonteks resep CookEdu:\n${recipeContextForPrompt(prompt + ' ' + preferences, recipes)}\nBuat menu 7 hari, ide belanja, dan strategi meal prep singkat.`,
+      }],
+      maxOutputTokens: 1050,
+      temperature: 0.55,
+    })
+
+    return jsonResponse({ status: 'success', action: 'meal-plan', reply: text, response: text, mode: 'gemini', model })
+  } catch {
+    return jsonResponse({ status: 'success', action: 'meal-plan', reply: fallbackReply, response: fallbackReply, mode: 'cookedu_brain', model: 'cookedu-brain-v1' })
+  }
+}
+
+function fallbackDraftRecipe(topic: string): DraftRecipe {
+  const title = topic.trim() || 'Resep Rumahan CookEdu'
+  return {
+    title,
+    category: 'Community',
+    description: `Draft resep ${title} yang bisa dirapikan admin sebelum publish.`,
+    difficulty: 'beginner',
+    cooking_time: 25,
+    prep_time: 10,
+    servings: 2,
+    ingredients: [
+      { item: 'Bahan utama', amount: '250', unit: 'g' },
+      { item: 'Bawang putih', amount: '2', unit: 'siung' },
+      { item: 'Garam', amount: '1/2', unit: 'sdt' },
+    ],
+    steps: [
+      { instruction: 'Siapkan semua bahan dan potong dengan ukuran seragam.', duration: 5, tip: 'Potongan seragam membuat matang lebih rata.' },
+      { instruction: 'Masak bahan utama dengan api sedang sampai matang.', duration: 15, tip: 'Koreksi rasa di akhir.' },
+      { instruction: 'Sajikan hangat dengan garnish sederhana.', duration: 2, tip: 'Tambahkan tekstur renyah jika ada.' },
+    ],
+    nutritional_info: { calories: 0 },
+  }
+}
+
+function normalizeDraftRecipe(payload: any, topic: string): DraftRecipe {
+  const fallback = fallbackDraftRecipe(topic)
+  const raw = payload?.draft || payload?.recipe || payload || {}
+  const difficulty = String(raw.difficulty || fallback.difficulty).toLowerCase()
+
+  return {
+    title: String(raw.title || fallback.title).slice(0, 120),
+    category: String(raw.category || fallback.category).slice(0, 80),
+    description: String(raw.description || fallback.description).slice(0, 1200),
+    difficulty: difficulty === 'advanced' || difficulty === 'intermediate' ? difficulty : 'beginner',
+    cooking_time: Math.max(5, Math.min(240, Number(raw.cooking_time || fallback.cooking_time))),
+    prep_time: Math.max(0, Math.min(120, Number(raw.prep_time || fallback.prep_time))),
+    servings: Math.max(1, Math.min(12, Number(raw.servings || fallback.servings))),
+    ingredients: (Array.isArray(raw.ingredients) ? raw.ingredients : fallback.ingredients)
+      .map((item: unknown) => {
+        if (typeof item === 'string') return { item }
+        const record = item as Record<string, unknown>
+        return {
+          item: String(record.item || record.name || record.ingredient || '').trim(),
+          amount: String(record.amount || '').trim(),
+          unit: String(record.unit || '').trim(),
+        }
+      })
+      .filter((item: { item: string }) => item.item.length > 0)
+      .slice(0, 18),
+    steps: (Array.isArray(raw.steps) ? raw.steps : fallback.steps)
+      .map((step: unknown) => {
+        if (typeof step === 'string') return { instruction: step, duration: 0, tip: '' }
+        const record = step as Record<string, unknown>
+        return {
+          instruction: String(record.instruction || record.text || record.step || '').trim(),
+          duration: Number(record.duration || 0),
+          tip: String(record.tip || '').trim(),
+        }
+      })
+      .filter((step: { instruction: string }) => step.instruction.length > 0)
+      .slice(0, 14),
+    nutritional_info: raw.nutritional_info && typeof raw.nutritional_info === 'object' ? raw.nutritional_info : fallback.nutritional_info,
+  }
+}
+
+async function handleAdminDraft(body: Record<string, unknown>, authHeader: string, apiKey: string | undefined, model: string, recipes: RecipeHint[]) {
+  const adminError = await requireAdmin(authHeader)
+  if (adminError) return adminError
+
+  const topic = String(body.prompt || body.topic || '').trim()
+  if (topic.length < 3) {
+    return jsonResponse({ status: 'error', message: 'Isi brief resep atau masalah data yang ingin dirapikan.' }, 422)
+  }
+
+  if (!apiKey) {
+    const draft = fallbackDraftRecipe(topic)
+    return jsonResponse({
+      status: 'success',
+      action: 'admin-draft',
+      draft,
+      reply: 'Gemini belum aktif, jadi CookEdu membuat draft aman berbasis template lokal.',
+      mode: 'cookedu_brain',
+      model: 'cookedu-brain-v1',
+    })
+  }
+
+  try {
+    const text = await callGeminiContent({
+      apiKey,
+      model,
+      systemPrompt: [
+        'Kamu adalah CookEdu Admin Recipe Manager.',
+        'Balas hanya JSON valid. Jangan markdown. Jangan gunakan karakter *, #, atau bullet.',
+        'Buat draft resep yang masuk akal untuk database recipes CookEdu.',
+        'Jangan mengubah schema. Field wajib: title, category, description, difficulty, cooking_time, prep_time, servings, ingredients, steps, nutritional_info.',
+        'ingredients adalah array object {item, amount, unit}. steps adalah array object {instruction, duration, tip}.',
+      ].join('\n'),
+      parts: [{
+        text: `Brief admin: ${topic}\nKonteks resep database untuk menghindari duplikasi:\n${recipeContextForPrompt(topic, recipes)}\nBalas JSON: {"draft":{...},"cleanup_notes":["catatan singkat"]}`,
+      }],
+      maxOutputTokens: 1300,
+      temperature: 0.45,
+    })
+
+    const payload = extractJsonPayload(text)
+    const draft = normalizeDraftRecipe(payload, topic)
+    return jsonResponse({
+      status: 'success',
+      action: 'admin-draft',
+      draft,
+      cleanup_notes: Array.isArray(payload?.cleanup_notes) ? payload.cleanup_notes.slice(0, 8) : [],
+      reply: 'Draft resep berhasil dibuat. Tinjau lagi sebelum disimpan ke Supabase.',
+      mode: 'gemini',
+      model,
+    })
+  } catch {
+    const draft = fallbackDraftRecipe(topic)
+    return jsonResponse({
+      status: 'success',
+      action: 'admin-draft',
+      draft,
+      cleanup_notes: ['Gemini belum stabil, draft dibuat dari CookEdu Brain lokal.'],
+      reply: 'Draft lokal berhasil dibuat. Tinjau lagi sebelum disimpan.',
+      mode: 'cookedu_brain',
+      model: 'cookedu-brain-v1',
+    })
+  }
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -287,14 +740,33 @@ Deno.serve(async (request) => {
 
   try {
     const body = await request.json()
-    const aiMode = String(Deno.env.get('COOKEDU_AI_MODE') || body.mode || 'cookedu-brain').toLowerCase()
     const apiKey = Deno.env.get('GEMINI_API_KEY')
-    const model = Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash'
+    const model = Deno.env.get('GEMINI_MODEL') || 'gemini-3.5-flash'
+    const aiMode = String(Deno.env.get('COOKEDU_AI_MODE') || body.mode || (apiKey ? 'hybrid' : 'cookedu-brain')).toLowerCase()
+    const action = String(body.action || 'chat').trim().toLowerCase()
+    const authHeader = request.headers.get('Authorization') || ''
     const prompt = String(body.prompt || body.question || '').trim()
     const userName = String(body.user_name || 'Koki CookEdu').trim()
-    const recipeHints = await fetchRecipeHints(request.headers.get('Authorization') || '')
+    const preferences = String(body.preferences || '').trim()
+    const recipeHints = await fetchRecipeHints(authHeader)
     fallbackPrompt = prompt
     fallbackUserName = userName
+
+    if (action === 'scan-fridge') {
+      return await handleScanFridge(body, apiKey, model)
+    }
+
+    if (action === 'recipe-doctor') {
+      return await handleRecipeDoctor(body, apiKey, model, recipeHints)
+    }
+
+    if (action === 'meal-plan') {
+      return await handleMealPlan(body, apiKey, model, recipeHints)
+    }
+
+    if (action === 'admin-draft') {
+      return await handleAdminDraft(body, authHeader, apiKey, model, recipeHints)
+    }
 
     if (!prompt) {
       return jsonResponse({ status: 'error', message: 'Prompt tidak boleh kosong.' }, 400)
@@ -322,6 +794,7 @@ Deno.serve(async (request) => {
       'Gunakan konteks resep CookEdu jika relevan.',
       'Jangan membuat klaim medis atau nutrisi ekstrem. Untuk alergi/penyakit, sarankan konsultasi ahli.',
       `Nama pengguna: ${userName}.`,
+      `Memory preference user: ${preferences || 'belum ada preferensi tersimpan.'}`,
       `Konteks resep CookEdu:\n${recipeContextForPrompt(prompt, recipeHints)}`,
     ].join('\n')
 

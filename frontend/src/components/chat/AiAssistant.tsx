@@ -7,6 +7,7 @@ import { useToastStore } from '../../store/toastStore'
 import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
 import { getPreferredIdentityName } from '../../lib/supabaseClient'
 import { buildLocalChefReply } from '../../lib/chefLocalBrain'
+import { formatAiMemory, loadAiMemory } from '../../lib/aiMemory'
 
 type Message = {
   id: string
@@ -85,6 +86,7 @@ export default function AiAssistant() {
         prompt,
         history,
         user_name: displayName,
+        preferences: formatAiMemory(loadAiMemory(user?.id)),
       })
 
       setMessages((prev) => [...prev, {

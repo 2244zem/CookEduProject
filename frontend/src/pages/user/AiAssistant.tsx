@@ -7,6 +7,7 @@ import { getPreferredIdentityName } from '../../lib/supabaseClient'
 import { chefAiApi, type ChefAiHistoryItem } from '../../lib/api'
 import { buildLocalChefReply } from '../../lib/chefLocalBrain'
 import { useToastStore } from '../../store/toastStore'
+import { formatAiMemory, loadAiMemory } from '../../lib/aiMemory'
 
 type Message = {
   id: string
@@ -49,7 +50,12 @@ export default function AiAssistantPage() {
     setIsTyping(true)
 
     try {
-      const response = await chefAiApi.chat({ prompt, history, user_name: displayName })
+      const response = await chefAiApi.chat({
+        prompt,
+        history,
+        user_name: displayName,
+        preferences: formatAiMemory(loadAiMemory(user?.id)),
+      })
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         text: response.data.reply || buildLocalChefReply(prompt, displayName),

@@ -1,4 +1,4 @@
-import { Home, User, Wand2, Bookmark, ShoppingBag, BookOpen, ChefHat, Coins, ShieldCheck } from '@icons/CookEduIcons'
+import { Home, User, Wand2, Bookmark, ShoppingBag, BookOpen, ChefHat, Coins, ShieldCheck, Sparkles } from '@icons/CookEduIcons'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../../store'
 import { useRealtimeWallet } from '../../hooks/useRealtimeWallet'
@@ -15,6 +15,7 @@ const TopNav = () => {
     { path: '/favorites', icon: Bookmark, label: 'Favorit' },
     { path: '/daftar-belanja', icon: ShoppingBag, label: 'Belanja' },
     { path: '/fridge', icon: Wand2, label: 'Scanner' },
+    { path: '/ai-lab', icon: Sparkles, label: 'AI Lab' },
     { path: '/learning', icon: BookOpen, label: 'Belajar' },
   ]
 

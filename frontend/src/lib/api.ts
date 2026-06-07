@@ -268,10 +268,35 @@ export type ChefAiHistoryItem = {
   parts?: Array<{ text: string }>
 }
 
+export type ChefAiAction = 'chat' | 'scan-fridge' | 'recipe-doctor' | 'meal-plan' | 'admin-draft'
+
+export type ChefAiDraftRecipe = {
+  title: string
+  category: string
+  description: string
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  cooking_time: number
+  prep_time: number
+  servings: number
+  ingredients: Array<{ item: string; amount?: string; unit?: string }>
+  steps: Array<{ instruction: string; duration?: number; tip?: string }>
+  nutritional_info?: Record<string, unknown>
+}
+
+export type ChefAiDetectedIngredient = {
+  name: string
+  confidence: number
+}
+
 export async function invokeChefAi(payload: {
+  action?: ChefAiAction
   prompt: string
   history?: ChefAiHistoryItem[]
   user_name?: string
+  preferences?: string
+  image_data_url?: string
+  known_ingredients?: string[]
+  topic?: string
 }) {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error('Supabase belum dikonfigurasi untuk Chef AI.')
@@ -295,7 +320,20 @@ export async function invokeChefAi(payload: {
     throw new Error(await getFunctionErrorMessage(error))
   }
 
-  const result = data as { status?: string; reply?: string; response?: string; message?: string; model?: string; mode?: 'gemini' | 'local_fallback' | 'cookedu_brain' }
+  const result = data as {
+    status?: string
+    action?: ChefAiAction
+    reply?: string
+    response?: string
+    message?: string
+    model?: string
+    mode?: 'gemini' | 'local_fallback' | 'cookedu_brain'
+    source?: 'gemini_vision' | 'cookedu_brain'
+    ingredients?: ChefAiDetectedIngredient[]
+    note?: string
+    draft?: ChefAiDraftRecipe
+    cleanup_notes?: string[]
+  }
   if (result.status === 'error') {
     throw new Error(result.message || 'Chef AI gagal memproses request.')
   }
@@ -309,7 +347,15 @@ export async function invokeChefAi(payload: {
 }
 
 export const chefAiApi = {
-  chat: invokeChefAi,
+  chat: (payload: Omit<Parameters<typeof invokeChefAi>[0], 'action'>) => invokeChefAi({ ...payload, action: 'chat' }),
+  scanFridge: (payload: { image_data_url: string; known_ingredients?: string[]; prompt?: string; user_name?: string; preferences?: string }) =>
+    invokeChefAi({ ...payload, prompt: payload.prompt || 'scan bahan makanan dari foto kulkas', action: 'scan-fridge' }),
+  recipeDoctor: (payload: { prompt: string; image_data_url?: string; user_name?: string; preferences?: string }) =>
+    invokeChefAi({ ...payload, action: 'recipe-doctor' }),
+  mealPlan: (payload: { prompt: string; user_name?: string; preferences?: string }) =>
+    invokeChefAi({ ...payload, action: 'meal-plan' }),
+  adminDraft: (payload: { prompt: string; user_name?: string; preferences?: string }) =>
+    invokeChefAi({ ...payload, action: 'admin-draft' }),
 }
 
 // ===== Recipe API =====

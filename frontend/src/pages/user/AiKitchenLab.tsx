@@ -1,0 +1,338 @@
+import { useMemo, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import { ArrowRight, Bot, Camera, ChefHat, Coins, Image, Loader2, Save, Sparkles, Upload, Wand2, X } from '@icons/CookEduIcons'
+import { useNavigate } from 'react-router-dom'
+import { chefAiApi, coinApi, type ChefAiDetectedIngredient } from '../../lib/api'
+import { emptyAiMemory, formatAiMemory, loadAiMemory, saveAiMemory, type CookEduAiMemory } from '../../lib/aiMemory'
+import { useAuthStore } from '../../store'
+import { getPreferredIdentityName } from '../../lib/supabaseClient'
+import { useToastStore } from '../../store/toastStore'
+import { stapleIngredientsData } from '../../data/stapleIngredients'
+
+const AI_BOOST_COST = 15
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('File gambar gagal dibaca.'))
+    reader.readAsDataURL(file)
+  })
+}
+
+export default function AiKitchenLab() {
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const pushToast = useToastStore((state) => state.pushToast)
+  const scanInputRef = useRef<HTMLInputElement | null>(null)
+  const doctorInputRef = useRef<HTMLInputElement | null>(null)
+  const displayName = getPreferredIdentityName({ username: user?.username, name: user?.name, email: user?.email })
+  const [memory, setMemory] = useState<CookEduAiMemory>(() => user?.id ? loadAiMemory(user.id) : emptyAiMemory)
+  const [scanImage, setScanImage] = useState('')
+  const [doctorImage, setDoctorImage] = useState('')
+  const [detectedIngredients, setDetectedIngredients] = useState<ChefAiDetectedIngredient[]>([])
+  const [doctorPrompt, setDoctorPrompt] = useState('')
+  const [mealPrompt, setMealPrompt] = useState('')
+  const [doctorReply, setDoctorReply] = useState('')
+  const [mealReply, setMealReply] = useState('')
+  const [scanNote, setScanNote] = useState('')
+  const [loadingAction, setLoadingAction] = useState('')
+  const memoryText = useMemo(() => formatAiMemory(memory), [memory])
+
+  const updateMemory = (key: keyof CookEduAiMemory, value: string) => {
+    setMemory((current) => ({ ...current, [key]: value }))
+  }
+
+  const persistMemory = () => {
+    saveAiMemory(user?.id, memory)
+    pushToast({
+      tone: 'success',
+      title: 'Memory AI tersimpan',
+      message: 'CookEdu Brain akan memakai preferensi ini untuk jawaban berikutnya.',
+    })
+  }
+
+  const chargePremium = async (action: string) => {
+    const response = await coinApi.spendCoins({
+      spend_type: 'ai_boost',
+      reference_id: `${action}-${Date.now()}`,
+    })
+    pushToast({
+      tone: 'success',
+      title: `${AI_BOOST_COST} koin dipakai`,
+      message: response.data.message || 'AI Boost aktif untuk fitur premium ini.',
+    })
+  }
+
+  const handleScanFile = async (file?: File | null) => {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      pushToast({ tone: 'warning', title: 'File belum cocok', message: 'Pilih foto bahan makanan.' })
+      return
+    }
+
+    setLoadingAction('scan')
+    try {
+      const imageDataUrl = await readFileAsDataUrl(file)
+      setScanImage(imageDataUrl)
+      await chargePremium('scan-fridge')
+      const response = await chefAiApi.scanFridge({
+        image_data_url: imageDataUrl,
+        known_ingredients: stapleIngredientsData.map((item) => item.name),
+        user_name: displayName,
+        preferences: memoryText,
+      })
+      const ingredients = response.data.ingredients || []
+      setDetectedIngredients(ingredients)
+      setScanNote(response.data.note || 'Scan selesai.')
+      pushToast({
+        tone: ingredients.length ? 'success' : 'warning',
+        title: ingredients.length ? 'Bahan terdeteksi' : 'Belum ada bahan jelas',
+        message: ingredients.length ? `${ingredients.length} bahan terbaca oleh CookEdu Vision.` : 'Coba foto ulang dengan cahaya lebih terang.',
+      })
+    } catch (error) {
+      pushToast({
+        tone: 'error',
+        title: 'Scan AI gagal',
+        message: error instanceof Error ? error.message : 'Coba lagi beberapa saat.',
+      })
+    } finally {
+      setLoadingAction('')
+    }
+  }
+
+  const runRecipeDoctor = async () => {
+    if (!doctorPrompt.trim() && !doctorImage) {
+      pushToast({ tone: 'warning', title: 'Ceritakan dulu masalahnya', message: 'Tulis masalah masakan atau unggah foto.' })
+      return
+    }
+
+    setLoadingAction('doctor')
+    try {
+      await chargePremium('recipe-doctor')
+      const response = await chefAiApi.recipeDoctor({
+        prompt: doctorPrompt,
+        image_data_url: doctorImage || undefined,
+        user_name: displayName,
+        preferences: memoryText,
+      })
+      setDoctorReply(response.data.reply || '')
+    } catch (error) {
+      pushToast({
+        tone: 'error',
+        title: 'Recipe Doctor gagal',
+        message: error instanceof Error ? error.message : 'Coba lagi beberapa saat.',
+      })
+    } finally {
+      setLoadingAction('')
+    }
+  }
+
+  const runMealPlan = async () => {
+    if (!mealPrompt.trim() && !memoryText) {
+      pushToast({ tone: 'warning', title: 'Isi target menu', message: 'Contoh: menu 7 hari hemat, tinggi protein, 30 menit.' })
+      return
+    }
+
+    setLoadingAction('meal')
+    try {
+      await chargePremium('meal-plan')
+      const response = await chefAiApi.mealPlan({
+        prompt: mealPrompt,
+        user_name: displayName,
+        preferences: memoryText,
+      })
+      setMealReply(response.data.reply || '')
+    } catch (error) {
+      pushToast({
+        tone: 'error',
+        title: 'Meal plan gagal',
+        message: error instanceof Error ? error.message : 'Coba lagi beberapa saat.',
+      })
+    } finally {
+      setLoadingAction('')
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F6F7F8] px-4 pb-32 pt-6 text-slate-900 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="overflow-hidden rounded-[32px] bg-[#2A4D88] p-6 text-white shadow-xl sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#D9D9D8]">CookEdu AI Engine</p>
+              <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">AI Kitchen Lab</h1>
+              <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-white/75">
+                Scan bahan, bedah masakan gagal, susun menu mingguan, dan simpan memory rasa. Fitur premium memakai {AI_BOOST_COST} koin per aksi.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/fridge')}
+              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-xs font-black uppercase tracking-widest text-[#2A4D88]"
+            >
+              Kulkas Pintar <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </header>
+
+        <section className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
+          <aside className="rounded-[28px] border border-[#B1BBC8]/40 bg-white p-5 shadow-sm">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <Save className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#7C94B8]">Memory Preference</p>
+                <h2 className="font-black text-slate-950">Selera {displayName}</h2>
+              </div>
+            </div>
+
+            {[
+              ['taste', 'Rasa favorit', 'Pedas manis, gurih ringan, suka bawang...'],
+              ['allergies', 'Pantangan', 'Alergi seafood, tanpa santan, tidak pedas...'],
+              ['budget', 'Budget', 'Hemat 50 ribu per hari...'],
+              ['cookingTime', 'Waktu masak', 'Maksimal 30 menit...'],
+              ['goals', 'Target', 'Meal prep, protein tinggi, bekal sekolah...'],
+            ].map(([key, label, placeholder]) => (
+              <label key={key} className="mb-3 block">
+                <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+                <input
+                  value={memory[key as keyof CookEduAiMemory]}
+                  onChange={(event) => updateMemory(key as keyof CookEduAiMemory, event.target.value)}
+                  placeholder={placeholder}
+                  className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold outline-none focus:border-[#7C94B8]"
+                />
+              </label>
+            ))}
+
+            <button
+              type="button"
+              onClick={persistMemory}
+              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 text-xs font-black uppercase tracking-widest text-white"
+            >
+              <Save className="h-4 w-4" />
+              Simpan Memory
+            </button>
+          </aside>
+
+          <div className="grid gap-5 xl:grid-cols-2">
+            <article className="rounded-[28px] border border-[#B1BBC8]/40 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#7C94B8]">Gemini Vision</p>
+                  <h2 className="text-xl font-black">Smart Fridge Scan</h2>
+                </div>
+                <span className="flex items-center gap-1 rounded-full bg-yellow-100 px-3 py-1 text-[10px] font-black text-yellow-800">
+                  <Coins className="h-3.5 w-3.5" /> {AI_BOOST_COST}
+                </span>
+              </div>
+              <input
+                ref={scanInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(event) => handleScanFile(event.target.files?.[0])}
+              />
+              <button
+                type="button"
+                onClick={() => scanInputRef.current?.click()}
+                disabled={loadingAction === 'scan'}
+                className="flex aspect-[16/9] w-full flex-col items-center justify-center rounded-[24px] border border-dashed border-[#7C94B8] bg-[#EDF1F6] text-[#2A4D88]"
+              >
+                {scanImage ? <img src={scanImage} alt="Foto bahan" className="h-full w-full rounded-[24px] object-cover" /> : loadingAction === 'scan' ? <Loader2 className="h-8 w-8 animate-spin" /> : <><Camera className="mb-3 h-8 w-8" /><span className="text-xs font-black uppercase tracking-widest">Scan Kamera</span></>}
+              </button>
+              {detectedIngredients.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {detectedIngredients.map((item) => (
+                    <span key={item.name} className="rounded-2xl bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                      {item.name} {Math.round(item.confidence * 100)}%
+                    </span>
+                  ))}
+                </div>
+              )}
+              {scanNote && <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">{scanNote}</p>}
+            </article>
+
+            <article className="rounded-[28px] border border-[#B1BBC8]/40 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#7C94B8]">AI Diagnosis</p>
+                  <h2 className="text-xl font-black">Recipe Doctor</h2>
+                </div>
+                <span className="flex items-center gap-1 rounded-full bg-yellow-100 px-3 py-1 text-[10px] font-black text-yellow-800">
+                  <Coins className="h-3.5 w-3.5" /> {AI_BOOST_COST}
+                </span>
+              </div>
+              <textarea
+                value={doctorPrompt}
+                onChange={(event) => setDoctorPrompt(event.target.value)}
+                placeholder="Contoh: ayamku gosong di luar tapi dalamnya masih mentah..."
+                className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold outline-none focus:border-[#7C94B8]"
+              />
+              <input ref={doctorInputRef} type="file" accept="image/*" className="hidden" onChange={async (event) => {
+                const file = event.target.files?.[0]
+                if (file) setDoctorImage(await readFileAsDataUrl(file))
+              }} />
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={() => doctorInputRef.current?.click()} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-500">
+                  <Upload className="h-4 w-4" /> Foto
+                </button>
+                <button type="button" onClick={runRecipeDoctor} disabled={loadingAction === 'doctor'} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#2A4D88] text-xs font-black uppercase tracking-widest text-white">
+                  {loadingAction === 'doctor' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
+                  Bedah
+                </button>
+              </div>
+              {doctorImage && (
+                <button type="button" onClick={() => setDoctorImage('')} className="mt-3 flex items-center gap-2 text-xs font-bold text-rose-600">
+                  <X className="h-4 w-4" /> Hapus foto lampiran
+                </button>
+              )}
+              {doctorReply && <p className="mt-4 whitespace-pre-line rounded-2xl bg-[#EDF1F6] p-4 text-sm font-semibold leading-6 text-slate-700">{doctorReply}</p>}
+            </article>
+
+            <article className="rounded-[28px] border border-[#B1BBC8]/40 bg-white p-5 shadow-sm xl:col-span-2">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#7C94B8]">Planner</p>
+                  <h2 className="text-xl font-black">Menu Mingguan Otomatis</h2>
+                </div>
+                <span className="flex items-center gap-1 rounded-full bg-yellow-100 px-3 py-1 text-[10px] font-black text-yellow-800">
+                  <Coins className="h-3.5 w-3.5" /> {AI_BOOST_COST}
+                </span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                <input
+                  value={mealPrompt}
+                  onChange={(event) => setMealPrompt(event.target.value)}
+                  placeholder="Contoh: menu 7 hari hemat, tidak pedas, bekal kantor, 30 menit"
+                  className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold outline-none focus:border-[#7C94B8]"
+                />
+                <button type="button" onClick={runMealPlan} disabled={loadingAction === 'meal'} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-xs font-black uppercase tracking-widest text-white">
+                  {loadingAction === 'meal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                  Buat Plan
+                </button>
+              </div>
+              {mealReply && <p className="mt-4 whitespace-pre-line rounded-2xl bg-[#EDF1F6] p-5 text-sm font-semibold leading-7 text-slate-700">{mealReply}</p>}
+            </article>
+          </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          {[
+            ['Lebih personal', 'AI membaca memory rasa dan batasan user.', Sparkles],
+            ['Lebih visual', 'Foto bahan bisa dikirim ke Gemini Vision lewat Supabase.', Image],
+            ['Lebih premium', 'Fitur berat memakai koin agar wallet punya fungsi nyata.', ChefHat],
+          ].map(([title, text, Icon]) => (
+            <div key={String(title)} className="rounded-[24px] border border-[#B1BBC8]/30 bg-white p-5">
+              <Icon className="mb-4 h-7 w-7 text-[#2A4D88]" />
+              <h3 className="font-black text-slate-950">{title}</h3>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{text}</p>
+            </div>
+          ))}
+        </section>
+      </div>
+    </div>
+  )
+}

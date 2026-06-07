@@ -1,5 +1,5 @@
 import { stapleIngredientsData } from '../data/stapleIngredients'
-import { isSupabaseConfigured, supabase } from './supabaseClient'
+import { chefAiApi } from './api'
 
 export type DetectedIngredient = {
   name: string
@@ -44,18 +44,13 @@ function uniqueDetectedIngredients(items: DetectedIngredient[]) {
 }
 
 async function invokeVisionFunction(imageDataUrl: string) {
-  if (!isSupabaseConfigured || !supabase) return null
-
-  const { data, error } = await supabase.functions.invoke('fridge-vision', {
-    body: {
-      image_data_url: imageDataUrl,
-      locale: 'id-ID',
-      known_ingredients: KNOWN_INGREDIENTS,
-    },
+  const response = await chefAiApi.scanFridge({
+    image_data_url: imageDataUrl,
+    known_ingredients: KNOWN_INGREDIENTS,
+    prompt: 'Deteksi bahan makanan dari foto kulkas dan beri hasil Bahasa Indonesia.',
   })
 
-  if (error) throw error
-  return data as { ingredients?: Array<string | { name?: string; confidence?: number }>; note?: string } | null
+  return response.data as { ingredients?: Array<string | { name?: string; confidence?: number }>; note?: string } | null
 }
 
 function loadImage(imageDataUrl: string) {
@@ -135,7 +130,7 @@ async function analyzeImageLocally(imageDataUrl: string): Promise<FridgeVisionRe
   return {
     ingredients: uniqueDetectedIngredients(fallback),
     source: 'local-scan',
-    note: 'AI cloud belum aktif, jadi CookEdu memakai pemindaian warna lokal sebagai fallback aman.',
+    note: 'Gemini Vision belum aktif atau koneksi sedang terbatas, jadi CookEdu memakai pemindaian warna lokal sebagai fallback aman.',
   }
 }
 
@@ -158,7 +153,7 @@ export async function analyzeFridgePhoto(imageDataUrl: string): Promise<FridgeVi
       return {
         ingredients: detected,
         source: 'vision-ai',
-        note: data?.note || 'Bahan terdeteksi memakai Supabase Edge Function fridge-vision.',
+        note: data?.note || 'Bahan terdeteksi memakai Supabase Edge Function chef-ai.',
       }
     }
   } catch (error) {

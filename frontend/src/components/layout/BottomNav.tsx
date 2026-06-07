@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { BookOpen, ChefHat, Heart, ShoppingBag, User } from '@icons/CookEduIcons'
+import { ChefHat, Heart, ShoppingBag, Sparkles, User } from '@icons/CookEduIcons'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 const BottomNav = () => {
@@ -7,9 +7,9 @@ const BottomNav = () => {
   const navigate = useNavigate()
 
   const navItems = [
-    { id: "home", path: "/", icon: BookOpen },
+    { id: "home", path: "/", icon: Heart },
     { id: "recipes", path: "/recipes", icon: ChefHat },
-    { id: "favorites", path: "/favorites", icon: Heart },
+    { id: "ai-lab", path: "/ai-lab", icon: Sparkles },
     { id: "shopping", path: "/daftar-belanja", icon: ShoppingBag },
     { id: "profile", path: "/profile", icon: User }
   ]

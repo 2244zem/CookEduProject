@@ -4,7 +4,7 @@ import { useToastStore } from '../../store/toastStore'
 import { 
   LayoutDashboard, ChefHat, BookOpen, FileText, 
   LogOut, Menu, X, Bell, Activity,
-  ChevronRight, Search, Coins
+  ChevronRight, Search, Coins, Sparkles
 } from '@icons/CookEduIcons'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,6 +15,7 @@ const navItems = [
   { to: '/admin/recipes', icon: ChefHat, label: 'Recipes', end: false },
   { to: '/admin/lessons', icon: BookOpen, label: 'Education', end: false },
   { to: '/admin/wallet', icon: Coins, label: 'Wallet', end: false },
+  { to: '/admin/ai-manager', icon: Sparkles, label: 'AI Manager', end: false },
   { to: '/admin/audit-logs', icon: FileText, label: 'Audit Logs', end: false },
 ]
 

@@ -27,8 +27,10 @@ const FridgeScanner = lazy(() => import('./pages/user/FridgeScanner'))
 const CatatanIbu = lazy(() => import('./pages/user/CatatanIbu'))
 const DaftarBelanja = lazy(() => import('./pages/user/DaftarBelanja'))
 const AiAssistant = lazy(() => import('./pages/user/AiAssistant'))
+const AiKitchenLab = lazy(() => import('./pages/user/AiKitchenLab'))
 const SocialHub = lazy(() => import('./pages/user/SocialHub'))
 const Favorites = lazy(() => import('./pages/user/Favorites'))
+const AiManager = lazy(() => import('./pages/admin/AiManager'))
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { isAuthenticated, isAdmin } = useAuthStore()
@@ -144,6 +146,7 @@ export default function App() {
               <Route path="recipes" element={<RecipesCRUD />} />
               <Route path="lessons" element={<LessonsManager />} />
               <Route path="wallet" element={<WalletAdmin />} />
+              <Route path="ai-manager" element={<AiManager />} />
               <Route path="audit-logs" element={<AuditLog />} />
             </Route>
 
@@ -160,6 +163,7 @@ export default function App() {
               <Route path="catatan-ibu" element={<CatatanIbu />} />
               <Route path="daftar-belanja" element={<DaftarBelanja />} />
               <Route path="ai-assistant" element={<AiAssistant />} />
+              <Route path="ai-lab" element={<AiKitchenLab />} />
               <Route path="cookshare" element={<SocialHub />} />
             </Route>
 
